@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline';">
+<meta name="referrer" content="no-referrer">
+<title>SW — Prototype Site</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green: hsl(130, 60%, 30%);
+    --green-light: hsl(130, 55%, 38%);
+    --bg: #f5f7f4;
+    --dark: #111;
+    --gray: #777;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+    overflow: hidden;
+  }
+
+  canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+  }
+
+  /* ── LANDING ── */
+  #landing {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+
+  #landing.hide {
+    opacity: 0;
+    transform: scale(0.97);
+    pointer-events: none;
+  }
+
+  .brand { text-align: center; }
+
+  .brand-logo-text {
+    font-family: Impact, 'Arial Narrow', sans-serif;
+    font-style: italic;
+    font-size: clamp(7rem, 22vw, 16rem);
+    position: relative;
+    left: -0.75rem;
+    color: hsl(130, 60%, 32%);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+    display: block;
+    filter: drop-shadow(0 3px 18px rgba(34,139,34,0.18));
+    user-select: none;
+  }
+
+  .brand-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(0.7rem, 1.6vw, 0.95rem);
+    letter-spacing: 0.55em;
+    text-transform: uppercase;
+    color: var(--gray);
+    margin-top: 0.3rem;
+    margin-bottom: 0;
+  }
+
+  /* ── BUTTON ── */
+  .cta-btn {
+    position: relative;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+  }
+
+  .btn-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 200px;
+    height: 54px;
+    border: 1.5px solid rgba(0,0,0,0.18);
+    border-radius: 2px;
+    overflow: hidden;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  .cta-btn:hover .btn-inner {
+    border-color: var(--green);
+    box-shadow: 0 4px 20px rgba(34,139,34,0.14);
+  }
+
+  .btn-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--green);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.45s cubic-bezier(0.7, 0, 0.3, 1);
+  }
+
+  .cta-btn:hover .btn-fill { transform: scaleX(1); }
+
+  .btn-text-wrap {
+    position: relative;
+    z-index: 1;
+    height: 1.2em;
+    overflow: hidden;
+  }
+
+  .btn-word {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--dark);
+    transition: transform 0.4s cubic-bezier(0.7, 0, 0.3, 1), color 0.25s;
+    line-height: 1.2em;
+  }
+
+  .btn-word-hover {
+    position: absolute;
+    top: 1.2em;
+    left: 0; right: 0;
+    text-align: center;
+  }
+
+  .cta-btn:hover .btn-word { transform: translateY(-1.2em); color: #fff; }
+
+  /* ── CONTACT OVERLAY ── */
+  #contactPage {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+    background: rgba(235,240,235,0.65);
+    backdrop-filter: blur(8px);
+  }
+
+  #contactPage.show { opacity: 1; pointer-events: all; }
+
+  .contact-glass {
+    background: rgba(255,255,255,0.97);
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 6px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.11), 0 4px 20px rgba(34,139,34,0.07);
+    padding: clamp(1.8rem, 4vw, 2.8rem) clamp(2rem, 5vw, 3.2rem);
+    width: min(560px, 94vw);
+    position: relative;
+    transform: translateY(24px);
+    transition: transform 0.6s ease;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+
+  #contactPage.show .contact-glass { transform: translateY(0); }
+
+  .contact-glass::-webkit-scrollbar { width: 4px; }
+  .contact-glass::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+  .contact-header { margin-bottom: 1.4rem; }
+
+  .contact-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--dark);
+  }
+
+  .contact-header h2 span { color: var(--green); }
+
+  .contact-header p {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 1rem;
+    color: var(--gray);
+    margin-top: 0.4rem;
+  }
+
+  .security-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(34,139,34,0.06);
+    border: 1px solid rgba(34,139,34,0.18);
+    border-radius: 3px;
+    padding: 0.45rem 0.8rem;
+    margin-bottom: 1.4rem;
+    font-size: 0.67rem;
+    letter-spacing: 0.07em;
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.9rem;
+  }
+
+  label {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #555;
+    font-weight: 700;
+  }
+
+  label .req { color: var(--green); margin-left: 2px; }
+
+  input, textarea {
+    background: #fafafa;
+    border: 1.5px solid #e2e2e2;
+    border-radius: 3px;
+    color: var(--dark);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    padding: 0.65rem 0.85rem;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+    width: 100%;
+  }
+
+  input::placeholder, textarea::placeholder { color: #bbb; }
+
+  input:focus, textarea:focus {
+    border-color: var(--green);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(34,139,34,0.09);
+  }
+
+  input.error, textarea.error {
+    border-color: #e53935;
+    box-shadow: 0 0 0 3px rgba(229,57,53,0.07);
+  }
+
+  .field-error {
+    font-size: 0.68rem;
+    color: #e53935;
+    display: none;
+    letter-spacing: 0.02em;
+  }
+
+  .field-error.show { display: block; }
+
+  textarea { resize: none; height: 88px; line-height: 1.5; }
+
+  /* Honeypot — invisible to real users */
+  .hp-field {
+    position: absolute;
+    left: -9999px; top: -9999px;
+    opacity: 0; pointer-events: none;
+  }
+
+  /* Math CAPTCHA */
+  .captcha-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .captcha-label {
+    font-size: 0.85rem;
+    background: #f0f5f0;
+    border: 1px solid #cde0cd;
+    border-radius: 3px;
+    padding: 0.45rem 0.75rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--green);
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  .captcha-input { width: 72px !important; flex-shrink: 0; }
+
+  .captcha-err-inline {
+    font-size: 0.68rem;
+    color: #e53935;
+    display: none;
+  }
+  .captcha-err-inline.show { display: block; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 0.9rem;
+    background: var(--green);
+    border: none;
+    border-radius: 3px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background: hsl(130, 55%, 34%);
+    box-shadow: 0 4px 16px rgba(34,139,34,0.25);
+    transform: translateY(-1px);
+  }
+
+  .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .submit-btn:active:not(:disabled) { transform: translateY(0); }
+
+  .privacy-note {
+    font-size: 0.67rem;
+    color: var(--gray);
+    text-align: center;
+    margin-top: 0.7rem;
+    font-family: 'Cormorant Garamond', serif;
+    line-height: 1.5;
+  }
+
+  .rate-notice {
+    font-size: 0.68rem;
+    color: #e53935;
+    text-align: center;
+    margin-top: 0.5rem;
+    min-height: 1rem;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 1rem; right: 1.2rem;
+    background: none; border: none;
+    color: #aaa; cursor: pointer;
+    font-size: 1.3rem; line-height: 1;
+    transition: color 0.3s;
+    font-family: 'Syne', sans-serif;
+  }
+  .close-btn:hover { color: var(--dark); }
+
+  .success-msg { display: none; text-align: center; padding: 2.5rem 0 1.5rem; }
+  .success-msg.show { display: block; }
+  .success-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .success-msg h3 {
+    font-size: 1.9rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    color: var(--green);
+    margin-bottom: 0.4rem;
+  }
+  .success-msg p { color: var(--gray); font-family: 'Cormorant Garamond', serif; font-size: 1rem; }
+
+  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="brand">
+    <span class="brand-logo-text">SW</span>
+    <div class="brand-sub">Prototype Site</div>
+  </div>
+
+  <button class="cta-btn" id="ctaBtn" aria-label="Open contact form">
+    <div class="btn-inner">
+      <div class="btn-fill"></div>
+      <div class="btn-text-wrap">
+        <span class="btn-word">Welcome</span>
+        <span class="btn-word btn-word-hover">Contact</span>
+      </div>
+    </div>
+  </button>
+</div>
+
+<!-- CONTACT OVERLAY -->
+<div id="contactPage" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
+  <div class="contact-glass">
+    <button class="close-btn" id="closeBtn" aria-label="Close">✕</button>
+
+    <div id="formContent">
+      <div class="contact-header">
+        <h2 id="contactTitle">Get in <span>Touch</span></h2>
+        <p>We'd love to hear from you.</p>
+      </div>
+
+      <div class="security-badge" aria-label="Secure form">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        SECURE FORM — YOUR DATA IS NEVER STORED OR SHARED
+      </div>
+
+      <form id="contactForm" novalidate autocomplete="off">
+
+        <!-- Honeypot anti-bot trap (invisible to humans) -->
+        <div class="hp-field" aria-hidden="true">
+          <label for="website">Leave blank</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fname">First Name <span class="req">*</span></label>
+            <input type="text" id="fname" placeholder="Jane" maxlength="50" autocomplete="given-name">
+            <span class="field-error" id="fname-err">Enter your first name.</span>
+          </div>
+          <div class="form-group">
+            <label for="lname">Last Name <span class="req">*</span></label>
+            <input type="text" id="lname" placeholder="Doe" maxlength="50" autocomplete="family-name">
+            <span class="field-error" id="lname-err">Enter your last name.</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address <span class="req">*</span></label>
+          <input type="email" id="email" placeholder="jane@example.com" maxlength="100" autocomplete="email">
+          <span class="field-error" id="email-err">Enter a valid email address.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone (optional)</label>
+          <input type="tel" id="phone" placeholder="+1 (555) 000-0000" maxlength="20" autocomplete="tel">
+          <span class="field-error" id="phone-err">Enter a valid phone number.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="company">Company (optional)</label>
+          <input type="text" id="company" placeholder="Your company" maxlength="80">
+        </div>
+
+        <div class="form-group">
+          <label for="subject">Subject <span class="req">*</span></label>
+          <input type="text" id="subject" placeholder="What's this about?" maxlength="120">
+          <span class="field-error" id="subject-err">Enter a subject.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="message">Message <span class="req">*</span></label>
+          <textarea id="message" placeholder="Tell us about your project…" maxlength="1000"></textarea>
+          <span class="field-error" id="message-err">Please enter a message (at least 10 characters).</span>
+        </div>
+
+        <!-- Math CAPTCHA -->
+        <div class="captcha-row">
+          <span class="captcha-label" id="captchaQ"></span>
+          <input class="captcha-input" type="number" id="captchaAns" placeholder="?" aria-label="CAPTCHA answer" min="0" max="99">
+          <span class="captcha-err-inline" id="captcha-err">Wrong answer — try again.</span>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Send Message</button>
+        <p class="rate-notice" id="rateNotice"></p>
+        <p class="privacy-note">
+          Your information is used only to respond to your inquiry.<br>
+          We never sell, share, or store your data beyond this session.
+        </p>
+      </form>
+    </div>
+
+    <div class="success-msg" id="successMsg">
+      <div class="success-icon">✦</div>
+      <h3>Message Sent</h3>
+      <p>Thank you for reaching out. We'll be in touch shortly.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════
+   ANIMATED WHITE BACKGROUND
+═══════════════════════════ */
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], lineOffset = 0;
+
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+
+class Particle {
+  constructor() { this.reset(true); }
+  reset(init) {
+    this.x = Math.random() * W;
+    this.y = init ? Math.random() * H : (Math.random() < .5 ? -4 : H + 4);
+    this.r = Math.random() * 1.8 + 0.4;
+    this.vx = (Math.random() - .5) * .38;
+    this.vy = (Math.random() - .5) * .38;
+    this.alpha = Math.random() * .3 + .07;
+    this.pulse = Math.random() * Math.PI * 2;
+  }
+  update() {
+    this.pulse += .011;
+    this.x += this.vx; this.y += this.vy;
+    if (this.x < -10) this.x = W + 10;
+    if (this.x > W + 10) this.x = -10;
+    if (this.y < -10) this.y = H + 10;
+    if (this.y > H + 10) this.y = -10;
+  }
+  draw() {
+    const a = this.alpha * (.7 + .3 * Math.sin(this.pulse));
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(34,139,34,${a})`;
+    ctx.fill();
+  }
+}
+
+function initParticles() {
+  particles = [];
+  const n = Math.min(Math.floor((W * H) / 7500), 130);
+  for (let i = 0; i < n; i++) particles.push(new Particle());
+}
+
+function drawConnections() {
+  for (let i = 0; i < particles.length; i++)
+    for (let j = i+1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 125) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(34,139,34,${.09*(1-d/125)})`;
+        ctx.lineWidth = .55; ctx.stroke();
+      }
+    }
+}
+
+function drawFlowLines() {
+  lineOffset += .0018;
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 6) {
+      const y = H*(.14+i*.17) + Math.sin(x*.0025+lineOffset+i*1.1)*55 + Math.cos(x*.005+lineOffset*.6+i)*22;
+      x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = `rgba(34,139,34,${.035+i*.009})`;
+    ctx.lineWidth = 1; ctx.stroke();
+  }
+}
+
+function animate() {
+  ctx.clearRect(0,0,W,H);
+  const g = ctx.createRadialGradient(W*.5,H*.45,0,W*.5,H*.5,Math.max(W,H)*.8);
+  g.addColorStop(0,'#ffffff'); g.addColorStop(1,'#ecf3ec');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  drawFlowLines(); drawConnections();
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animate);
+}
+
+window.addEventListener('resize', () => { resize(); initParticles(); });
+resize(); initParticles(); animate();
+
+/* ═══════════════════════════
+   UI INTERACTIONS
+═══════════════════════════ */
+const landing = document.getElementById('landing');
+const contactPage = document.getElementById('contactPage');
+
+document.getElementById('ctaBtn').addEventListener('click', () => {
+  contactPage.classList.add('show');
+  landing.classList.add('hide');
+  document.getElementById('fname').focus();
+});
+
+function closeContact() {
+  contactPage.classList.remove('show');
+  setTimeout(() => landing.classList.remove('hide'), 200);
+}
+
+document.getElementById('closeBtn').addEventListener('click', closeContact);
+contactPage.addEventListener('click', e => { if (e.target === contactPage) closeContact(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && contactPage.classList.contains('show')) closeContact(); });
+
+/* ═══════════════════════════
+   SECURITY & VALIDATION
+═══════════════════════════ */
+
+// Math CAPTCHA
+let captchaAnswer = 0;
+function genCaptcha() {
+  const a = Math.floor(Math.random()*9)+1, b = Math.floor(Math.random()*9)+1;
+  captchaAnswer = a + b;
+  document.getElementById('captchaQ').textContent = `${a} + ${b} = ?`;
+  document.getElementById('captchaAns').value = '';
+}
+genCaptcha();
+
+// Rate limiter
+let submitCount = 0, lastSubmitTime = 0;
+const RATE_LIMIT = 3, RATE_WINDOW = 60000;
+
+// Sanitize input — strip any HTML/script injection
+function sanitize(s) {
+  return s.replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/javascript:/gi,'').replace(/on\w+\s*=/gi,'')
+          .replace(/['"`;]/g,'').trim();
+}
+
+// Validators
+const isEmail = e => /^[^\s@<>'"]{1,64}@[^\s@<>'"]{1,255}\.[a-zA-Z]{2,}$/.test(e);
+const isPhone = p => !p || /^[\d\s\+\-\(\)\.]{7,20}$/.test(p);
+
+// Field error helpers
+function showErr(fieldId, errId) {
+  document.getElementById(fieldId).classList.add('error');
+  document.getElementById(errId).classList.add('show');
+}
+function clearErr(fieldId, errId) {
+  document.getElementById(fieldId).classList.remove('error');
+  document.getElementById(errId).classList.remove('show');
+}
+
+// Live-clear errors on input
+[['fname','fname-err'],['lname','lname-err'],['email','email-err'],
+ ['phone','phone-err'],['subject','subject-err'],['message','message-err']].forEach(([f,e]) => {
+  document.getElementById(f).addEventListener('input', () => clearErr(f,e));
+});
+document.getElementById('captchaAns').addEventListener('input', () => {
+  document.getElementById('captchaAns').classList.remove('error');
+  document.getElementById('captcha-err').classList.remove('show');
+});
+
+// Submit
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  // Honeypot
+  if (document.getElementById('website').value !== '') return;
+
+  // Rate limit
+  const now = Date.now();
+  if (now - lastSubmitTime < RATE_WINDOW) {
+    if (submitCount >= RATE_LIMIT) {
+      document.getElementById('rateNotice').textContent = 'Too many submissions. Please wait a minute.';
+      return;
+    }
+  } else { submitCount = 0; }
+  document.getElementById('rateNotice').textContent = '';
+
+  // Gather & sanitize
+  const fname   = sanitize(document.getElementById('fname').value);
+  const lname   = sanitize(document.getElementById('lname').value);
+  const email   = sanitize(document.getElementById('email').value);
+  const phone   = sanitize(document.getElementById('phone').value);
+  const subject = sanitize(document.getElementById('subject').value);
+  const message = sanitize(document.getElementById('message').value);
+  const captcha = parseInt(document.getElementById('captchaAns').value, 10);
+
+  let valid = true;
+
+  if (!fname) { showErr('fname','fname-err'); valid = false; } else clearErr('fname','fname-err');
+  if (!lname) { showErr('lname','lname-err'); valid = false; } else clearErr('lname','lname-err');
+  if (!isEmail(email)) { showErr('email','email-err'); valid = false; } else clearErr('email','email-err');
+  if (!isPhone(phone)) { showErr('phone','phone-err'); valid = false; } else clearErr('phone','phone-err');
+  if (!subject) { showErr('subject','subject-err'); valid = false; } else clearErr('subject','subject-err');
+  if (message.length < 10) { showErr('message','message-err'); valid = false; } else clearErr('message','message-err');
+
+  if (isNaN(captcha) || captcha !== captchaAnswer) {
+    document.getElementById('captchaAns').classList.add('error');
+    document.getElementById('captcha-err').classList.add('show');
+    genCaptcha(); valid = false;
+  } else {
+    document.getElementById('captchaAns').classList.remove('error');
+    document.getElementById('captcha-err').classList.remove('show');
+  }
+
+  if (!valid) return;
+
+  // Passed all checks
+  submitCount++; lastSubmitTime = Date.now();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  // Simulated send delay (hook your backend here)
+  setTimeout(() => {
+    const fc = document.getElementById('formContent');
+    fc.style.cssText = 'opacity:0;transform:translateY(-10px);transition:opacity .4s,transform .4s';
+    setTimeout(() => {
+      fc.style.display = 'none';
+      document.getElementById('successMsg').classList.add('show');
+      this.reset(); genCaptcha();
+      btn.disabled = false; btn.textContent = 'Send Message';
+    }, 420);
+  }, 900);
+});
+</script>
+</body>
+</html>
