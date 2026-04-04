@@ -32,15 +32,7 @@
     z-index: 0;
   }
 
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-    opacity: 0.025;
-    pointer-events: none;
-  }
+
 
   /* ── LANDING ── */
   #landing {
@@ -713,17 +705,46 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Sending…';
 
-  // Simulated send delay (hook your backend here)
-  setTimeout(() => {
-    const fc = document.getElementById('formContent');
-    fc.style.cssText = 'opacity:0;transform:translateY(-10px);transition:opacity .4s,transform .4s';
-    setTimeout(() => {
-      fc.style.display = 'none';
-      document.getElementById('successMsg').classList.add('show');
-      this.reset(); genCaptcha();
-      btn.disabled = false; btn.textContent = 'Send Message';
-    }, 420);
-  }, 900);
+  // Send to Formspree
+  const formData = {
+    firstName: fname,
+    lastName: lname,
+    email: email,
+    phone: phone,
+    company: sanitize(document.getElementById('company').value),
+    subject: subject,
+    message: message
+  };
+
+  fetch('https://formspree.io/f/xkoppjve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(formData)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok) {
+      const fc = document.getElementById('formContent');
+      fc.style.cssText = 'opacity:0;transform:translateY(-10px);transition:opacity .4s,transform .4s';
+      setTimeout(() => {
+        fc.style.display = 'none';
+        document.getElementById('successMsg').classList.add('show');
+        document.getElementById('contactForm').reset();
+        genCaptcha();
+        btn.disabled = false;
+        btn.textContent = 'Send Message';
+      }, 420);
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Send Message';
+      document.getElementById('rateNotice').textContent = 'Something went wrong. Please try again.';
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.textContent = 'Send Message';
+    document.getElementById('rateNotice').textContent = 'Network error. Please check your connection and try again.';
+  });
 });
 </script>
 </body>
