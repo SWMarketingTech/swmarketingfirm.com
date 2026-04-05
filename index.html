@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src https://formspree.io;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com; script-src 'self' 'unsafe-inline'; connect-src https://formspree.io;">
 <meta name="referrer" content="no-referrer">
-<title>SW — Prototype Site</title>
+<title>SW — Updated Site</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -384,6 +384,367 @@
   .success-msg p { color: var(--gray); font-family: 'Cormorant Garamond', serif; font-size: 1rem; }
 
   @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+  /* ── BUTTON GROUP ── */
+  .btn-group {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-inner--outline {
+    background: transparent;
+    border-color: var(--green) !important;
+  }
+
+  /* ── SERVICES SECTION ── */
+  #servicesPage {
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.7s ease;
+    background: #fff;
+  }
+
+  #servicesPage.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .services-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Services nav bar */
+  .services-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 3rem;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .services-nav-logo {
+    font-family: Impact, sans-serif;
+    font-style: italic;
+    font-size: 2rem;
+    color: hsl(130, 60%, 32%);
+    letter-spacing: -0.01em;
+    user-select: none;
+  }
+
+  .services-back {
+    background: none;
+    border: 1.5px solid rgba(0,0,0,0.15);
+    border-radius: 2px;
+    padding: 0.5rem 1.4rem;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--dark);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .services-back:hover {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  /* Hero strip */
+  /* ── SERVICES HERO — text block (light) + graphic box (dark) ── */
+  .services-hero {
+    background: #f5f7f4;
+    padding: 4rem clamp(2rem, 6vw, 6rem) 2.5rem;
+  }
+
+  .services-hero-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .services-hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 5vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--dark);
+    max-width: 700px;
+    margin: 0 0 1.2rem;
+  }
+
+  .services-hero h1 em {
+    font-style: normal;
+    color: var(--green);
+  }
+
+  .services-hero p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    color: var(--gray);
+    max-width: 560px;
+    line-height: 1.65;
+    margin-bottom: 3rem;
+  }
+
+  /* The dark graphic box — all four corners rounded, padding below so bottom corners show */
+  .services-hero-graphic {
+    position: relative;
+    width: 100%;
+    height: clamp(260px, 38vh, 460px);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #060d06;
+    margin-bottom: 3rem;
+  }
+
+  .services-hero {
+    padding-bottom: 0;
+  }
+
+  #heroCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* Services grid */
+  /* Horizontal accordion pane layout */
+  .services-grid {
+    background: #ffffff;
+    display: flex;
+    flex-direction: row;
+    gap: 0.6rem;
+    padding: 2.5rem clamp(1.5rem, 4vw, 4rem) 2.5rem;
+    height: 420px;
+  }
+
+  .service-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    flex: 1;
+    min-width: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    transition: flex 0.55s cubic-bezier(0.7,0,0.3,1),
+                box-shadow 0.4s ease;
+  }
+
+  .service-card:hover {
+    flex: 4;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  }
+
+  /* Background image layer */
+  .service-card-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.6s ease;
+    z-index: 0;
+  }
+
+  .service-card:hover .service-card-bg {
+    transform: scale(1.04);
+  }
+
+  /* Dark overlay — bottom to top so text at bottom reads clearly */
+  .service-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      rgba(0,8,0,0.90) 0%,
+      rgba(0,8,0,0.55) 45%,
+      rgba(0,8,0,0.15) 100%
+    );
+    z-index: 1;
+    transition: background 0.5s ease;
+  }
+
+  /* Green bottom accent bar */
+  .service-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 4px;
+    background: var(--green);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.7,0,0.3,1);
+    z-index: 3;
+  }
+  .service-card:hover::before { transform: scaleX(1); }
+
+  /* Content at bottom of card */
+  .service-card-content {
+    position: relative;
+    z-index: 2;
+    padding: 1.2rem 1.4rem;
+    width: 100%;
+  }
+
+  .service-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .service-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: hsl(130,65%,60%);
+    flex-shrink: 0;
+  }
+
+  .service-icon {
+    width: 22px; height: 22px;
+    color: hsl(130,65%,65%);
+    opacity: 0.9;
+    flex-shrink: 0;
+  }
+
+  .service-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+    line-height: 1.2;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Expanded content fades in on hover */
+  .service-expand {
+    max-width: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-width 0.5s ease,
+                max-height 0.5s ease,
+                opacity 0.4s ease 0.1s;
+  }
+
+  .service-card:hover .service-expand {
+    max-width: 600px;
+    max-height: 200px;
+    opacity: 1;
+  }
+
+  .service-card p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.55;
+    margin-top: 0.5rem;
+    white-space: normal;
+  }
+
+  .service-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.7rem;
+  }
+
+  .service-tag {
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.5rem;
+    border: 1px solid rgba(100,220,100,0.3);
+    border-radius: 2px;
+    color: hsl(130,65%,65%);
+    background: rgba(34,139,34,0.12);
+  }
+
+  /* CTA strip at bottom */
+  .services-cta {
+    background: var(--green);
+    padding: 4rem 3rem;
+    text-align: center;
+    margin-top: auto;
+  }
+
+  .services-cta h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.6rem;
+  }
+
+  .services-cta p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 2rem;
+  }
+
+  .services-cta-btn {
+    display: inline-block;
+    padding: 0.9rem 2.5rem;
+    background: #fff;
+    color: var(--green);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+  }
+
+  .services-cta-btn:hover {
+    background: rgba(255,255,255,0.9);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 600px) {
+    .services-nav { padding: 1rem 1.5rem; }
+    .services-hero { padding: 3.5rem 1.5rem 3rem; }
+    .services-grid { grid-template-columns: 1fr; }
+    .service-card { padding: 2rem 1.5rem; }
+    .services-cta { padding: 3rem 1.5rem; }
+    .btn-group { flex-direction: column; gap: 0.7rem; }
+  }
+
 </style>
 </head>
 <body>
@@ -397,15 +758,155 @@
     <div class="brand-sub">Updated Site</div>
   </div>
 
-  <button class="cta-btn" id="ctaBtn" aria-label="Open contact form">
-    <div class="btn-inner">
-      <div class="btn-fill"></div>
-      <div class="btn-text-wrap">
-        <span class="btn-word">Welcome</span>
-        <span class="btn-word btn-word-hover">Contact</span>
+  <div class="btn-group">
+    <button class="cta-btn" id="welcomeBtn" aria-label="View our services">
+      <div class="btn-inner">
+        <div class="btn-fill"></div>
+        <div class="btn-text-wrap">
+          <span class="btn-word">Welcome</span>
+        </div>
+      </div>
+    </button>
+    <button class="cta-btn" id="ctaBtn" aria-label="Open contact form">
+      <div class="btn-inner btn-inner--outline">
+        <div class="btn-fill"></div>
+        <div class="btn-text-wrap">
+          <span class="btn-word">Contact</span>
+        </div>
+      </div>
+    </button>
+  </div>
+</div>
+
+
+<!-- SERVICES PAGE -->
+<div id="servicesPage">
+  <div class="services-wrap">
+    <nav class="services-nav">
+      <span class="services-nav-logo">SW</span>
+      <button class="services-back" id="servicesBack">← Back</button>
+    </nav>
+
+    <div class="services-hero">
+      <span class="services-hero-label">What We Offer</span>
+      <h1>Solutions Built for <em>Your</em> Business</h1>
+      <p>We deliver tailored strategies and hands-on execution across four core disciplines — built to move your business forward.</p>
+      <div class="services-hero-graphic">
+        <canvas id="heroCanvas"></canvas>
       </div>
     </div>
-  </button>
+
+    <div class="services-grid">
+
+      <div class="service-card">
+        <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1547658719-da2b51169166?w=800&q=80');"></div>
+        <div class="service-card-content">
+          <div class="service-row">
+            <span class="service-num">01</span>
+            <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            <h3>Web Site Development</h3>
+          </div>
+          <div class="service-expand">
+            <p>We design and build fast, modern websites that look exceptional on every device. From landing pages to full platforms — engineered for performance and conversion.</p>
+            <div class="service-tags">
+              <span class="service-tag">UI / UX Design</span>
+              <span class="service-tag">Custom Dev</span>
+              <span class="service-tag">E-Commerce</span>
+              <span class="service-tag">SEO</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=800&q=80');"></div>
+        <div class="service-card-content">
+          <div class="service-row">
+            <span class="service-num">02</span>
+            <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <h3>Marketing & Sales Solutions</h3>
+          </div>
+          <div class="service-expand">
+            <p>Data-driven campaigns that generate leads and close deals. We align your brand story with proven sales funnels to grow revenue — consistently and measurably.</p>
+            <div class="service-tags">
+              <span class="service-tag">Digital Ads</span>
+              <span class="service-tag">Email Marketing</span>
+              <span class="service-tag">CRM Strategy</span>
+              <span class="service-tag">Analytics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80');"></div>
+        <div class="service-card-content">
+          <div class="service-row">
+            <span class="service-num">03</span>
+            <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <h3>IT & Security Solutions</h3>
+          </div>
+          <div class="service-expand">
+            <p>Protect your business and optimize your infrastructure. We assess, implement, and monitor IT systems so you can operate with confidence in a complex digital landscape.</p>
+            <div class="service-tags">
+              <span class="service-tag">Cybersecurity</span>
+              <span class="service-tag">Cloud Setup</span>
+              <span class="service-tag">IT Support</span>
+              <span class="service-tag">Compliance</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80');"></div>
+        <div class="service-card-content">
+          <div class="service-row">
+            <span class="service-num">04</span>
+            <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            <h3>Graphic & Website Design</h3>
+          </div>
+          <div class="service-expand">
+            <p>Brand identity, visual systems, and creative assets that make your business unforgettable. We craft everything from logos to full design languages that resonate.</p>
+            <div class="service-tags">
+              <span class="service-tag">Brand Identity</span>
+              <span class="service-tag">Logo Design</span>
+              <span class="service-tag">Print & Digital</span>
+              <span class="service-tag">Motion</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-card">
+        <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80');"></div>
+        <div class="service-card-content">
+          <div class="service-row">
+            <span class="service-num">05</span>
+            <svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <h3>Traditional Consulting, Teaching & Advising</h3>
+          </div>
+          <div class="service-expand">
+            <p>Expert guidance rooted in decades of real-world experience. We advise leadership teams, train staff, and deliver strategic counsel that drives lasting organizational change.</p>
+            <div class="service-tags">
+              <span class="service-tag">Executive Advising</span>
+              <span class="service-tag">Pro Bono Consulting</span>
+              <span class="service-tag">Staff Training</span>
+              <span class="service-tag">Strategy Consulting</span>
+              <span class="service-tag">Workshops</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="services-cta">
+      <h2>Ready to Get Started?</h2>
+      <p>Tell us about your project and we'll be in touch within 24 hours.</p>
+      <button class="services-cta-btn" id="servicesCta">Contact Us</button>
+    </div>
+  </div>
 </div>
 
 <!-- CONTACT OVERLAY -->
@@ -589,7 +1090,9 @@ resize(); initParticles(); animate();
 ═══════════════════════════ */
 const landing = document.getElementById('landing');
 const contactPage = document.getElementById('contactPage');
+const servicesPage = document.getElementById('servicesPage');
 
+// CONTACT button
 document.getElementById('ctaBtn').addEventListener('click', () => {
   contactPage.classList.add('show');
   landing.classList.add('hide');
@@ -603,7 +1106,34 @@ function closeContact() {
 
 document.getElementById('closeBtn').addEventListener('click', closeContact);
 contactPage.addEventListener('click', e => { if (e.target === contactPage) closeContact(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && contactPage.classList.contains('show')) closeContact(); });
+
+// WELCOME button → services page
+document.getElementById('welcomeBtn').addEventListener('click', () => {
+  servicesPage.classList.add('show');
+  landing.classList.add('hide');
+  servicesPage.scrollTop = 0;
+});
+
+function closeServices() {
+  servicesPage.classList.remove('show');
+  setTimeout(() => landing.classList.remove('hide'), 200);
+}
+
+document.getElementById('servicesBack').addEventListener('click', closeServices);
+
+// "Contact Us" CTA inside services → opens contact form
+document.getElementById('servicesCta').addEventListener('click', () => {
+  servicesPage.classList.remove('show');
+  contactPage.classList.add('show');
+  document.getElementById('fname').focus();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (contactPage.classList.contains('show')) closeContact();
+    if (servicesPage.classList.contains('show')) closeServices();
+  }
+});
 
 /* ═══════════════════════════
    SECURITY & VALIDATION
@@ -746,6 +1276,162 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
     document.getElementById('rateNotice').textContent = 'Network error. Please check your connection and try again.';
   });
 });
+
+
+/* ═══════════════════════════
+   SERVICES HERO CANVAS
+═══════════════════════════ */
+function initHeroCanvas() {
+  const hc = document.getElementById('heroCanvas');
+  if (!hc) return;
+  const hx = hc.getContext('2d');
+  let HW, HH, hT = 0;
+
+  function hResize() {
+    HW = hc.width = hc.offsetWidth;
+    HH = hc.height = hc.offsetHeight;
+  }
+
+  // Orb centered
+  const orb = { x: 0.5, y: 0.5, r: 0 };
+
+  // Ray particles emanating in all directions
+  const rays = [];
+  const RAY_COUNT = 220;
+  for (let i = 0; i < RAY_COUNT; i++) {
+    rays.push({
+      angle: Math.random() * Math.PI * 2,
+      speed: Math.random() * 2.2 + 0.6,
+      len: Math.random() * 180 + 40,
+      life: Math.random(),
+      maxLife: Math.random() * 0.6 + 0.4,
+      r: Math.random() * 1.2 + 0.2,
+      alpha: Math.random() * 0.7 + 0.2,
+    });
+  }
+
+  // Floating particles
+  const hParticles = [];
+  for (let i = 0; i < 80; i++) {
+    hParticles.push({
+      x: Math.random(),
+      y: Math.random(),
+      r: Math.random() * 1.4 + 0.3,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      alpha: Math.random() * 0.4 + 0.1,
+      pulse: Math.random() * Math.PI * 2,
+    });
+  }
+
+  function drawHero() {
+    hT++;
+    hx.clearRect(0, 0, HW, HH);
+
+    // Deep dark bg
+    const bgG = hx.createLinearGradient(0, 0, HW, HH);
+    bgG.addColorStop(0, '#060d06');
+    bgG.addColorStop(1, '#0a160a');
+    hx.fillStyle = bgG;
+    hx.fillRect(0, 0, HW, HH);
+
+    const ox = HW * orb.x + Math.sin(hT * 0.008) * 18;
+    const oy = HH * orb.y + Math.cos(hT * 0.006) * 12;
+    orb.r = Math.min(HW, HH) * 0.28;
+
+    // Outer glow layers
+    const glows = [
+      { r: orb.r * 2.8, a: 0.06 },
+      { r: orb.r * 2.0, a: 0.1 },
+      { r: orb.r * 1.4, a: 0.18 },
+    ];
+    glows.forEach(g => {
+      const grd = hx.createRadialGradient(ox, oy, 0, ox, oy, g.r);
+      grd.addColorStop(0, `rgba(52,199,89,${g.a})`);
+      grd.addColorStop(1, 'rgba(52,199,89,0)');
+      hx.fillStyle = grd;
+      hx.beginPath();
+      hx.arc(ox, oy, g.r, 0, Math.PI * 2);
+      hx.fill();
+    });
+
+    // Ray particles
+    rays.forEach(ray => {
+      ray.life += 0.012 * ray.speed;
+      if (ray.life > ray.maxLife) {
+        ray.life = 0;
+        ray.angle = Math.random() * Math.PI * 2;
+        ray.speed = Math.random() * 2.2 + 0.6;
+        ray.len = Math.random() * 180 + 40;
+        ray.maxLife = Math.random() * 0.6 + 0.4;
+      }
+      const prog = ray.life / ray.maxLife;
+      const dist = prog * ray.len * (orb.r / 100);
+      const px = ox + Math.cos(ray.angle) * dist;
+      const py = oy + Math.sin(ray.angle) * dist;
+      const fade = Math.sin(prog * Math.PI);
+      hx.beginPath();
+      hx.arc(px, py, ray.r, 0, Math.PI * 2);
+      hx.fillStyle = `rgba(52,199,89,${ray.alpha * fade})`;
+      hx.fill();
+    });
+
+    // The glowing orb itself
+    const orbGrd = hx.createRadialGradient(ox - orb.r * 0.2, oy - orb.r * 0.2, 0, ox, oy, orb.r);
+    orbGrd.addColorStop(0, 'rgba(120,230,120,0.95)');
+    orbGrd.addColorStop(0.35, 'rgba(52,199,89,0.85)');
+    orbGrd.addColorStop(0.75, 'rgba(34,139,34,0.7)');
+    orbGrd.addColorStop(1, 'rgba(10,60,10,0.4)');
+    hx.fillStyle = orbGrd;
+    hx.beginPath();
+    hx.arc(ox, oy, orb.r, 0, Math.PI * 2);
+    hx.fill();
+
+    // Orb surface shimmer
+    const shimmer = hx.createRadialGradient(ox - orb.r * 0.3, oy - orb.r * 0.35, 0, ox, oy, orb.r);
+    shimmer.addColorStop(0, `rgba(200,255,200,${0.15 + 0.08 * Math.sin(hT * 0.04)})`);
+    shimmer.addColorStop(0.5, 'rgba(200,255,200,0.04)');
+    shimmer.addColorStop(1, 'rgba(0,0,0,0)');
+    hx.fillStyle = shimmer;
+    hx.beginPath();
+    hx.arc(ox, oy, orb.r, 0, Math.PI * 2);
+    hx.fill();
+
+    // Floating background particles (left side / everywhere)
+    hParticles.forEach(p => {
+      p.x += p.vx / HW;
+      p.y += p.vy / HH;
+      p.pulse += 0.02;
+      if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+      if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+      const a = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
+      hx.beginPath();
+      hx.arc(p.x * HW, p.y * HH, p.r, 0, Math.PI * 2);
+      hx.fillStyle = `rgba(52,199,89,${a})`;
+      hx.fill();
+    });
+
+    // Subtle horizontal scan line
+    const scanY = ((hT * 0.5) % HH);
+    const scanG = hx.createLinearGradient(0, scanY - 40, 0, scanY + 40);
+    scanG.addColorStop(0, 'rgba(52,199,89,0)');
+    scanG.addColorStop(0.5, 'rgba(52,199,89,0.04)');
+    scanG.addColorStop(1, 'rgba(52,199,89,0)');
+    hx.fillStyle = scanG;
+    hx.fillRect(0, scanY - 40, HW, 80);
+
+    requestAnimationFrame(drawHero);
+  }
+
+  hResize();
+  window.addEventListener('resize', hResize);
+  drawHero();
+}
+
+// Init hero canvas when services page opens
+document.getElementById('welcomeBtn').addEventListener('click', () => {
+  setTimeout(initHeroCanvas, 50);
+}, { once: true });
 </script>
 </body>
 </html>
