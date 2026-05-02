@@ -1,0 +1,3474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CRM GO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik+Mono+One&family=Russo+One&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #0B6E8C;
+    --teal-deep: #074E66;
+    --teal-light: #138FB1;
+    --yellow: #FFD60A;
+    --yellow-deep: #C9A300;
+    --yellow-shadow: #6B5800;
+    --black: #0E0E10;
+    --card: #11212A;
+    --card-border: rgba(255,255,255,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { min-height: 100%; width: 100%; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: radial-gradient(ellipse at center top, var(--teal-light) 0%, var(--teal) 45%, var(--teal-deep) 100%);
+    background-attachment: fixed;
+    color: white;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ============= HOME VIEW ============= */
+  #homeView.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+    padding: 40px;
+  }
+
+  .logo {
+    font-family: 'Bungee', 'Rubik Mono One', sans-serif;
+    color: var(--yellow);
+    font-size: clamp(72px, 14vw, 168px);
+    letter-spacing: 6px;
+    line-height: 1;
+    text-align: center;
+    text-shadow:
+      1px 1px 0 var(--yellow-deep),
+      2px 2px 0 var(--yellow-deep),
+      3px 3px 0 var(--yellow-deep),
+      4px 4px 0 var(--yellow-deep),
+      5px 5px 0 var(--yellow-deep),
+      6px 6px 0 var(--yellow-deep),
+      7px 7px 0 var(--yellow-shadow),
+      8px 8px 0 var(--yellow-shadow),
+      9px 9px 0 var(--yellow-shadow),
+      10px 10px 0 var(--yellow-shadow),
+      11px 11px 0 rgba(0,0,0,0.4),
+      12px 12px 24px rgba(0,0,0,0.45);
+    transform: perspective(800px) rotateX(6deg);
+    user-select: none;
+    -webkit-text-stroke: 1px rgba(0,0,0,0.15);
+  }
+  .logo .gap { display: inline-block; width: 0.4em; }
+
+  .start-wrap { position: relative; display: flex; justify-content: center; }
+
+  .start-btn {
+    position: relative;
+    padding: 22px 64px;
+    font-family: 'Russo One', 'Bungee', sans-serif;
+    font-size: clamp(22px, 3vw, 32px);
+    letter-spacing: 4px;
+    color: white;
+    background: linear-gradient(180deg, #FF5A6E 0%, #E11D48 50%, #9F1239 100%);
+    border: none;
+    border-radius: 18px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow:
+      0 0 0 4px rgba(255,255,255,0.08),
+      0 8px 0 0 #6B0E25,
+      0 14px 30px rgba(0,0,0,0.45),
+      inset 0 2px 0 rgba(255,255,255,0.35),
+      inset 0 -3px 0 rgba(0,0,0,0.25);
+    transition: transform 120ms ease, box-shadow 120ms ease, filter 200ms ease;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.35);
+  }
+  .start-btn::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.18);
+    pointer-events: none;
+  }
+  .start-btn .arrow { display: inline-block; margin-left: 12px; transform: translateY(-1px); }
+  .start-btn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 4px rgba(255,255,255,0.12),
+      0 10px 0 0 #6B0E25,
+      0 18px 36px rgba(0,0,0,0.5),
+      inset 0 2px 0 rgba(255,255,255,0.4),
+      inset 0 -3px 0 rgba(0,0,0,0.25);
+  }
+  .start-btn:active {
+    transform: translateY(6px);
+    box-shadow:
+      0 0 0 4px rgba(255,255,255,0.08),
+      0 2px 0 0 #6B0E25,
+      0 6px 14px rgba(0,0,0,0.4),
+      inset 0 2px 0 rgba(255,255,255,0.3),
+      inset 0 -2px 0 rgba(0,0,0,0.25);
+  }
+  .start-wrap::after {
+    content: "";
+    position: absolute;
+    inset: -14px;
+    border-radius: 26px;
+    background: radial-gradient(closest-side, rgba(255,90,110,0.35), transparent 70%);
+    z-index: -1;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50% { opacity: 0.95; transform: scale(1.05); }
+  }
+
+  .options {
+    display: none;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 400ms ease, transform 400ms ease;
+  }
+  .options.visible { display: flex; opacity: 1; transform: translateY(0); }
+
+  .opt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 32px;
+    min-width: 240px;
+    background: var(--black);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    font-family: 'Russo One', 'Inter', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 200ms ease, border-color 200ms ease;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.45), 0 12px 24px rgba(0,0,0,0.35);
+  }
+  .opt-btn:hover {
+    background: #1a1a1d;
+    border-color: var(--yellow);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 rgba(0,0,0,0.45), 0 16px 30px rgba(0,0,0,0.5);
+  }
+  .opt-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.45), 0 8px 16px rgba(0,0,0,0.35);
+  }
+  .opt-btn .label { white-space: nowrap; }
+  .opt-btn .divider {
+    display: inline-block; width: 2px; height: 24px;
+    background: rgba(255,255,255,0.35); margin: 0 4px;
+  }
+  .opt-btn .icon { width: 26px; height: 26px; color: var(--yellow); }
+
+  .back {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    display: none;
+    transition: all 200ms ease;
+    z-index: 5;
+  }
+  .back:hover { background: rgba(255,255,255,0.08); color: white; }
+  .back.visible { display: inline-block; }
+
+  .stage.started .start-wrap { display: none; }
+
+  /* ============= IN-PERSON VIEW (map + nearby list) ============= */
+  .ip-shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 24px 28px 80px;
+  }
+  .ip-controls {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr auto;
+    gap: 14px;
+    align-items: end;
+  }
+  @media (max-width: 760px) {
+    .ip-controls { grid-template-columns: 1fr; }
+  }
+
+  .mode-toggle {
+    display: flex;
+    background: var(--black);
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .mode-btn {
+    flex: 1;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .mode-btn svg { width: 14px; height: 14px; }
+  .mode-btn.active {
+    background: var(--yellow);
+    color: var(--black);
+  }
+  .mode-btn:not(.active):hover {
+    color: white;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .ip-stats {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    margin: 18px 4px 12px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+  }
+  .ip-stats .stat { display: flex; align-items: center; gap: 8px; }
+  .ip-stats .stat strong { color: var(--yellow); font-weight: 700; }
+  .ip-stats svg { width: 14px; height: 14px; color: var(--yellow); }
+
+  .map-wrap {
+    position: relative;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    overflow: hidden;
+    height: 440px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  #mapContainer { width: 100%; height: 100%; background: #0F2B36; }
+
+  .map-loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px;
+    background: rgba(7, 50, 65, 0.85);
+    backdrop-filter: blur(4px);
+    color: white;
+    z-index: 5;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .map-loading.hidden { display: none; }
+  .map-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: var(--yellow);
+    border-radius: 50%;
+    animation: spinIp 1s linear infinite;
+  }
+  @keyframes spinIp { to { transform: rotate(360deg); } }
+
+  .recenter-btn {
+    position: absolute;
+    bottom: 16px; right: 16px;
+    z-index: 400;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: white;
+    color: var(--black);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    transition: transform 150ms ease;
+  }
+  .recenter-btn:hover { transform: scale(1.08); }
+  .recenter-btn svg { width: 22px; height: 22px; }
+
+  /* User pin (blue dot with pulse) */
+  .user-marker { background: transparent; border: none; }
+  .user-pin { position: relative; width: 24px; height: 24px; }
+  .user-pin .pulse {
+    position: absolute; inset: -10px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.35);
+    animation: userPulse 2s ease-out infinite;
+  }
+  .user-pin .dot {
+    position: absolute; inset: 4px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #3B82F6;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  @keyframes userPulse {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+
+  /* Business pin (numbered yellow teardrop) */
+  .biz-marker { background: transparent; border: none; }
+  .biz-pin {
+    width: 36px; height: 36px;
+    background: var(--yellow);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 150ms ease, background 150ms ease;
+  }
+  .biz-pin:hover { transform: rotate(-45deg) scale(1.12); }
+  .biz-pin .num {
+    transform: rotate(45deg);
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    color: var(--black);
+    line-height: 1;
+  }
+  .biz-marker.selected .biz-pin {
+    background: #FF6B7E;
+    transform: rotate(-45deg) scale(1.25);
+    z-index: 1000;
+  }
+  .biz-marker.selected .biz-pin .num { color: white; }
+
+  /* Override Leaflet popup look to match theme */
+  .leaflet-popup-content-wrapper {
+    background: #11212A !important;
+    color: white !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(255,214,10,0.3) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+  }
+  .leaflet-popup-tip { background: #11212A !important; }
+  .leaflet-popup-content {
+    margin: 12px 14px !important;
+    font-family: 'Inter', sans-serif !important;
+    min-width: 180px;
+  }
+  .leaflet-popup-close-button { color: rgba(255,255,255,0.5) !important; }
+  .popup-content h4 {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: white;
+  }
+  .popup-content .meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .popup-content a {
+    color: var(--yellow);
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-decoration: none;
+  }
+  .popup-content a:hover { text-decoration: underline; }
+
+  /* In-person business list (cards under the map) */
+  .ip-list {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .ip-list-title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.85);
+    text-transform: uppercase;
+    margin: 4px 4px 8px;
+  }
+  .ip-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    background: rgba(7, 50, 65, 0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .ip-card:hover {
+    border-color: rgba(255,214,10,0.4);
+    transform: translateX(2px);
+    background: rgba(7, 50, 65, 0.75);
+  }
+  .ip-card.active {
+    border-color: var(--yellow);
+    background: rgba(255,214,10,0.08);
+    box-shadow: 0 0 0 1px var(--yellow);
+  }
+  .ip-card .pin-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(255,214,10,0.18);
+    border: 1px solid rgba(255,214,10,0.45);
+    color: var(--yellow);
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ip-card .info { min-width: 0; }
+  .ip-card .info h4 {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    color: white;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.3px;
+  }
+  .ip-card .info .sub {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.65);
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .ip-card .info .sub .stars { color: #FFD60A; letter-spacing: 0.5px; }
+  .ip-card .info .sub .sep { color: rgba(255,255,255,0.3); }
+  .ip-card .info .sub .time-pill {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86EFAC;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    font-weight: 600;
+  }
+  .ip-card .info .sub .time-pill svg { width: 10px; height: 10px; }
+
+  .ip-card .actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .ip-action {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: all 120ms ease;
+  }
+  .ip-action.primary { background: var(--yellow); color: var(--black); box-shadow: 0 2px 0 var(--yellow-shadow); }
+  .ip-action.primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .ip-action.ghost {
+    background: rgba(255,255,255,0.06);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 8px 10px;
+  }
+  .ip-action.ghost:hover { border-color: var(--yellow); }
+  .ip-action svg { width: 12px; height: 12px; }
+
+  @media (max-width: 600px) {
+    .map-wrap { height: 340px; }
+    .ip-card { grid-template-columns: auto 1fr; }
+    .ip-card .actions {
+      grid-column: 1 / -1;
+      margin-top: 6px;
+    }
+    .ip-card .actions .ip-action.primary { flex: 1; justify-content: center; padding: 10px; }
+  }
+
+  /* ============= SEARCH VIEW ============= */
+  .search-shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 24px 28px 80px;
+  }
+
+  .search-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 16px 0 28px;
+    flex-wrap: wrap;
+  }
+
+  .mini-logo {
+    font-family: 'Bungee', sans-serif;
+    color: var(--yellow);
+    font-size: 32px;
+    letter-spacing: 3px;
+    text-shadow:
+      1px 1px 0 var(--yellow-deep),
+      2px 2px 0 var(--yellow-deep),
+      3px 3px 0 var(--yellow-shadow),
+      4px 4px 0 rgba(0,0,0,0.4);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .crumb {
+    font-family: 'Russo One', sans-serif;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px;
+    background: rgba(0,0,0,0.18);
+  }
+  .crumb .pill-icon {
+    display: inline-block; vertical-align: -3px; margin-right: 6px;
+  }
+
+  .panel {
+    background: rgba(7, 50, 65, 0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 22px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto auto;
+    gap: 14px;
+    align-items: end;
+  }
+  @media (max-width: 820px) {
+    .controls { grid-template-columns: 1fr 1fr; }
+    .controls .btn-search, .controls .btn-maps { grid-column: span 1; }
+  }
+  @media (max-width: 480px) {
+    .controls { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: "▾";
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--yellow);
+    pointer-events: none;
+    font-size: 14px;
+  }
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    background: var(--black);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 14px 38px 14px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  select:hover { border-color: var(--yellow); }
+  select:focus { outline: none; border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,214,10,0.25); }
+
+  .btn {
+    border: none;
+    cursor: pointer;
+    font-family: 'Russo One', sans-serif;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease;
+  }
+  .btn-search {
+    background: var(--yellow);
+    color: var(--black);
+    padding: 14px 26px;
+    border-radius: 12px;
+    font-size: 14px;
+    box-shadow: 0 4px 0 var(--yellow-shadow), 0 8px 18px rgba(0,0,0,0.35);
+  }
+  .btn-search:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .btn-search:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--yellow-shadow); }
+
+  .btn-maps {
+    background: var(--black);
+    color: white;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    border: 2px solid rgba(255,255,255,0.12);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-maps:hover { border-color: var(--yellow); }
+
+  /* Results */
+  .results-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 26px 4px 14px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.75);
+    text-transform: uppercase;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .results-meta strong { color: var(--yellow); font-weight: 700; }
+
+  /* === LIST VIEW (Excel-style horizontal table) === */
+  .list {
+    background: rgba(7, 50, 65, 0.55);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+  }
+  .list-table-wrap { overflow-x: auto; }
+
+  .list-header,
+  .list-row {
+    display: grid;
+    grid-template-columns:
+      minmax(180px, 2.2fr)   /* Name */
+      minmax(220px, 2.8fr)   /* Address */
+      minmax(140px, 1.3fr)   /* Number */
+      minmax(150px, 1.3fr)   /* Rating */
+      minmax(140px, auto);   /* Actions */
+    align-items: stretch;
+    min-width: 880px;
+  }
+
+  .list-header {
+    background: rgba(0,0,0,0.55);
+    border-bottom: 2px solid rgba(255,214,10,0.4);
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--yellow);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .list-header > div {
+    padding: 12px 16px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+  }
+  .list-header > div:last-child { border-right: none; }
+
+  .list-row {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    transition: background 100ms ease;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row:nth-child(odd) { background: rgba(255,255,255,0.02); }
+  .list-row:nth-child(even) { background: rgba(0,0,0,0.12); }
+  .list-row:hover { background: rgba(255,214,10,0.08); }
+
+  .list-row > div {
+    padding: 11px 16px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .list-row > div:last-child { border-right: none; }
+
+  .cell-name {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    color: white;
+    letter-spacing: 0.3px;
+  }
+  .cell-address { color: rgba(255,255,255,0.88); }
+  .cell-address .distance {
+    color: rgba(255,255,255,0.45);
+    font-size: 11px;
+    margin-left: 6px;
+  }
+  .cell-number {
+    font-family: 'Russo One', sans-serif;
+    color: var(--yellow);
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+    font-size: 13.5px;
+  }
+  .cell-rating .stars { color: #FFD60A; letter-spacing: 0.5px; font-size: 13px; }
+  .cell-rating .meta { color: rgba(255,255,255,0.6); font-size: 11px; margin-left: 6px; }
+
+  .cell-actions {
+    padding: 6px 10px !important;
+    gap: 6px;
+    justify-content: flex-start;
+  }
+  .row-action {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 120ms ease;
+    white-space: nowrap;
+  }
+  .row-action.primary {
+    background: var(--yellow);
+    color: var(--black);
+    box-shadow: 0 2px 0 var(--yellow-shadow);
+  }
+  .row-action.primary:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .row-action.primary svg { width: 12px; height: 12px; }
+  .row-action.ghost {
+    background: rgba(255,255,255,0.06);
+    color: white;
+    border-color: rgba(255,255,255,0.12);
+    padding: 7px 8px;
+  }
+  .row-action.ghost:hover { background: rgba(255,255,255,0.1); border-color: var(--yellow); }
+  .row-action.ghost svg { width: 13px; height: 13px; }
+
+  /* Pagination */
+  .pager {
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    margin-top: 30px; flex-wrap: wrap;
+  }
+  .page-btn {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.35);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.12);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 150ms ease;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--yellow); }
+  .page-btn.active {
+    background: var(--yellow);
+    color: var(--black);
+    border-color: var(--yellow);
+  }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .page-info {
+    font-size: 12px; color: rgba(255,255,255,0.65); letter-spacing: 1px;
+    margin: 0 8px; text-transform: uppercase;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.7);
+  }
+  .empty h3 {
+    font-family: 'Russo One', sans-serif;
+    color: var(--yellow);
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+
+  /* ============= CALL MODAL ============= */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .modal-backdrop.visible { display: flex; opacity: 1; }
+
+  .modal {
+    width: 100%;
+    max-width: 420px;
+    background: #0E232C;
+    border: 1px solid rgba(255,214,10,0.25);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    transform: translateY(10px) scale(0.98);
+    transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+  }
+  .modal-backdrop.visible .modal { transform: translateY(0) scale(1); }
+
+  .modal h2 {
+    font-family: 'Russo One', sans-serif;
+    font-size: 18px;
+    color: white;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .modal .biz-sub {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .modal .num {
+    font-family: 'Russo One', sans-serif;
+    font-size: 30px;
+    color: var(--yellow);
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 18px 12px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 12px;
+    border: 1px dashed rgba(255,214,10,0.35);
+    margin-bottom: 18px;
+    user-select: all;
+    cursor: text;
+  }
+  .modal { max-height: 90vh; overflow-y: auto; }
+
+  .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .modal-actions a, .modal-actions button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 10px;
+    border-radius: 12px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: all 150ms ease;
+    text-align: center;
+    line-height: 1.1;
+  }
+  .modal-actions .dial {
+    background: var(--yellow);
+    color: var(--black);
+    box-shadow: 0 4px 0 var(--yellow-shadow);
+  }
+  .modal-actions .dial:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .modal-actions .speaker {
+    background: linear-gradient(180deg, #16A34A 0%, #15803D 100%);
+    color: white;
+    box-shadow: 0 4px 0 #14532D;
+  }
+  .modal-actions .speaker:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  .copy-row { display: flex; justify-content: center; margin-bottom: 14px; }
+  .copy-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent;
+    color: rgba(255,255,255,0.75);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .copy-btn:hover { border-color: var(--yellow); color: white; }
+  .copy-btn.copied { background: #22c55e; color: white; border-color: #22c55e; }
+
+  /* === Speaker mode panel === */
+  .speaker-panel { display: none; margin-bottom: 14px; }
+  .speaker-panel.active { display: block; }
+
+  .speaker-status {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #BBF7D0;
+  }
+  .speaker-status .pulse {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34,197,94,0.7);
+    animation: pulseDot 1.4s ease-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulseDot {
+    0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+    70% { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+  }
+
+  .speaker-instructions {
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.5;
+  }
+  .speaker-instructions strong { color: var(--yellow); }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .metric {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .metric .num {
+    font-family: 'Russo One', sans-serif;
+    font-size: 32px;
+    color: var(--yellow);
+    letter-spacing: 1px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric .lbl {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .metric.answered .num { color: #22c55e; }
+
+  .level-wrap {
+    margin-bottom: 14px;
+  }
+  .level-bar {
+    height: 8px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .level-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #22c55e 0%, #FFD60A 60%, #ef4444 100%);
+    border-radius: 999px;
+    transition: width 80ms linear;
+  }
+  .level-label {
+    display: flex; justify-content: space-between;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .level-label .threshold-mark { color: var(--yellow); }
+
+  .speaker-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .speaker-controls button {
+    padding: 12px;
+    border-radius: 10px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: all 150ms ease;
+  }
+  .speaker-controls .answered-btn {
+    background: rgba(34,197,94,0.18);
+    color: #BBF7D0;
+    border: 1px solid rgba(34,197,94,0.4);
+  }
+  .speaker-controls .answered-btn:hover { background: rgba(34,197,94,0.3); }
+  .speaker-controls .answered-btn.active { background: #22c55e; color: white; }
+  .speaker-controls .end-btn {
+    background: rgba(239,68,68,0.18);
+    color: #FCA5A5;
+    border: 1px solid rgba(239,68,68,0.4);
+  }
+  .speaker-controls .end-btn:hover { background: rgba(239,68,68,0.3); color: white; }
+
+  .mic-error {
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.4);
+    color: #FCA5A5;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  /* === Pre-flight popup === */
+  .preflight { display: none; margin-bottom: 14px; }
+  .preflight.active { display: block; animation: fadeIn 220ms ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .preflight-title {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    color: var(--yellow);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .preflight-title svg { width: 18px; height: 18px; color: #22c55e; }
+
+  .pf-steps {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .pf-step {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.4;
+  }
+  .pf-step .num {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--yellow);
+    color: var(--black);
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+
+  .pf-perm-note {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: rgba(255,214,10,0.06);
+    border: 1px solid rgba(255,214,10,0.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.45;
+  }
+  .pf-perm-note svg { width: 16px; height: 16px; color: var(--yellow); flex-shrink: 0; margin-top: 1px; }
+  .pf-perm-note strong { color: var(--yellow); font-weight: 700; }
+
+  .pf-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+  .pf-actions button {
+    padding: 13px;
+    border-radius: 10px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: all 150ms ease;
+  }
+  .pf-cancel {
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.18) !important;
+  }
+  .pf-cancel:hover { color: white; border-color: rgba(255,255,255,0.4) !important; }
+  .pf-start {
+    background: linear-gradient(180deg, #16A34A 0%, #15803D 100%);
+    color: white;
+    box-shadow: 0 4px 0 #14532D;
+  }
+  .pf-start:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  /* === Webcam preview & OCR === */
+  .webcam-block {
+    display: none;
+    margin-bottom: 12px;
+  }
+  .webcam-block.active { display: block; }
+
+  .webcam-preview {
+    position: relative;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.15);
+    aspect-ratio: 16 / 9;
+  }
+  .webcam-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .webcam-overlay {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    border: 2px dashed rgba(255,214,10,0.5);
+    border-radius: 12px;
+    box-sizing: border-box;
+  }
+  .webcam-status {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .webcam-status .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #22c55e;
+    animation: pulseDot 1.4s ease-out infinite;
+  }
+  .webcam-status.loading .dot { background: #FFD60A; }
+  .webcam-status.idle .dot { background: rgba(255,255,255,0.4); animation: none; }
+
+  .ocr-results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .ocr-card {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .ocr-card .ocr-label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ocr-card .ocr-label svg { width: 11px; height: 11px; color: var(--yellow); }
+  .ocr-card .ocr-value {
+    font-family: 'Russo One', sans-serif;
+    font-size: 16px;
+    color: white;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ocr-card .ocr-value.dim { color: rgba(255,255,255,0.35); }
+  .ocr-card.match .ocr-value { color: #22c55e; }
+
+  .voip-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.12);
+    border-radius: 12px;
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .voip-row strong { color: var(--yellow); }
+
+  .modal-close {
+    margin-top: 14px;
+    width: 100%;
+    background: transparent;
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 150ms ease;
+  }
+  .modal-close:hover { color: white; border-color: rgba(255,255,255,0.25); }
+
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #22c55e;
+    color: white;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+  .toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ============= WALLET (top right, fixed across all views) ============= */
+  .wallet {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,214,10,0.35);
+    border-radius: 999px;
+    padding: 5px 6px 5px 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+  .wallet-balance {
+    display: flex; align-items: center; gap: 8px;
+    color: white;
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.8px;
+  }
+  .wallet-balance svg { color: var(--yellow); width: 16px; height: 16px; }
+  .wallet-balance .lbl {
+    color: rgba(255,255,255,0.6);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .wallet-balance .amount {
+    color: var(--yellow);
+    font-variant-numeric: tabular-nums;
+    transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+  }
+  .wallet-balance .amount.bump { transform: scale(1.18); }
+  .wallet-withdraw {
+    background: var(--yellow);
+    color: var(--black);
+    border: none;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: filter 150ms ease, transform 150ms ease;
+    box-shadow: 0 2px 0 var(--yellow-shadow);
+  }
+  .wallet-withdraw:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .wallet-withdraw:active { transform: translateY(1px); box-shadow: none; }
+
+  @media (max-width: 600px) {
+    .wallet { top: 12px; right: 12px; padding: 4px 5px 4px 10px; gap: 6px; }
+    .wallet-balance { font-size: 12px; }
+    .wallet-balance .lbl { display: none; }
+    .wallet-withdraw { padding: 6px 10px; font-size: 10px; }
+  }
+
+  /* ============= FAQ MODAL (earnings explainer) ============= */
+  .faq-title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 22px;
+    color: white;
+    letter-spacing: 1.5px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .faq-sub {
+    text-align: center;
+    font-size: 11px;
+    color: var(--yellow);
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+    font-weight: 600;
+  }
+  .faq-section { margin-bottom: 16px; }
+  .faq-section-title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .faq-section-title svg { width: 14px; height: 14px; color: var(--yellow); }
+  .faq-list { display: flex; flex-direction: column; gap: 6px; }
+  .faq-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 10px 14px;
+  }
+  .faq-item .row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.92);
+  }
+  .faq-item .ico {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: rgba(255,214,10,0.14);
+    color: var(--yellow);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .faq-item .ico svg { width: 16px; height: 16px; }
+  .faq-item .amt {
+    font-family: 'Russo One', sans-serif;
+    color: var(--yellow);
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .faq-item.bonus .ico { background: rgba(255, 122, 137, 0.14); color: #FF7A89; }
+  .faq-item.bonus .amt { color: #FF7A89; }
+  .faq-item.commission .ico { background: rgba(34, 197, 94, 0.14); color: #22c55e; }
+  .faq-item.commission .amt { color: #22c55e; }
+  .faq-note {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    text-align: center;
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+  .faq-note strong { color: var(--yellow); font-weight: 700; }
+  .faq-cta {
+    width: 100%;
+    padding: 14px;
+    margin-top: 14px;
+    background: var(--yellow);
+    color: var(--black);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--yellow-shadow);
+    transition: all 150ms ease;
+  }
+  .faq-cta:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .faq-cta:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--yellow-shadow); }
+
+  /* ============= WITHDRAW MODAL ============= */
+  .withdraw-summary {
+    background: rgba(0,0,0,0.4);
+    border: 1px dashed rgba(255,214,10,0.4);
+    border-radius: 14px;
+    padding: 22px;
+    margin: 14px 0 18px;
+    text-align: center;
+  }
+  .withdraw-summary .lbl {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .withdraw-summary .amt {
+    font-family: 'Russo One', sans-serif;
+    font-size: 40px;
+    color: var(--yellow);
+    letter-spacing: 1px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .withdraw-empty {
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 4px 0 12px;
+  }
+  .withdraw-form { margin-bottom: 4px; }
+  .withdraw-form .field-lbl {
+    font-size: 11px; letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .withdraw-form select, .withdraw-form input {
+    width: 100%;
+    background: var(--black);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 12px;
+    transition: border-color 150ms ease;
+  }
+  .withdraw-form select:focus, .withdraw-form input:focus {
+    outline: none; border-color: var(--yellow);
+  }
+  .withdraw-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+  .withdraw-actions button {
+    padding: 13px;
+    border-radius: 12px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: all 150ms ease;
+  }
+  .withdraw-actions .cancel {
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .withdraw-actions .cancel:hover { color: white; border-color: rgba(255,255,255,0.4); }
+  .withdraw-actions .confirm {
+    background: var(--yellow);
+    color: var(--black);
+    box-shadow: 0 4px 0 var(--yellow-shadow);
+  }
+  .withdraw-actions .confirm:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .withdraw-actions .confirm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    filter: grayscale(0.4);
+  }
+</style>
+</head>
+<body>
+
+  <button class="back" id="backBtn">&larr; Back</button>
+
+  <!-- ============= WALLET (visible on every view) ============= -->
+  <div class="wallet" id="wallet">
+    <div class="wallet-balance">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
+      </svg>
+      <span class="lbl">Balance</span>
+      <span class="amount" id="walletAmount">$0.00</span>
+    </div>
+    <button class="wallet-withdraw" id="walletWithdraw">Request Withdraw</button>
+  </div>
+
+  <!-- ============= HOME VIEW ============= -->
+  <div class="view active" id="homeView">
+    <div class="stage" id="stage">
+      <div class="logo" aria-label="CRM GO">
+        <span class="crm">CRM</span><span class="gap"></span><span class="go">GO</span>
+      </div>
+
+      <div class="start-wrap">
+        <button class="start-btn" id="startBtn">
+          Start Now <span class="arrow">&#9654;</span>
+        </button>
+      </div>
+
+      <div class="options" id="options">
+        <button class="opt-btn" data-choice="otp" id="otpBtn">
+          <span class="label">OTP over the phone</span>
+          <span class="divider"></span>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </button>
+
+        <button class="opt-btn" data-choice="inperson">
+          <span class="label">In-Person</span>
+          <span class="divider"></span>
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="13" cy="4" r="2"/>
+            <path d="M4 22l4-9 4 3 2 6"/>
+            <path d="M14 13l-3-4 4-3 3 3 3 1"/>
+            <path d="M9 7l-3 1-1 3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= SEARCH VIEW ============= -->
+  <div class="view" id="searchView">
+    <div class="search-shell">
+      <div class="search-header">
+        <div class="mini-logo" id="miniLogo">CRM&nbsp;GO</div>
+        <span class="crumb">
+          <svg class="pill-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/>
+          </svg>
+          OTP over the phone
+        </span>
+      </div>
+
+      <div class="panel">
+        <div class="controls">
+          <div class="field">
+            <label for="bizType">Business Type</label>
+            <div class="select-wrap">
+              <select id="bizType">
+                <option value="restaurant">Restaurant</option>
+                <option value="plumbing">Plumbing</option>
+                <option value="carpentry">Carpentry</option>
+                <option value="lawncare">Lawn Care</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="metro">Metropolitan Area</label>
+            <div class="select-wrap">
+              <select id="metro">
+                <option value="atlanta">Atlanta, GA (+ surrounding)</option>
+                <option value="houston">Houston, TX (+ surrounding)</option>
+                <option value="losangeles">Los Angeles, CA (+ surrounding)</option>
+                <option value="chicago">Chicago, IL (+ surrounding)</option>
+                <option value="newyork">New York, NY (+ surrounding)</option>
+                <option value="dallas">Dallas, TX (+ surrounding)</option>
+                <option value="phoenix">Phoenix, AZ (+ surrounding)</option>
+                <option value="miami">Miami, FL (+ surrounding)</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn btn-search" id="searchBtn">Search</button>
+
+          <a class="btn btn-maps" id="mapsAllBtn" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            View on Maps
+          </a>
+        </div>
+      </div>
+
+      <div class="results-meta" id="resultsMeta"></div>
+
+      <div class="list"><div class="list-table-wrap" id="grid"></div></div>
+
+      <div class="pager" id="pager"></div>
+    </div>
+  </div>
+
+  <!-- ============= IN-PERSON VIEW ============= -->
+  <div class="view" id="inPersonView">
+    <div class="ip-shell">
+      <div class="search-header">
+        <div class="mini-logo" id="ipMiniLogo">CRM&nbsp;GO</div>
+        <span class="crumb">
+          <svg class="pill-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="13" cy="4" r="2"/><path d="M4 22l4-9 4 3 2 6"/><path d="M14 13l-3-4 4-3 3 3 3 1"/><path d="M9 7l-3 1-1 3"/>
+          </svg>
+          In-Person · Walking GPS
+        </span>
+      </div>
+
+      <div class="panel">
+        <div class="ip-controls">
+          <div class="field">
+            <label for="ipBizType">Business Type</label>
+            <div class="select-wrap">
+              <select id="ipBizType">
+                <option value="restaurant">Restaurant</option>
+                <option value="plumbing">Plumbing</option>
+                <option value="carpentry">Carpentry</option>
+                <option value="lawncare">Lawn Care</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Travel Mode</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active" data-mode="walking" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M4 22l4-9 4 3 2 6"/><path d="M14 13l-3-4 4-3 3 3 3 1"/></svg>
+                Walking
+              </button>
+              <button class="mode-btn" data-mode="driving" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h-2v-6l2-5h11l4 5h1a2 2 0 0 1 2 2v4h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                Driving
+              </button>
+            </div>
+          </div>
+
+          <button class="btn btn-search" id="ipUseLocation" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px;"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+            Use My Location
+          </button>
+        </div>
+      </div>
+
+      <div class="ip-stats" id="ipStats"></div>
+
+      <div class="map-wrap">
+        <div id="mapContainer"></div>
+        <div class="map-loading" id="mapLoading">
+          <div class="map-spinner"></div>
+          <div>Loading map…</div>
+        </div>
+        <button class="recenter-btn" id="recenterBtn" title="Re-center on me">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        </button>
+      </div>
+
+      <div class="ip-list-title" id="ipListTitle">Nearby</div>
+      <div class="ip-list" id="ipList"></div>
+    </div>
+  </div>
+
+  <!-- ============= CALL MODAL ============= -->
+  <div class="modal-backdrop" id="callModal" role="dialog" aria-modal="true" aria-labelledby="callModalTitle">
+    <div class="modal">
+      <h2 id="callModalTitle">Call for OTP</h2>
+      <div class="biz-sub" id="callBizName">—</div>
+      <div class="num" id="callNumber" tabindex="0">(000) 000-0000</div>
+
+      <div class="modal-actions">
+        <a class="dial" id="callDial" href="#">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+          Dial
+        </a>
+        <button class="speaker" id="callSpeaker">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          Call Speaker
+        </button>
+      </div>
+
+      <div class="copy-row">
+        <button class="copy-btn" id="callCopy">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Number
+        </button>
+      </div>
+
+      <!-- Pre-flight instructions popup — shown when "Call Speaker" is first clicked -->
+      <div class="preflight" id="preflight">
+        <div class="preflight-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          Speaker Mode Setup
+        </div>
+
+        <div class="pf-steps">
+          <div class="pf-step"><span class="num">1</span><span>Dial the number on your phone.</span></div>
+          <div class="pf-step"><span class="num">2</span><span>Turn on <strong>speakerphone</strong>.</span></div>
+          <div class="pf-step"><span class="num">3</span><span>Place the phone face-up near your computer's <strong>microphone</strong> — close enough that the speaker is clearly audible.</span></div>
+          <div class="pf-step"><span class="num">4</span><span>Angle the phone <strong>screen toward your webcam</strong> so the dialed number and call timer are clearly visible. You don't need to be in frame.</span></div>
+          <div class="pf-step"><span class="num">5</span><span>I'll count rings, time the call, and read the phone's screen automatically.</span></div>
+        </div>
+
+        <div class="pf-perm-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>You'll be asked to grant <strong>microphone</strong> and <strong>camera</strong> access. Both are used locally — nothing is uploaded.</span>
+        </div>
+
+        <div class="pf-actions">
+          <button class="pf-cancel" id="pfCancel">Cancel</button>
+          <button class="pf-start" id="pfStart">Start Listening</button>
+        </div>
+      </div>
+
+      <!-- Persistent error banner — shown when mic/camera fails (sibling of speakerPanel) -->
+      <div id="micError" class="mic-error" style="display:none;"></div>
+
+      <!-- Speaker mode panel — shown after pre-flight is confirmed -->
+      <div class="speaker-panel" id="speakerPanel">
+        <div class="speaker-status">
+          <span class="pulse"></span>
+          <span><strong>Listening</strong> for ringback tones via microphone…</span>
+        </div>
+
+        <div class="speaker-instructions">
+          <strong>1.</strong> Dial the number on your phone &nbsp;·&nbsp;
+          <strong>2.</strong> Turn on speakerphone &nbsp;·&nbsp;
+          <strong>3.</strong> Place phone face-up next to your computer's microphone (or sit close to it).
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="num" id="ringCount">0</div>
+            <div class="lbl">Rings Detected</div>
+          </div>
+          <div class="metric" id="timerMetric">
+            <div class="num" id="callTimer">00:00</div>
+            <div class="lbl" id="callTimerLabel">Time on Call</div>
+          </div>
+        </div>
+
+        <div class="level-wrap">
+          <div class="level-bar">
+            <div class="level-fill" id="levelFill"></div>
+          </div>
+          <div class="level-label">
+            <span>Mic Level</span>
+            <span class="threshold-mark">▲ Ringback (440+480 Hz)</span>
+          </div>
+        </div>
+
+        <!-- Webcam OCR block — only shown if user opted in -->
+        <div class="webcam-block" id="webcamBlock">
+          <div class="webcam-preview">
+            <video id="webcamVideo" autoplay muted playsinline></video>
+            <div class="webcam-overlay"></div>
+            <div class="webcam-status loading" id="webcamStatus"><span class="dot"></span><span id="webcamStatusText">Loading OCR…</span></div>
+          </div>
+          <div class="ocr-results">
+            <div class="ocr-card" id="ocrNumCard">
+              <div class="ocr-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+                Read from Screen
+              </div>
+              <div class="ocr-value dim" id="ocrNum">— — —</div>
+            </div>
+            <div class="ocr-card" id="ocrTimerCard">
+              <div class="ocr-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Phone Timer
+              </div>
+              <div class="ocr-value dim" id="ocrTimer">— —</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="speaker-controls">
+          <button class="answered-btn" id="answeredBtn">Mark Answered</button>
+          <button class="end-btn" id="endCallBtn">End Call</button>
+        </div>
+      </div>
+
+      <div class="voip-row" id="voipNote">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--yellow);"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <span><strong>Speaker mode</strong> uses your computer's microphone to count rings and time the call automatically. Dial uses your phone or installed softphone.</span>
+      </div>
+
+      <button class="modal-close" id="callClose">Close</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Number copied</div>
+
+  <!-- ============= OTP EARNINGS FAQ MODAL ============= -->
+  <div class="modal-backdrop" id="otpFaqModal" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
+    <div class="modal" style="max-width: 520px;">
+      <div class="faq-title" id="faqTitle">How You Earn</div>
+      <div class="faq-sub">OTP Over the Phone</div>
+
+      <div class="faq-section">
+        <div class="faq-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+          Per-Call Earnings
+        </div>
+        <div class="faq-list">
+          <div class="faq-item">
+            <span class="row">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+              </span>
+              Completed call (rings to voicemail)
+            </span>
+            <span class="amt">$0.10</span>
+          </div>
+          <div class="faq-item">
+            <span class="row">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+              </span>
+              Leave a voicemail
+            </span>
+            <span class="amt">$0.05</span>
+          </div>
+          <div class="faq-item">
+            <span class="row">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+              </span>
+              Schedule an appointment
+            </span>
+            <span class="amt">$2.00</span>
+          </div>
+          <div class="faq-item">
+            <span class="row">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </span>
+              Call longer than 2 minutes (auto)
+            </span>
+            <span class="amt">$0.70</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-section">
+        <div class="faq-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Bonuses
+        </div>
+        <div class="faq-list">
+          <div class="faq-item bonus">
+            <span class="row">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </span>
+              Important prospect
+            </span>
+            <span class="amt">+$8.00</span>
+          </div>
+          <div class="faq-item bonus">
+            <span class="row">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M12 2c1 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 1-5"/><path d="M16 14a4 4 0 0 1-8 0"/></svg>
+              </span>
+              Closing streaks · multi-call · high production
+            </span>
+            <span class="amt">Variable</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-section">
+        <div class="faq-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Commission (Separate)
+        </div>
+        <div class="faq-list">
+          <div class="faq-item commission">
+            <span class="row">
+              <span class="ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </span>
+              Closing with a client
+            </span>
+            <span class="amt">$200 – $1,000</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-note">
+        Your earnings appear in the <strong>top-right corner</strong>. Tap <strong>Request Withdraw</strong> to cash out anytime.
+      </div>
+
+      <button class="faq-cta" id="otpFaqContinue">Got It — Let's Go</button>
+    </div>
+  </div>
+
+  <!-- ============= WITHDRAW MODAL ============= -->
+  <div class="modal-backdrop" id="withdrawModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width: 420px;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;text-align:center;margin-bottom:4px;">Request Withdrawal</h2>
+      <div class="biz-sub" style="text-align:center;">Cash Out Your Earnings</div>
+
+      <div class="withdraw-summary">
+        <div class="lbl">Available Balance</div>
+        <div class="amt" id="withdrawAmount">$0.00</div>
+      </div>
+
+      <div class="withdraw-empty" id="withdrawEmpty">
+        No funds available yet. Make calls and earn —<br>your balance will appear here as you go.
+      </div>
+
+      <div class="withdraw-form" id="withdrawForm" style="display:none;">
+        <label class="field-lbl" for="payoutMethod">Payout Method</label>
+        <select id="payoutMethod">
+          <option>Direct Deposit (Bank)</option>
+          <option>PayPal</option>
+          <option>Cash App</option>
+          <option>Venmo</option>
+          <option>Zelle</option>
+        </select>
+      </div>
+
+      <div class="withdraw-actions">
+        <button class="cancel" id="withdrawCancel">Cancel</button>
+        <button class="confirm" id="withdrawConfirm" disabled>Request Withdraw</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ====================== ROUTING / VIEWS ====================== */
+const homeView = document.getElementById('homeView');
+const searchView = document.getElementById('searchView');
+const inPersonView = document.getElementById('inPersonView');
+const startBtn = document.getElementById('startBtn');
+const options = document.getElementById('options');
+const stage = document.getElementById('stage');
+const backBtn = document.getElementById('backBtn');
+const otpBtn = document.getElementById('otpBtn');
+const miniLogo = document.getElementById('miniLogo');
+
+let currentView = 'home'; // 'home' | 'options' | 'search' | 'inperson'
+
+function showView(name) {
+  currentView = name;
+  homeView.classList.toggle('active', name === 'home' || name === 'options');
+  searchView.classList.toggle('active', name === 'search');
+  inPersonView.classList.toggle('active', name === 'inperson');
+  if (name === 'home') {
+    stage.classList.remove('started');
+    options.classList.remove('visible');
+    backBtn.classList.remove('visible');
+  } else if (name === 'options') {
+    stage.classList.add('started');
+    options.classList.add('visible');
+    backBtn.classList.add('visible');
+  } else if (name === 'search' || name === 'inperson') {
+    backBtn.classList.add('visible');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Leaflet needs a kick when its container becomes visible
+    if (name === 'inperson' && window.L && mapInstance) {
+      setTimeout(() => mapInstance.invalidateSize(), 50);
+    }
+  }
+}
+
+startBtn.addEventListener('click', () => showView('options'));
+backBtn.addEventListener('click', () => {
+  if (currentView === 'search' || currentView === 'inperson') showView('options');
+  else showView('home');
+});
+miniLogo.addEventListener('click', () => showView('home'));
+
+otpBtn.addEventListener('click', () => {
+  // Show earnings FAQ before entering the search view
+  showOtpFaq();
+});
+
+document.querySelector('[data-choice="inperson"]').addEventListener('click', () => {
+  startInPerson();
+});
+
+/* ====================== DATA ====================== */
+// Each metro lists its central city + surrounding suburbs/exurbs.
+// "Geographic proximity" sorting: businesses are seeded across these
+// cities and sorted by distance from the metro center.
+const METROS = {
+  atlanta: {
+    name: 'Atlanta',
+    state: 'GA',
+    center: { lat: 33.749, lng: -84.388 },
+    areaCodes: ['404', '470', '678', '770'],
+    cities: [
+      { name: 'Atlanta',       lat: 33.7490, lng: -84.3880 },
+      { name: 'Decatur',       lat: 33.7748, lng: -84.2963 },
+      { name: 'Sandy Springs', lat: 33.9304, lng: -84.3733 },
+      { name: 'Marietta',      lat: 33.9526, lng: -84.5499 },
+      { name: 'Smyrna',        lat: 33.8839, lng: -84.5144 },
+      { name: 'Roswell',       lat: 34.0232, lng: -84.3616 },
+      { name: 'Alpharetta',    lat: 34.0754, lng: -84.2941 },
+      { name: 'Tucker',        lat: 33.8545, lng: -84.2171 },
+    ]
+  },
+  houston: {
+    name: 'Houston',
+    state: 'TX',
+    center: { lat: 29.7604, lng: -95.3698 },
+    areaCodes: ['281', '346', '713', '832'],
+    cities: [
+      { name: 'Houston',        lat: 29.7604, lng: -95.3698 },
+      { name: 'Bellaire',       lat: 29.7058, lng: -95.4588 },
+      { name: 'Pasadena',       lat: 29.6911, lng: -95.2091 },
+      { name: 'Sugar Land',     lat: 29.6197, lng: -95.6349 },
+      { name: 'Pearland',       lat: 29.5636, lng: -95.2860 },
+      { name: 'Katy',           lat: 29.7858, lng: -95.8244 },
+      { name: 'Cypress',        lat: 29.9691, lng: -95.6972 },
+      { name: 'The Woodlands',  lat: 30.1658, lng: -95.4613 },
+      { name: 'Spring',         lat: 30.0799, lng: -95.4172 },
+    ]
+  },
+  losangeles: {
+    name: 'Los Angeles',
+    state: 'CA',
+    center: { lat: 34.0522, lng: -118.2437 },
+    areaCodes: ['213', '310', '323', '424', '818'],
+    cities: [
+      { name: 'Los Angeles',  lat: 34.0522, lng: -118.2437 },
+      { name: 'Santa Monica', lat: 34.0195, lng: -118.4912 },
+      { name: 'Pasadena',     lat: 34.1478, lng: -118.1445 },
+      { name: 'Glendale',     lat: 34.1425, lng: -118.2551 },
+      { name: 'Burbank',      lat: 34.1808, lng: -118.3090 },
+      { name: 'Long Beach',   lat: 33.7701, lng: -118.1937 },
+      { name: 'Inglewood',    lat: 33.9617, lng: -118.3531 },
+      { name: 'Torrance',     lat: 33.8358, lng: -118.3406 },
+    ]
+  },
+  chicago: {
+    name: 'Chicago',
+    state: 'IL',
+    center: { lat: 41.8781, lng: -87.6298 },
+    areaCodes: ['312', '773', '872'],
+    cities: [
+      { name: 'Chicago',    lat: 41.8781, lng: -87.6298 },
+      { name: 'Evanston',   lat: 42.0451, lng: -87.6877 },
+      { name: 'Oak Park',   lat: 41.8850, lng: -87.7845 },
+      { name: 'Skokie',     lat: 42.0334, lng: -87.7334 },
+      { name: 'Naperville', lat: 41.7508, lng: -88.1535 },
+      { name: 'Schaumburg', lat: 42.0334, lng: -88.0834 },
+      { name: 'Aurora',     lat: 41.7606, lng: -88.3201 },
+    ]
+  },
+  newyork: {
+    name: 'New York',
+    state: 'NY',
+    center: { lat: 40.7128, lng: -74.0060 },
+    areaCodes: ['212', '347', '646', '718', '929'],
+    cities: [
+      { name: 'New York',    lat: 40.7128, lng: -74.0060 },
+      { name: 'Brooklyn',    lat: 40.6782, lng: -73.9442 },
+      { name: 'Queens',      lat: 40.7282, lng: -73.7949 },
+      { name: 'Bronx',       lat: 40.8448, lng: -73.8648 },
+      { name: 'Jersey City', lat: 40.7178, lng: -74.0431 },
+      { name: 'Hoboken',     lat: 40.7440, lng: -74.0324 },
+      { name: 'Yonkers',     lat: 40.9312, lng: -73.8987 },
+    ]
+  },
+  dallas: {
+    name: 'Dallas',
+    state: 'TX',
+    center: { lat: 32.7767, lng: -96.7970 },
+    areaCodes: ['214', '469', '972'],
+    cities: [
+      { name: 'Dallas',     lat: 32.7767, lng: -96.7970 },
+      { name: 'Plano',      lat: 33.0198, lng: -96.6989 },
+      { name: 'Frisco',     lat: 33.1507, lng: -96.8236 },
+      { name: 'Irving',     lat: 32.8140, lng: -96.9489 },
+      { name: 'Arlington',  lat: 32.7357, lng: -97.1081 },
+      { name: 'Garland',    lat: 32.9126, lng: -96.6389 },
+      { name: 'Richardson', lat: 32.9483, lng: -96.7299 },
+    ]
+  },
+  phoenix: {
+    name: 'Phoenix',
+    state: 'AZ',
+    center: { lat: 33.4484, lng: -112.0740 },
+    areaCodes: ['480', '602', '623'],
+    cities: [
+      { name: 'Phoenix',    lat: 33.4484, lng: -112.0740 },
+      { name: 'Scottsdale', lat: 33.4942, lng: -111.9261 },
+      { name: 'Tempe',      lat: 33.4255, lng: -111.9400 },
+      { name: 'Mesa',       lat: 33.4152, lng: -111.8315 },
+      { name: 'Chandler',   lat: 33.3062, lng: -111.8413 },
+      { name: 'Gilbert',    lat: 33.3528, lng: -111.7890 },
+      { name: 'Glendale',   lat: 33.5387, lng: -112.1860 },
+    ]
+  },
+  miami: {
+    name: 'Miami',
+    state: 'FL',
+    center: { lat: 25.7617, lng: -80.1918 },
+    areaCodes: ['305', '786'],
+    cities: [
+      { name: 'Miami',         lat: 25.7617, lng: -80.1918 },
+      { name: 'Miami Beach',   lat: 25.7907, lng: -80.1300 },
+      { name: 'Coral Gables',  lat: 25.7215, lng: -80.2684 },
+      { name: 'Hialeah',       lat: 25.8576, lng: -80.2781 },
+      { name: 'Doral',         lat: 25.8195, lng: -80.3553 },
+      { name: 'Aventura',      lat: 25.9565, lng: -80.1392 },
+      { name: 'Homestead',     lat: 25.4687, lng: -80.4776 },
+    ]
+  }
+};
+
+const TYPE_CONFIG = {
+  restaurant: {
+    label: 'Restaurant',
+    nameTemplates: [
+      "The Olive Branch", "Bella Notte", "Sunrise Diner", "Harbor & Hearth",
+      "Mama Rosa's Kitchen", "Blue Plate Bistro", "The Copper Kettle", "Maple & Vine",
+      "Saffron Spoon", "Eight Tables", "Crescent Moon Cafe", "The Sage Room",
+      "Ember Grill", "Riverstone Tavern", "Little Saigon", "El Patio Verde",
+      "Goldfinch Eatery", "The Walnut", "North End Pizzeria", "Nakamura Ramen",
+      "Stonefire BBQ", "Magnolia & Rye", "Velvet Fork", "The Brass Rabbit",
+      "Casa Lupita", "Spice Route", "Halcyon Bistro", "Iron Vine",
+      "Sunday Supper", "The Daily Catch"
+    ],
+    googleQuery: 'restaurants'
+  },
+  plumbing: {
+    label: 'Plumbing',
+    nameTemplates: [
+      "All-Pro Plumbing", "Reliable Plumbing Co.", "Henderson & Sons Plumbing", "Mr. Pipe Plumbing",
+      "Anchor Plumbing Services", "Citywide Plumbing", "Patriot Plumbing", "Fast Flow Plumbing",
+      "Five Star Plumbing", "Anytime Plumbers", "Drain Masters", "Apex Plumbing Solutions",
+      "Mainline Plumbing", "Watershed Plumbing", "True North Plumbing", "Vanguard Plumbing",
+      "Sterling Plumbing", "Premier Plumbing Pros", "Iron Wrench Plumbing", "BlueLine Plumbing",
+      "Sentry Plumbing", "Hillside Plumbing Co.", "Garcia Plumbing", "Northgate Plumbing",
+      "Express Plumbing", "Family Plumbing & Drain", "Capstone Plumbing", "Cornerstone Plumbing",
+      "Trident Plumbing", "Bayview Plumbing"
+    ],
+    googleQuery: 'plumbers'
+  },
+  carpentry: {
+    label: 'Carpentry',
+    nameTemplates: [
+      "Heritage Carpentry", "Master Craft Carpentry", "Oakwood Carpentry Co.", "Timberline Woodworks",
+      "Walnut Lane Carpentry", "Ironwood Custom Carpentry", "Stratton & Sons Carpentry", "Cedar Crest Carpentry",
+      "Kingfisher Carpentry", "True Square Carpentry", "Maple Ridge Woodworking", "Birchwood Carpentry",
+      "Forge & Grain", "Hammerhead Carpentry", "Northstar Carpentry", "Highland Woodworks",
+      "Anchor Carpentry", "Brookline Carpentry Co.", "Solid Cedar Carpentry", "Craftsman Pro Carpentry",
+      "Paramount Carpentry", "Riverwood Carpentry", "Greenfield Carpentry", "Stonebrook Woodworks",
+      "Ashford Carpentry", "Old Mill Carpentry", "Jameson Carpentry", "Blackwood Carpentry",
+      "Summit Carpentry", "The Joinery"
+    ],
+    googleQuery: 'carpenters'
+  },
+  lawncare: {
+    label: 'Lawn Care',
+    nameTemplates: [
+      "Greenline Lawn Care", "Evergreen Lawn Pros", "Cutting Edge Lawn Care", "Turf Masters",
+      "Premier Lawn & Landscape", "Sunrise Lawn Care", "Emerald Acres Lawn Care", "Front Yard Heroes",
+      "Blue Sky Lawn Care", "ProCut Lawn Service", "Crisp Cut Lawn Care", "Verdant Lawn Co.",
+      "Legacy Lawn Care", "Backyard Brothers", "Hometown Lawn Pros", "Trim & Tidy Lawn Care",
+      "Magnolia Lawn Service", "Greenwave Lawn Care", "Ace Lawn & Landscape", "First Cut Lawn Care",
+      "Liberty Lawn Care", "Patriot Lawn Service", "Foothill Lawn Care", "Sunshine Lawn Care",
+      "Cornerstone Lawn Pros", "Apex Lawn Care", "All-Season Lawn Care", "Greenleaf Lawn Service",
+      "Nature's Edge Lawn Care", "Yard Kings"
+    ],
+    googleQuery: 'lawn care services'
+  }
+};
+
+const STREETS = [
+  "Main St", "Oak Ave", "Maple Dr", "Cedar Ln", "Park Blvd",
+  "1st St", "2nd Ave", "Elm St", "Pine Rd", "Washington Ave",
+  "Lincoln Blvd", "Highland Ave", "Sunset Dr", "Hillcrest Rd", "Magnolia Ln",
+  "Riverside Dr", "Lakeview Rd", "Westbrook Ln", "Greenway Dr", "Briar St"
+];
+
+/* ====================== UTIL ====================== */
+function seed(s) {
+  // Tiny mulberry32 seeded by string hash
+  let h = 1779033703 ^ s.length;
+  for (let i = 0; i < s.length; i++) {
+    h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  let a = h >>> 0;
+  return function() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function haversineMiles(a, b) {
+  const R = 3958.8;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+  const x = Math.sin(dLat/2)**2 + Math.sin(dLng/2)**2 * Math.cos(lat1) * Math.cos(lat2);
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+function fmtPhone(area, rng) {
+  const mid = String(Math.floor(rng() * 900) + 100);
+  const last = String(Math.floor(rng() * 9000) + 1000);
+  return `(${area}) ${mid}-${last}`;
+}
+
+function generateBusinesses(metroKey, typeKey) {
+  const metro = METROS[metroKey];
+  const type = TYPE_CONFIG[typeKey];
+  const rng = seed(metroKey + ':' + typeKey);
+
+  return type.nameTemplates.map((tplName, i) => {
+    const city = metro.cities[Math.floor(rng() * metro.cities.length)];
+    const number = Math.floor(rng() * 9000) + 100;
+    const street = STREETS[Math.floor(rng() * STREETS.length)];
+    const area = metro.areaCodes[Math.floor(rng() * metro.areaCodes.length)];
+    const phone = fmtPhone(area, rng);
+    const ratingNum = (3.6 + rng() * 1.3);
+    const rating = Math.round(ratingNum * 10) / 10;
+    const reviews = Math.floor(rng() * 480) + 18;
+
+    // Slight scatter around the city center
+    const dLat = (rng() - 0.5) * 0.04;
+    const dLng = (rng() - 0.5) * 0.04;
+    const coords = { lat: city.lat + dLat, lng: city.lng + dLng };
+    const distance = haversineMiles(metro.center, coords);
+
+    return {
+      id: `${metroKey}-${typeKey}-${i}`,
+      name: tplName,
+      address: `${number} ${street}, ${city.name}, ${metro.state}`,
+      city: city.name,
+      phone,
+      rating,
+      reviews,
+      coords,
+      distance
+    };
+  }).sort((a, b) => a.distance - b.distance);
+}
+
+/* ====================== SEARCH / RENDER ====================== */
+const PAGE_SIZE = 10;
+let searchState = {
+  results: [],
+  page: 1,
+  metroKey: 'houston',
+  typeKey: 'restaurant'
+};
+
+const grid = document.getElementById('grid');
+const pager = document.getElementById('pager');
+const meta = document.getElementById('resultsMeta');
+const mapsAllBtn = document.getElementById('mapsAllBtn');
+const bizType = document.getElementById('bizType');
+const metroSel = document.getElementById('metro');
+const searchBtn = document.getElementById('searchBtn');
+
+function runSearch() {
+  searchState.metroKey = metroSel.value;
+  searchState.typeKey = bizType.value;
+  searchState.page = 1;
+  searchState.results = generateBusinesses(searchState.metroKey, searchState.typeKey);
+  updateMapsAllLink();
+  render();
+}
+
+function updateMapsAllLink() {
+  const m = METROS[searchState.metroKey];
+  const q = `${TYPE_CONFIG[searchState.typeKey].googleQuery} near ${m.name}, ${m.state}`;
+  mapsAllBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
+function googleMapsLinkFor(biz) {
+  const q = `${biz.name} ${biz.address}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
+function telLink(phone) { return `tel:${phone.replace(/[^\d]/g, '')}`; }
+
+function renderStars(rating) {
+  const full = Math.floor(rating);
+  const half = (rating - full) >= 0.5;
+  const stars = '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(5 - full - (half ? 1 : 0));
+  return stars;
+}
+
+function render() {
+  const { results, page, metroKey, typeKey } = searchState;
+  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
+  const slice = results.slice(start, start + PAGE_SIZE);
+  const m = METROS[metroKey];
+  const t = TYPE_CONFIG[typeKey];
+
+  meta.innerHTML = `
+    <div>Showing <strong>${start + 1}–${start + slice.length}</strong> of <strong>${results.length}</strong> · <strong>${t.label}</strong> near <strong>${m.name}, ${m.state}</strong></div>
+    <div>Sorted by geographic proximity</div>
+  `;
+
+  if (slice.length === 0) {
+    grid.innerHTML = `<div class="empty"><h3>No results</h3><p>Try a different metro or type.</p></div>`;
+    pager.innerHTML = '';
+    return;
+  }
+
+  const headerHtml = `
+    <div class="list-header">
+      <div>Name</div>
+      <div>Address</div>
+      <div>Number</div>
+      <div>Rating</div>
+      <div>Actions</div>
+    </div>
+  `;
+
+  const rowsHtml = slice.map(b => `
+    <div class="list-row">
+      <div class="cell-name" title="${escapeHtml(b.name)}">${escapeHtml(b.name)}</div>
+      <div class="cell-address" title="${escapeHtml(b.address)}">
+        ${escapeHtml(b.address)}<span class="distance">· ${b.distance.toFixed(1)} mi</span>
+      </div>
+      <div class="cell-number">${b.phone}</div>
+      <div class="cell-rating">
+        <span class="stars" title="${b.rating} stars">${renderStars(b.rating)}</span><span class="meta">${b.rating.toFixed(1)} · ${b.reviews}</span>
+      </div>
+      <div class="cell-actions">
+        <button class="row-action primary" data-call="${escapeHtml(b.id)}" title="Call ${b.phone}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+          Call
+        </button>
+        <a class="row-action ghost" href="${googleMapsLinkFor(b)}" target="_blank" rel="noopener" title="Open in Google Maps">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </a>
+      </div>
+    </div>
+  `).join('');
+
+  grid.innerHTML = headerHtml + rowsHtml;
+
+  renderPager(totalPages);
+}
+
+function renderPager(totalPages) {
+  const { page } = searchState;
+  let html = '';
+  html += `<button class="page-btn" id="prevPage" ${page === 1 ? 'disabled' : ''}>‹ Prev</button>`;
+
+  // Compact pagination — show window of pages around current
+  const window_ = 2;
+  const pages = new Set([1, totalPages]);
+  for (let p = page - window_; p <= page + window_; p++) {
+    if (p > 0 && p <= totalPages) pages.add(p);
+  }
+  const sorted = [...pages].sort((a, b) => a - b);
+  let last = 0;
+  for (const p of sorted) {
+    if (p - last > 1) html += `<span class="page-info">…</span>`;
+    html += `<button class="page-btn ${p === page ? 'active' : ''}" data-page="${p}">${p}</button>`;
+    last = p;
+  }
+
+  html += `<button class="page-btn" id="nextPage" ${page === totalPages ? 'disabled' : ''}>Next ›</button>`;
+  html += `<span class="page-info">Page ${page} of ${totalPages}</span>`;
+  pager.innerHTML = html;
+
+  pager.querySelectorAll('[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      searchState.page = parseInt(btn.dataset.page, 10);
+      render();
+      window.scrollTo({ top: document.querySelector('.results-meta').offsetTop - 20, behavior: 'smooth' });
+    });
+  });
+  document.getElementById('prevPage')?.addEventListener('click', () => {
+    if (searchState.page > 1) { searchState.page--; render(); }
+  });
+  document.getElementById('nextPage')?.addEventListener('click', () => {
+    if (searchState.page < totalPages) { searchState.page++; render(); }
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+searchBtn.addEventListener('click', runSearch);
+bizType.addEventListener('change', runSearch);
+metroSel.addEventListener('change', runSearch);
+
+/* ====================== CALL MODAL ====================== */
+const callModal = document.getElementById('callModal');
+const callBizName = document.getElementById('callBizName');
+const callNumber = document.getElementById('callNumber');
+const callDial = document.getElementById('callDial');
+const callCopy = document.getElementById('callCopy');
+const callClose = document.getElementById('callClose');
+const toast = document.getElementById('toast');
+
+function openCallModal(biz) {
+  callBizName.textContent = biz.name;
+  callNumber.textContent = biz.phone;
+  callDial.href = telLink(biz.phone);
+  callCopy.classList.remove('copied');
+  callCopy.innerHTML = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Copy Number
+  `;
+  // Reset speaker panel state on open
+  stopSpeakerMode({ silent: true });
+  callModal.classList.add('visible');
+}
+
+function closeCallModal() {
+  stopSpeakerMode({ silent: true });
+  callModal.classList.remove('visible');
+}
+
+callClose.addEventListener('click', closeCallModal);
+callModal.addEventListener('click', (e) => {
+  if (e.target === callModal) closeCallModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && callModal.classList.contains('visible')) closeCallModal();
+});
+
+callCopy.addEventListener('click', async () => {
+  const number = callNumber.textContent;
+  try {
+    await navigator.clipboard.writeText(number);
+    showToast('Number copied');
+    callCopy.classList.add('copied');
+    callCopy.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Copied
+    `;
+  } catch {
+    // Fallback: select the number for manual copy
+    const range = document.createRange();
+    range.selectNodeContents(callNumber);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    showToast('Press Ctrl/Cmd+C to copy');
+  }
+});
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('visible'), 1800);
+}
+
+// Delegate clicks on the dynamically-rendered call buttons
+grid.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-call]');
+  if (!btn) return;
+  const id = btn.dataset.call;
+  const biz = searchState.results.find(b => b.id === id);
+  if (biz) openCallModal(biz);
+});
+
+/* ====================== SPEAKER MODE ====================== */
+const callSpeakerBtn = document.getElementById('callSpeaker');
+const speakerPanel = document.getElementById('speakerPanel');
+const ringCountEl = document.getElementById('ringCount');
+const callTimerEl = document.getElementById('callTimer');
+const callTimerLabel = document.getElementById('callTimerLabel');
+const timerMetric = document.getElementById('timerMetric');
+const levelFill = document.getElementById('levelFill');
+const answeredBtn = document.getElementById('answeredBtn');
+const endCallBtn = document.getElementById('endCallBtn');
+const micError = document.getElementById('micError');
+const voipNote = document.getElementById('voipNote');
+
+// Pre-flight popup elements
+const preflight = document.getElementById('preflight');
+const pfCancel = document.getElementById('pfCancel');
+const pfStart = document.getElementById('pfStart');
+const modalActionsEl = document.querySelector('.modal-actions');
+const copyRowEl = document.querySelector('.copy-row');
+
+// Webcam / OCR elements
+const webcamBlock = document.getElementById('webcamBlock');
+const webcamVideo = document.getElementById('webcamVideo');
+const webcamStatus = document.getElementById('webcamStatus');
+const webcamStatusText = document.getElementById('webcamStatusText');
+const ocrNum = document.getElementById('ocrNum');
+const ocrTimer = document.getElementById('ocrTimer');
+const ocrNumCard = document.getElementById('ocrNumCard');
+
+const speakerState = {
+  active: false,
+  useWebcam: false,
+  stream: null,
+  videoStream: null,
+  audioCtx: null,
+  analyser: null,
+  rafId: null,
+  startedAt: 0,
+  answeredAt: 0,
+  answered: false,
+  ringCount: 0,
+  inRing: false,
+  ringStartedAt: 0,
+  lastRingEndAt: 0,
+  baseline: 0.005,
+  ringTonePresentFrames: 0,
+  timerInterval: null,
+  ocrWorker: null,
+  ocrLoopActive: false,
+  expectedNumber: ''
+};
+
+// Tesseract.js worker cache (loaded once, reused across calls)
+let tesseractScriptPromise = null;
+let cachedOcrWorker = null;
+
+callSpeakerBtn.addEventListener('click', openPreflight);
+pfCancel.addEventListener('click', closePreflight);
+pfStart.addEventListener('click', () => {
+  // Up-front environment check: getUserMedia requires HTTPS or localhost.
+  // If you opened this file directly (file://), the browser blocks mic/camera.
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    closePreflight();
+    showMicError({ name: 'InsecureContextError' });
+    return;
+  }
+  // Don't restore action buttons — speaker panel is about to take over
+  closePreflight({ restoreActions: false });
+  startSpeakerMode({ useWebcam: true });
+});
+endCallBtn.addEventListener('click', () => stopSpeakerMode({ silent: false }));
+answeredBtn.addEventListener('click', markAnswered);
+
+function openPreflight() {
+  // Hide the standard action area while the pre-flight popup is shown
+  modalActionsEl.style.display = 'none';
+  copyRowEl.style.display = 'none';
+  voipNote.style.display = 'none';
+  preflight.classList.add('active');
+}
+function closePreflight({ restoreActions = true } = {}) {
+  preflight.classList.remove('active');
+  // Restore action area only if asked AND speaker mode is not running
+  if (restoreActions && !speakerState.active) {
+    modalActionsEl.style.display = '';
+    copyRowEl.style.display = '';
+    voipNote.style.display = '';
+  }
+}
+
+async function startSpeakerMode({ useWebcam = false } = {}) {
+  if (speakerState.active) return;
+  speakerState.useWebcam = useWebcam;
+  speakerState.expectedNumber = (callNumber.textContent || '').replace(/\D/g, '');
+
+  // Reset UI
+  micError.style.display = 'none';
+  micError.textContent = '';
+  ringCountEl.textContent = '0';
+  callTimerEl.textContent = '00:00';
+  callTimerLabel.textContent = 'Time on Call';
+  timerMetric.classList.remove('answered');
+  answeredBtn.classList.remove('active');
+  answeredBtn.textContent = 'Mark Answered';
+  levelFill.style.width = '0%';
+  speakerPanel.classList.add('active');
+  voipNote.style.display = 'none';
+
+  // Reset detection state
+  Object.assign(speakerState, {
+    active: true,
+    answered: false,
+    ringCount: 0,
+    inRing: false,
+    ringStartedAt: 0,
+    lastRingEndAt: 0,
+    baseline: 0.005,
+    ringTonePresentFrames: 0,
+    answeredAt: 0
+  });
+
+  // Request microphone
+  try {
+    speakerState.stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false
+      }
+    });
+  } catch (err) {
+    showMicError(err);
+    speakerPanel.classList.remove('active');
+    voipNote.style.display = '';
+    modalActionsEl.style.display = '';
+    copyRowEl.style.display = '';
+    speakerState.active = false;
+    return;
+  }
+
+  // Set up Web Audio analyzer
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  speakerState.audioCtx = new Ctx();
+  const source = speakerState.audioCtx.createMediaStreamSource(speakerState.stream);
+  const analyser = speakerState.audioCtx.createAnalyser();
+  analyser.fftSize = 4096;
+  analyser.smoothingTimeConstant = 0.3;
+  source.connect(analyser);
+  speakerState.analyser = analyser;
+
+  const timeBuffer = new Float32Array(analyser.fftSize);
+  const freqBuffer = new Float32Array(analyser.frequencyBinCount);
+
+  // Pre-compute frequency bins for US ringback (440 Hz + 480 Hz dual tone)
+  const sampleRate = speakerState.audioCtx.sampleRate;
+  const binHz = sampleRate / analyser.fftSize;
+  const bin440 = Math.round(440 / binHz);
+  const bin480 = Math.round(480 / binHz);
+  // Average a small window around each target to absorb minor frequency drift
+  const binWindow = 1;
+
+  speakerState.startedAt = performance.now();
+
+  // Tick — runs every animation frame, samples audio, detects rings
+  function tick() {
+    if (!speakerState.active) return;
+
+    analyser.getFloatTimeDomainData(timeBuffer);
+    analyser.getFloatFrequencyData(freqBuffer); // values are in dB
+
+    // RMS audio level
+    let sum = 0;
+    for (let i = 0; i < timeBuffer.length; i++) sum += timeBuffer[i] * timeBuffer[i];
+    const rms = Math.sqrt(sum / timeBuffer.length);
+
+    // Visual level meter (logarithmic feels better)
+    const lvlPct = Math.min(100, Math.max(0, (Math.log10(rms + 0.0001) + 4) * 28));
+    levelFill.style.width = lvlPct + '%';
+
+    // Frequency-domain check: is the ringback dual-tone present?
+    const mag440 = avgBinDb(freqBuffer, bin440, binWindow);
+    const mag480 = avgBinDb(freqBuffer, bin480, binWindow);
+    // Pick a "noise floor" reference from a band well outside the ringback
+    const noiseRef = avgBinDb(freqBuffer, Math.round(2000 / binHz), 8);
+    // Both tones should be clearly above the noise reference
+    const ringbackPresent = (mag440 - noiseRef > 12) && (mag480 - noiseRef > 12);
+
+    // Adaptive baseline (only update when we're not currently in a "ring")
+    if (!speakerState.inRing) {
+      speakerState.baseline = speakerState.baseline * 0.985 + rms * 0.015;
+    }
+    const levelThreshold = Math.max(0.012, speakerState.baseline * 4);
+    const now = performance.now();
+
+    // A "ring frame" requires BOTH adequate level AND ringback frequencies
+    const ringFrame = rms > levelThreshold && ringbackPresent;
+
+    if (ringFrame) speakerState.ringTonePresentFrames++;
+    else speakerState.ringTonePresentFrames = Math.max(0, speakerState.ringTonePresentFrames - 1);
+
+    // Ring edge detection (debounced via frame counter)
+    if (speakerState.ringTonePresentFrames > 8 && !speakerState.inRing) {
+      speakerState.inRing = true;
+      speakerState.ringStartedAt = now;
+    } else if (speakerState.ringTonePresentFrames < 3 && speakerState.inRing) {
+      const dur = now - speakerState.ringStartedAt;
+      const sinceLast = now - speakerState.lastRingEndAt;
+
+      // US ringback ≈ 2s on / 4s off. Accept 0.5s–4s, require ≥2s gap.
+      if (dur >= 500 && dur <= 4500 && sinceLast >= 2000) {
+        speakerState.ringCount++;
+        ringCountEl.textContent = speakerState.ringCount;
+        flashMetric(ringCountEl);
+      }
+      speakerState.inRing = false;
+      speakerState.lastRingEndAt = now;
+    }
+
+    // Auto-detect answered: ≥1 ring + 8s of no ringback = call picked up
+    if (!speakerState.answered && speakerState.ringCount >= 1
+        && now - speakerState.lastRingEndAt > 8000
+        && !speakerState.inRing) {
+      markAnswered({ auto: true });
+    }
+
+    speakerState.rafId = requestAnimationFrame(tick);
+  }
+  tick();
+
+  // Timer — updates 4x/sec
+  speakerState.timerInterval = setInterval(updateTimerDisplay, 250);
+  updateTimerDisplay();
+
+  // Optionally start webcam OCR
+  if (useWebcam) {
+    startWebcamOcr().catch(err => {
+      console.warn('Webcam OCR failed:', err);
+      webcamStatus.classList.remove('loading');
+      webcamStatus.classList.add('idle');
+      webcamStatusText.textContent = 'OCR unavailable';
+    });
+  }
+}
+
+function avgBinDb(freqArr, centerBin, half) {
+  let sum = 0, n = 0;
+  for (let i = centerBin - half; i <= centerBin + half; i++) {
+    if (i >= 0 && i < freqArr.length) { sum += freqArr[i]; n++; }
+  }
+  return n ? sum / n : -100;
+}
+
+function updateTimerDisplay() {
+  if (!speakerState.active) return;
+  const refStart = speakerState.answered ? speakerState.answeredAt : speakerState.startedAt;
+  const elapsed = (performance.now() - refStart) / 1000;
+  callTimerEl.textContent = formatDuration(elapsed);
+}
+
+function formatDuration(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+function flashMetric(el) {
+  el.animate(
+    [
+      { transform: 'scale(1)', color: 'var(--yellow)' },
+      { transform: 'scale(1.18)', color: '#22c55e' },
+      { transform: 'scale(1)', color: 'var(--yellow)' }
+    ],
+    { duration: 350, easing: 'ease-out' }
+  );
+}
+
+function markAnswered({ auto = false } = {}) {
+  if (!speakerState.active || speakerState.answered) return;
+  speakerState.answered = true;
+  speakerState.answeredAt = performance.now();
+  answeredBtn.classList.add('active');
+  answeredBtn.textContent = auto ? '✓ Auto-Detected Answer' : '✓ Answered';
+  callTimerLabel.textContent = 'Talk Time';
+  timerMetric.classList.add('answered');
+  showToast(auto ? 'Call answered (auto)' : 'Call marked as answered');
+  // Reset timer base so "Talk Time" starts at 00:00
+  callTimerEl.textContent = '00:00';
+}
+
+function stopSpeakerMode({ silent = false } = {}) {
+  if (!speakerState.active && silent) {
+    // Just hide the panel
+    speakerPanel.classList.remove('active');
+    webcamBlock.classList.remove('active');
+    voipNote.style.display = '';
+    modalActionsEl.style.display = '';
+    copyRowEl.style.display = '';
+    preflight.classList.remove('active');
+    return;
+  }
+
+  // Cancel animation loop
+  if (speakerState.rafId) cancelAnimationFrame(speakerState.rafId);
+  speakerState.rafId = null;
+
+  // Clear timer
+  if (speakerState.timerInterval) clearInterval(speakerState.timerInterval);
+  speakerState.timerInterval = null;
+
+  // Stop mic stream
+  if (speakerState.stream) {
+    speakerState.stream.getTracks().forEach(t => t.stop());
+    speakerState.stream = null;
+  }
+  if (speakerState.audioCtx) {
+    speakerState.audioCtx.close().catch(() => {});
+    speakerState.audioCtx = null;
+  }
+
+  // Stop webcam stream + OCR loop
+  speakerState.ocrLoopActive = false;
+  if (speakerState.videoStream) {
+    speakerState.videoStream.getTracks().forEach(t => t.stop());
+    speakerState.videoStream = null;
+  }
+  webcamBlock.classList.remove('active');
+  // Reset OCR display values
+  ocrNum.textContent = '— — —';
+  ocrNum.classList.add('dim');
+  ocrTimer.textContent = '— —';
+  ocrTimer.classList.add('dim');
+  ocrNumCard.classList.remove('match');
+
+  if (!silent && speakerState.active) {
+    const totalSec = (performance.now() - speakerState.startedAt) / 1000;
+    showToast(`Call ended · ${speakerState.ringCount} ring${speakerState.ringCount === 1 ? '' : 's'} · ${formatDuration(totalSec)}`);
+  }
+
+  speakerState.active = false;
+  speakerPanel.classList.remove('active');
+  voipNote.style.display = '';
+  modalActionsEl.style.display = '';
+  copyRowEl.style.display = '';
+}
+
+/* ====================== WEBCAM OCR ====================== */
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (tesseractScriptPromise) return tesseractScriptPromise;
+  tesseractScriptPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+    s.onload = () => resolve(window.Tesseract);
+    s.onerror = () => reject(new Error('Failed to load Tesseract.js'));
+    document.head.appendChild(s);
+  });
+  return tesseractScriptPromise;
+}
+
+async function startWebcamOcr() {
+  webcamBlock.classList.add('active');
+  webcamStatus.classList.add('loading');
+  webcamStatus.classList.remove('idle');
+  webcamStatusText.textContent = 'Requesting camera…';
+
+  // Request camera (back/environment-facing if available, else any)
+  try {
+    speakerState.videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+    });
+  } catch (err) {
+    webcamStatus.classList.remove('loading');
+    webcamStatus.classList.add('idle');
+    webcamStatusText.textContent = err.name === 'NotAllowedError' ? 'Camera denied' : 'Camera unavailable';
+    showToast('Camera access denied — running mic-only');
+    return;
+  }
+  webcamVideo.srcObject = speakerState.videoStream;
+
+  // Lazy-load Tesseract (~3 MB)
+  webcamStatusText.textContent = 'Loading OCR engine…';
+  let Tesseract;
+  try { Tesseract = await loadTesseract(); }
+  catch (err) {
+    webcamStatus.classList.remove('loading');
+    webcamStatus.classList.add('idle');
+    webcamStatusText.textContent = 'OCR engine failed';
+    return;
+  }
+
+  // Reuse worker across calls when possible
+  if (!cachedOcrWorker) {
+    cachedOcrWorker = await Tesseract.createWorker('eng');
+    await cachedOcrWorker.setParameters({
+      tessedit_char_whitelist: '0123456789():.- ',
+      tessedit_pageseg_mode: 6 // assume uniform block of text
+    });
+  }
+  speakerState.ocrWorker = cachedOcrWorker;
+
+  webcamStatus.classList.remove('loading');
+  webcamStatusText.textContent = 'Reading screen';
+
+  speakerState.ocrLoopActive = true;
+  ocrLoop();
+}
+
+async function ocrLoop() {
+  // Off-screen canvas for frame capture
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  while (speakerState.ocrLoopActive && speakerState.active) {
+    if (webcamVideo.videoWidth > 0) {
+      // Crop to center 70% horizontally, 50% vertically — usually where the
+      // dialed number + timer sit on a phone screen
+      const vw = webcamVideo.videoWidth;
+      const vh = webcamVideo.videoHeight;
+      const cropW = Math.floor(vw * 0.7);
+      const cropH = Math.floor(vh * 0.5);
+      const sx = Math.floor((vw - cropW) / 2);
+      const sy = Math.floor((vh - cropH) / 2);
+      canvas.width = cropW;
+      canvas.height = cropH;
+      ctx.drawImage(webcamVideo, sx, sy, cropW, cropH, 0, 0, cropW, cropH);
+
+      // Light pre-processing: increase contrast, grayscale
+      const img = ctx.getImageData(0, 0, cropW, cropH);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const g = (d[i] * 0.3 + d[i+1] * 0.59 + d[i+2] * 0.11);
+        // Contrast stretch around 128
+        const c = Math.min(255, Math.max(0, (g - 128) * 1.4 + 128));
+        d[i] = d[i+1] = d[i+2] = c;
+      }
+      ctx.putImageData(img, 0, 0);
+
+      try {
+        const { data } = await speakerState.ocrWorker.recognize(canvas);
+        processOcrText(data.text || '');
+      } catch (e) {
+        // Ignore individual recognition failures
+      }
+    }
+    // Throttle ~1 recognition every 1.5s (Tesseract is heavy)
+    await sleep(1500);
+  }
+}
+
+function processOcrText(text) {
+  // Phone number patterns — try a few common shapes
+  const phoneRegexes = [
+    /\(\s*\d{3}\s*\)\s*\d{3}\s*[-.\s]?\s*\d{4}/,
+    /\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/,
+    /\b\d{10}\b/
+  ];
+  for (const r of phoneRegexes) {
+    const m = text.match(r);
+    if (m) {
+      const cleaned = m[0].replace(/\s+/g, ' ').trim();
+      ocrNum.textContent = cleaned;
+      ocrNum.classList.remove('dim');
+      const digits = cleaned.replace(/\D/g, '');
+      ocrNumCard.classList.toggle('match',
+        digits.length >= 10 && digits.endsWith(speakerState.expectedNumber.slice(-10)));
+      break;
+    }
+  }
+
+  // Timer pattern — MM:SS or H:MM:SS
+  const timerMatch = text.match(/\b(\d{1,2}:\d{2}(?::\d{2})?)\b/);
+  if (timerMatch) {
+    ocrTimer.textContent = timerMatch[1];
+    ocrTimer.classList.remove('dim');
+    // If we see a real call timer ticking up, the call has been answered
+    if (!speakerState.answered && /^\d{1,2}:\d{2}/.test(timerMatch[1])) {
+      const [m, s] = timerMatch[1].split(':').map(Number);
+      if (m * 60 + s >= 1) markAnswered({ auto: true });
+    }
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showMicError(err) {
+  let title = 'Microphone unavailable';
+  let body = '';
+  let toastMsg = 'Microphone access required';
+
+  if (err && err.name === 'InsecureContextError') {
+    title = 'Browser security blocking mic + camera';
+    body = `This page was opened directly from your computer (<code>file://</code>), and browsers block microphone and camera access in that context for security reasons. To use Speaker Mode, host this file on a local server (e.g. run <code>python -m http.server</code> in the folder, then open <code>http://localhost:8000/crm-go.html</code>) or upload it to any web host with HTTPS.`;
+    toastMsg = 'Open via http://localhost or HTTPS';
+  } else if (err && err.name === 'NotAllowedError') {
+    body = 'You denied microphone or camera access. Click the lock/mic icon in your browser address bar, change permissions to "Allow", reload, and try again.';
+  } else if (err && err.name === 'NotFoundError') {
+    body = 'No microphone or camera was found on this device.';
+  } else {
+    body = (err && err.message) ? err.message : 'Unknown error.';
+  }
+
+  micError.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div style="flex:1;">
+        <div style="font-weight:700;letter-spacing:1px;text-transform:uppercase;font-size:12px;margin-bottom:6px;">${title}</div>
+        <div style="font-size:12px;line-height:1.5;color:rgba(252,165,165,0.95);">${body}</div>
+        <button id="micErrorDismiss" style="margin-top:10px;background:transparent;color:#FCA5A5;border:1px solid rgba(252,165,165,0.4);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-family:inherit;">Dismiss</button>
+      </div>
+    </div>
+  `;
+  micError.style.display = '';
+  showToast(toastMsg);
+
+  // Dismiss handler
+  document.getElementById('micErrorDismiss').addEventListener('click', () => {
+    micError.style.display = 'none';
+    micError.innerHTML = '';
+  });
+}
+
+/* ====================== WALLET / EARNINGS ====================== */
+const WALLET_KEY = 'crmgo_wallet_v1';
+let walletBalance = 0;
+
+const walletAmountEl = document.getElementById('walletAmount');
+const walletWithdrawBtn = document.getElementById('walletWithdraw');
+
+function loadWallet() {
+  try {
+    const stored = localStorage.getItem(WALLET_KEY);
+    if (stored !== null) walletBalance = parseFloat(stored) || 0;
+  } catch { /* localStorage may be unavailable */ }
+  renderWallet();
+}
+function saveWallet() {
+  try { localStorage.setItem(WALLET_KEY, walletBalance.toFixed(2)); } catch {}
+}
+function renderWallet() {
+  walletAmountEl.textContent = '$' + walletBalance.toFixed(2);
+}
+function addEarnings(amount, reason = '') {
+  walletBalance = Math.max(0, walletBalance + amount);
+  renderWallet();
+  saveWallet();
+  walletAmountEl.classList.add('bump');
+  setTimeout(() => walletAmountEl.classList.remove('bump'), 240);
+  if (amount > 0) showToast(`+$${amount.toFixed(2)}${reason ? ' · ' + reason : ''}`);
+}
+loadWallet();
+
+// Expose for testing/manual demo from the dev console:
+//   addEarnings(0.10, 'Test'); addEarnings(2.00, 'Appointment');
+window.addEarnings = addEarnings;
+
+/* ====================== OTP FAQ MODAL ====================== */
+const otpFaqModal = document.getElementById('otpFaqModal');
+const otpFaqContinue = document.getElementById('otpFaqContinue');
+
+function showOtpFaq() { otpFaqModal.classList.add('visible'); }
+function closeOtpFaq() { otpFaqModal.classList.remove('visible'); }
+
+otpFaqContinue.addEventListener('click', () => {
+  closeOtpFaq();
+  showView('search');
+  runSearch();
+});
+otpFaqModal.addEventListener('click', (e) => {
+  if (e.target === otpFaqModal) closeOtpFaq();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && otpFaqModal.classList.contains('visible')) closeOtpFaq();
+});
+
+/* ====================== WITHDRAW MODAL ====================== */
+const withdrawModal = document.getElementById('withdrawModal');
+const withdrawAmountEl = document.getElementById('withdrawAmount');
+const withdrawEmpty = document.getElementById('withdrawEmpty');
+const withdrawForm = document.getElementById('withdrawForm');
+const withdrawCancel = document.getElementById('withdrawCancel');
+const withdrawConfirm = document.getElementById('withdrawConfirm');
+const payoutMethod = document.getElementById('payoutMethod');
+
+function openWithdraw() {
+  withdrawAmountEl.textContent = '$' + walletBalance.toFixed(2);
+  const hasFunds = walletBalance > 0;
+  withdrawEmpty.style.display = hasFunds ? 'none' : '';
+  withdrawForm.style.display = hasFunds ? '' : 'none';
+  withdrawConfirm.disabled = !hasFunds;
+  withdrawConfirm.textContent = hasFunds
+    ? `Withdraw $${walletBalance.toFixed(2)}`
+    : 'Request Withdraw';
+  withdrawModal.classList.add('visible');
+}
+function closeWithdraw() { withdrawModal.classList.remove('visible'); }
+
+walletWithdrawBtn.addEventListener('click', openWithdraw);
+withdrawCancel.addEventListener('click', closeWithdraw);
+withdrawModal.addEventListener('click', (e) => {
+  if (e.target === withdrawModal) closeWithdraw();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && withdrawModal.classList.contains('visible')) closeWithdraw();
+});
+
+withdrawConfirm.addEventListener('click', () => {
+  if (walletBalance <= 0) return;
+  const amount = walletBalance;
+  const method = payoutMethod.value;
+  // In production this would call your payout API (Stripe Connect, Dwolla, etc.)
+  walletBalance = 0;
+  renderWallet();
+  saveWallet();
+  closeWithdraw();
+  showToast(`Withdrawal of $${amount.toFixed(2)} requested via ${method}`);
+});
+
+/* ====================== IN-PERSON (MAP) VIEW ====================== */
+const ipMiniLogo = document.getElementById('ipMiniLogo');
+const ipBizType = document.getElementById('ipBizType');
+const ipUseLocationBtn = document.getElementById('ipUseLocation');
+const mapContainer = document.getElementById('mapContainer');
+const mapLoading = document.getElementById('mapLoading');
+const ipList = document.getElementById('ipList');
+const ipStats = document.getElementById('ipStats');
+const ipListTitle = document.getElementById('ipListTitle');
+const recenterBtn = document.getElementById('recenterBtn');
+
+let leafletPromise = null;
+let mapInstance = null;
+let userMarker = null;
+let bizMarkers = [];
+let userPosition = null;
+
+const ipState = {
+  typeKey: 'restaurant',
+  mode: 'walking',  // 'walking' | 'driving'
+  results: []
+};
+
+function loadLeaflet() {
+  if (window.L) return Promise.resolve();
+  if (leafletPromise) return leafletPromise;
+  leafletPromise = new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+    css.crossOrigin = '';
+    document.head.appendChild(css);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+    script.crossOrigin = '';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load Leaflet'));
+    document.head.appendChild(script);
+  });
+  return leafletPromise;
+}
+
+function getCurrentPosition() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy
+      }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+  });
+}
+
+function generateBusinessesAroundPoint(center, typeKey, maxMiles) {
+  const type = TYPE_CONFIG[typeKey];
+  const seedKey = `inperson:${center.lat.toFixed(3)}:${center.lng.toFixed(3)}:${typeKey}:${maxMiles}`;
+  const rng = seed(seedKey);
+  const cosLat = Math.cos(center.lat * Math.PI / 180);
+
+  return type.nameTemplates.slice(0, 14).map((tplName, i) => {
+    const angle = rng() * 2 * Math.PI;
+    const dist = Math.sqrt(rng()) * maxMiles; // sqrt → uniform distribution within disk
+
+    const dLat = (dist * Math.cos(angle)) / 69;
+    const dLng = (dist * Math.sin(angle)) / (69 * Math.max(0.0001, cosLat));
+
+    const coords = { lat: center.lat + dLat, lng: center.lng + dLng };
+    const distance = haversineMiles(center, coords);
+
+    const number = Math.floor(rng() * 9000) + 100;
+    const street = STREETS[Math.floor(rng() * STREETS.length)];
+    const phone = fmtPhone('555', rng);
+    const ratingNum = (3.7 + rng() * 1.2);
+    const rating = Math.round(ratingNum * 10) / 10;
+    const reviews = Math.floor(rng() * 480) + 18;
+
+    return {
+      id: `ip-${typeKey}-${i}`,
+      name: tplName,
+      address: `${number} ${street}`,
+      phone,
+      rating,
+      reviews,
+      coords,
+      distance
+    };
+  }).sort((a, b) => a.distance - b.distance);
+}
+
+function walkingMinutes(miles) { return Math.max(1, Math.round(miles * 20)); }   // ~3 mph
+function drivingMinutes(miles) { return Math.max(1, Math.round(miles * 2.4)); }  // ~25 mph
+
+async function startInPerson() {
+  showView('inperson');
+  mapLoading.classList.remove('hidden');
+  mapLoading.querySelector('div:last-child').textContent = 'Loading map…';
+
+  // Load Leaflet (~150 KB)
+  try {
+    await loadLeaflet();
+  } catch (err) {
+    mapLoading.innerHTML = '<div style="color:#FCA5A5;padding:20px;text-align:center;">Failed to load map. Check your internet connection and try again.</div>';
+    return;
+  }
+
+  mapLoading.querySelector('div:last-child').textContent = 'Getting your location…';
+
+  // Get user location (with fallback)
+  const pos = await getCurrentPosition();
+  if (pos) {
+    userPosition = pos;
+  } else {
+    // Fallback: downtown Houston so something useful shows
+    userPosition = { lat: 29.7604, lng: -95.3698, accuracy: null };
+    showToast('Using default location (Houston). Allow location for best results.');
+  }
+
+  // Initialize the map
+  if (!mapInstance) {
+    mapInstance = L.map(mapContainer, {
+      zoomControl: true,
+      attributionControl: false
+    }).setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      crossOrigin: true
+    }).addTo(mapInstance);
+
+    L.control.attribution({ prefix: false, position: 'bottomleft' })
+      .addAttribution('© OpenStreetMap')
+      .addTo(mapInstance);
+  } else {
+    mapInstance.setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
+    setTimeout(() => mapInstance.invalidateSize(), 80);
+  }
+
+  // User marker (replace if exists)
+  if (userMarker) userMarker.remove();
+  const userIcon = L.divIcon({
+    className: 'user-marker',
+    html: '<div class="user-pin"><div class="pulse"></div><div class="dot"></div></div>',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+  });
+  userMarker = L.marker([userPosition.lat, userPosition.lng], { icon: userIcon, zIndexOffset: 1000 })
+    .addTo(mapInstance)
+    .bindTooltip('You', { permanent: false, direction: 'top', offset: [0, -8] });
+
+  mapLoading.classList.add('hidden');
+  runIpSearch();
+}
+
+function runIpSearch() {
+  if (!userPosition) return;
+  const maxMiles = ipState.mode === 'walking' ? 1.0 : 5.0;
+  ipState.results = generateBusinessesAroundPoint(userPosition, ipState.typeKey, maxMiles);
+  renderIpResults();
+}
+
+function renderIpResults() {
+  // Clear existing business markers
+  bizMarkers.forEach(m => m.remove());
+  bizMarkers = [];
+
+  const t = TYPE_CONFIG[ipState.typeKey];
+  const modeLabel = ipState.mode === 'walking' ? 'walk' : 'drive';
+
+  // Add a marker for every business
+  ipState.results.forEach((b, i) => {
+    const icon = L.divIcon({
+      className: 'biz-marker',
+      html: `<div class="biz-pin"><span class="num">${i + 1}</span></div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+      popupAnchor: [0, -34]
+    });
+    const marker = L.marker([b.coords.lat, b.coords.lng], { icon }).addTo(mapInstance);
+
+    const time = ipState.mode === 'walking' ? walkingMinutes(b.distance) : drivingMinutes(b.distance);
+    marker.bindPopup(`
+      <div class="popup-content">
+        <h4>${escapeHtml(b.name)}</h4>
+        <div class="meta">
+          ${escapeHtml(b.address)}<br>
+          ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel} · ★ ${b.rating.toFixed(1)}
+        </div>
+        <a href="${getDirectionsUrl(b)}" target="_blank" rel="noopener">DIRECTIONS →</a>
+      </div>
+    `);
+
+    marker.on('click', () => highlightCard(b.id));
+    bizMarkers.push(marker);
+  });
+
+  // Stats summary
+  const closest = ipState.results[0];
+  ipStats.innerHTML = `
+    <div class="stat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span><strong>${ipState.results.length}</strong> ${escapeHtml(t.label.toLowerCase())} spots ${ipState.mode === 'walking' ? 'within walking range' : 'nearby'}</span>
+    </div>
+    ${closest ? `<div class="stat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Closest: <strong>${closest.distance.toFixed(2)} mi</strong> · ${ipState.mode === 'walking' ? walkingMinutes(closest.distance) : drivingMinutes(closest.distance)} min ${modeLabel}</span>
+    </div>` : ''}
+  `;
+
+  ipListTitle.textContent = `Nearby · ${ipState.results.length} spots`;
+
+  // Render the list cards
+  ipList.innerHTML = ipState.results.map((b, i) => {
+    const time = ipState.mode === 'walking' ? walkingMinutes(b.distance) : drivingMinutes(b.distance);
+    return `
+      <div class="ip-card" data-id="${escapeHtml(b.id)}" data-idx="${i}">
+        <div class="pin-num">${i + 1}</div>
+        <div class="info">
+          <h4>${escapeHtml(b.name)}</h4>
+          <div class="sub">
+            <span class="stars">${renderStars(b.rating)}</span>
+            <span>${b.rating.toFixed(1)}</span>
+            <span class="sep">·</span>
+            <span>${escapeHtml(b.address)}</span>
+            <span class="sep">·</span>
+            <span>${b.distance.toFixed(2)} mi</span>
+            <span class="time-pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              ${time} min ${modeLabel}
+            </span>
+          </div>
+        </div>
+        <div class="actions">
+          <a class="ip-action primary" href="${getDirectionsUrl(b)}" target="_blank" rel="noopener" title="Open walking directions in Google Maps">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Directions
+          </a>
+          <button class="ip-action ghost" data-call-ip="${escapeHtml(b.id)}" type="button" title="Call ${b.phone}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+            Call
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getDirectionsUrl(b) {
+  const mode = ipState.mode === 'walking' ? 'walking' : 'driving';
+  const dest = `${b.coords.lat},${b.coords.lng}`;
+  let url = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=${mode}`;
+  if (userPosition) url += `&origin=${userPosition.lat},${userPosition.lng}`;
+  return url;
+}
+
+function highlightCard(id) {
+  document.querySelectorAll('.ip-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+  // Also highlight the marker
+  bizMarkers.forEach((m, i) => {
+    const el = m.getElement();
+    if (el) el.classList.toggle('selected', ipState.results[i] && ipState.results[i].id === id);
+  });
+}
+
+// Card click → fly map to it + open popup
+ipList.addEventListener('click', (e) => {
+  // Call button on a card
+  const callBtn = e.target.closest('[data-call-ip]');
+  if (callBtn) {
+    e.preventDefault();
+    const biz = ipState.results.find(b => b.id === callBtn.dataset.callIp);
+    if (biz) openCallModal(biz);
+    return;
+  }
+  // Don't trigger card focus on Directions link
+  if (e.target.closest('a')) return;
+
+  const card = e.target.closest('.ip-card');
+  if (!card) return;
+  const idx = parseInt(card.dataset.idx, 10);
+  const biz = ipState.results[idx];
+  if (biz && mapInstance) {
+    mapInstance.flyTo([biz.coords.lat, biz.coords.lng], 17, { duration: 0.6 });
+    setTimeout(() => bizMarkers[idx].openPopup(), 650);
+    highlightCard(biz.id);
+  }
+});
+
+// Type & mode controls
+ipBizType.addEventListener('change', () => {
+  ipState.typeKey = ipBizType.value;
+  runIpSearch();
+});
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ipState.mode = btn.dataset.mode;
+    if (mapInstance && userPosition) {
+      mapInstance.setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
+    }
+    runIpSearch();
+  });
+});
+
+// Use location / re-center buttons
+ipUseLocationBtn.addEventListener('click', startInPerson);
+recenterBtn.addEventListener('click', () => {
+  if (mapInstance && userPosition) {
+    mapInstance.flyTo([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14, { duration: 0.6 });
+  }
+});
+
+// Mini logo → home
+ipMiniLogo.addEventListener('click', () => showView('home'));
+</script>
+</body>
+</html>
