@@ -350,15 +350,24 @@
   }
 
   /* === Follow mode: 3D third-person camera ===
-     - rotateX tilts the ground plane back like a game camera
-     - scale enlarges so we don't see edges of the rendered map
-     - translateY shifts the map up so the cursor sits in the lower 1/3 visually
-     - transform-origin near the bottom keeps the bottom edge anchored
+     - rotateX tilts the ground plane back (camera angle)
+     - rotateZ spins the map so the user's heading direction is "up" on screen.
+       Driven by --map-rotation, set in JS from GPS / compass heading.
+     - scale enlarges (~2x) so even when rotated at any angle, no blank
+       corners of the wrap show through.
+     - translateY pushes the rendered tiles down a bit so the bottom is
+       solid map (not empty background).
+     - transform-origin around 70% keeps the lower portion visually anchored.
   */
   .map-wrap.follow-mode #mapContainer {
-    transform: perspective(800px) rotateX(60deg) scale(1.6) translateY(-8%);
+    transform:
+      perspective(800px)
+      rotateX(60deg)
+      rotateZ(var(--map-rotation, 0deg))
+      scale(2.0)
+      translateY(-10%);
     transform-origin: center 70%;
-    transition: transform 750ms cubic-bezier(.2,.8,.2,1);
+    transition: transform 420ms cubic-bezier(.25,.8,.3,1);
   }
   .map-wrap:not(.follow-mode) #mapContainer {
     transform: none;
@@ -393,9 +402,8 @@
     inset: -22px;
     width: 64px; height: 64px;
     transform-origin: 50% 50%;
-    transition: transform 250ms ease;
+    transition: transform 420ms cubic-bezier(.25,.8,.3,1);
     filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
-    /* Counter the parent map's rotateX so the cursor stands UP like a 3D character */
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
@@ -4169,10 +4177,21 @@ function setUserMarkerToDefault() {
 
 function updateArrowHeading(headingDeg) {
   if (!userMarker) return;
+  lastHeading = headingDeg;
   const el = userMarker.getElement();
   if (!el) return;
   const arrow = el.querySelector('.arrow');
-  if (arrow) arrow.style.transform = `rotate(${headingDeg}deg)`;
+  if (!arrow) return;
+
+  if (followMode) {
+    // Rideshare-style: rotate the MAP so the heading direction is "up" on screen.
+    // The cursor itself counter-rotates to compensate, so it always appears pointing UP.
+    document.documentElement.style.setProperty('--map-rotation', `${-headingDeg}deg`);
+    arrow.style.transform = `rotate(${headingDeg}deg)`;
+  } else {
+    // Not in follow mode — just rotate the cursor to indicate heading; map stays north-up.
+    arrow.style.transform = `rotate(${headingDeg}deg)`;
+  }
 }
 
 function toggleFollowMode() {
@@ -4196,6 +4215,10 @@ function enableFollowMode() {
   if (navState.active) mapWrap.classList.add('has-nav');
 
   setUserMarkerToArrow();
+
+  // Apply current heading to the map IMMEDIATELY so it orients to the user's direction
+  // and the cursor reads as "right side up" before the camera even finishes flying in.
+  updateArrowHeading(lastHeading || 0);
 
   // Step 1: zoom in tight on user. Step 2: offset so cursor sits in lower portion.
   mapInstance.flyTo([userPosition.lat, userPosition.lng], 18, { duration: 0.4, easeLinearity: 0.25 });
@@ -4243,6 +4266,8 @@ function handleCompass(e) {
 }
 
 function disableFollowMode() {
+  // Reset map rotation back to north-up
+  document.documentElement.style.setProperty('--map-rotation', '0deg');
   mapWrap.classList.remove('has-nav');
   setUserMarkerToDefault();
   if (mapInstance && userPosition) {
