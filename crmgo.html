@@ -529,13 +529,217 @@
   .ip-action svg { width: 12px; height: 12px; }
 
   @media (max-width: 600px) {
-    .map-wrap { height: 340px; }
+    .ip-shell { padding: 16px 14px 60px; }
+    .map-wrap { height: 60vh; min-height: 360px; }
     .ip-card { grid-template-columns: auto 1fr; }
     .ip-card .actions {
       grid-column: 1 / -1;
       margin-top: 6px;
     }
-    .ip-card .actions .ip-action.primary { flex: 1; justify-content: center; padding: 10px; }
+    .ip-card .actions .ip-action.primary { flex: 1; justify-content: center; padding: 12px; }
+    .ip-card .actions .ip-action.ghost { padding: 12px 14px; }
+    .ip-controls { gap: 10px; }
+    .recenter-btn { width: 52px; height: 52px; bottom: 20px; right: 20px; }
+    .recenter-btn svg { width: 26px; height: 26px; }
+  }
+
+  /* === Geolocation helper banner (shown when locating / failed) === */
+  .geo-status {
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 410;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.15);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 32px);
+    text-align: center;
+  }
+  .geo-status.visible { display: inline-flex; }
+  .geo-status .mini-spinner {
+    width: 12px; height: 12px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: var(--yellow);
+    border-radius: 50%;
+    animation: spinIp 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  .geo-status.error { background: rgba(220, 38, 38, 0.85); border-color: rgba(252,165,165,0.5); }
+  .geo-status .geo-retry {
+    background: var(--yellow);
+    color: var(--black);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+
+  /* === In-app navigation panel (rideshare-style) === */
+  .nav-panel {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 420;
+    background: linear-gradient(180deg, #0E232C 0%, #11353F 100%);
+    border-bottom: 2px solid var(--yellow);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    display: none;
+    color: white;
+    max-height: 60%;
+    overflow: hidden;
+  }
+  .nav-panel.active { display: flex; flex-direction: column; }
+
+  .nav-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    gap: 10px;
+  }
+  .nav-dest {
+    flex: 1;
+    min-width: 0;
+  }
+  .nav-dest .lbl {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--yellow);
+    margin-bottom: 2px;
+    font-family: 'Russo One', sans-serif;
+  }
+  .nav-dest h3 {
+    font-family: 'Russo One', sans-serif;
+    font-size: 15px;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nav-close {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.18);
+    color: #FCA5A5;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 150ms ease;
+    font-size: 18px;
+    font-family: 'Inter', sans-serif;
+    line-height: 1;
+  }
+  .nav-close:hover { background: rgba(239,68,68,0.3); color: white; }
+
+  .nav-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-summary .stat {
+    text-align: center;
+    padding: 10px 8px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .nav-summary .stat:last-child { border-right: none; }
+  .nav-summary .stat .num {
+    display: block;
+    font-family: 'Russo One', sans-serif;
+    font-size: 22px;
+    color: var(--yellow);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .nav-summary .stat .lbl {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    margin-top: 4px;
+    display: inline-block;
+  }
+
+  .nav-current {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: rgba(255,214,10,0.08);
+    border-bottom: 1px solid rgba(255,214,10,0.2);
+  }
+  .nav-current .arrow {
+    width: 44px; height: 44px;
+    background: var(--yellow);
+    color: var(--black);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .nav-current .arrow svg { width: 26px; height: 26px; }
+  .nav-current .text {
+    flex: 1;
+    min-width: 0;
+  }
+  .nav-current .text .instr {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    color: white;
+    line-height: 1.25;
+  }
+  .nav-current .text .dist {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 3px;
+  }
+
+  .nav-steps {
+    overflow-y: auto;
+    flex: 1;
+    max-height: 180px;
+  }
+  .nav-step {
+    display: flex; gap: 12px; align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .nav-step .arrow {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    color: var(--yellow);
+  }
+  .nav-step .arrow svg { width: 14px; height: 14px; }
+  .nav-step .text { flex: 1; min-width: 0; }
+  .nav-step .text .instr { color: rgba(255,255,255,0.85); }
+  .nav-step .text .dist { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+  .nav-arrived {
+    text-align: center;
+    padding: 20px;
+    color: #22c55e;
+    font-family: 'Russo One', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
   }
 
   /* ============= SEARCH VIEW ============= */
@@ -1712,6 +1916,11 @@
           <div class="map-spinner"></div>
           <div>Loading map…</div>
         </div>
+        <div class="geo-status" id="geoStatus"></div>
+
+        <!-- In-app navigation panel (rideshare-style) -->
+        <div class="nav-panel" id="navPanel"></div>
+
         <button class="recenter-btn" id="recenterBtn" title="Re-center on me">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
         </button>
@@ -3192,20 +3401,61 @@ function loadLeaflet() {
   return leafletPromise;
 }
 
-function getCurrentPosition() {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) { resolve(null); return; }
+function getPositionOnce(opts) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error('No geolocation API')); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy
+        accuracy: pos.coords.accuracy,
+        heading: pos.coords.heading
       }),
-      () => resolve(null),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      (err) => reject(err),
+      opts
     );
   });
 }
+
+// Mobile-friendly: try high-accuracy first with a long timeout, then fall back
+async function getCurrentPositionRobust() {
+  if (!navigator.geolocation) return null;
+
+  // Step 1: peek at any cached location quickly
+  let position = null;
+  try {
+    position = await getPositionOnce({ enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 });
+    showGeoStatus({ html: '<span class="mini-spinner"></span>Refining location…' });
+  } catch (_) { /* no cached fix, continue */ }
+
+  // Step 2: get a high-accuracy reading (longer timeout — mobile GPS warmup is slow)
+  try {
+    const fresh = await getPositionOnce({ enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 });
+    return fresh;
+  } catch (err) {
+    if (position) return position; // use cached if available
+    // Step 3: last-ditch low-accuracy attempt
+    try {
+      return await getPositionOnce({ enableHighAccuracy: false, timeout: 12000, maximumAge: 0 });
+    } catch (err2) {
+      throw err2;
+    }
+  }
+}
+
+const geoStatusEl = document.getElementById('geoStatus');
+function showGeoStatus({ html, error = false, retry = false } = {}) {
+  geoStatusEl.innerHTML = html + (retry ? ' <button class="geo-retry" id="geoRetryBtn">Retry</button>' : '');
+  geoStatusEl.classList.toggle('error', error);
+  geoStatusEl.classList.add('visible');
+  if (retry) {
+    document.getElementById('geoRetryBtn').addEventListener('click', () => {
+      hideGeoStatus();
+      startInPerson();
+    });
+  }
+}
+function hideGeoStatus() { geoStatusEl.classList.remove('visible'); geoStatusEl.innerHTML = ''; }
 
 function generateBusinessesAroundPoint(center, typeKey, maxMiles) {
   const type = TYPE_CONFIG[typeKey];
@@ -3260,15 +3510,19 @@ async function startInPerson() {
   }
 
   mapLoading.querySelector('div:last-child').textContent = 'Getting your location…';
+  showGeoStatus({ html: '<span class="mini-spinner"></span>Locating you…' });
 
-  // Get user location (with fallback)
-  const pos = await getCurrentPosition();
-  if (pos) {
-    userPosition = pos;
-  } else {
+  // Get user location (mobile-friendly with retries + fallback)
+  try {
+    userPosition = await getCurrentPositionRobust();
+    hideGeoStatus();
+  } catch (err) {
     // Fallback: downtown Houston so something useful shows
     userPosition = { lat: 29.7604, lng: -95.3698, accuracy: null };
-    showToast('Using default location (Houston). Allow location for best results.');
+    let msg = 'Location unavailable — showing default area';
+    if (err && err.code === 1) msg = 'Location permission denied — showing default area';
+    else if (err && err.code === 3) msg = 'Location timed out — showing default area';
+    showGeoStatus({ html: msg, error: true, retry: true });
   }
 
   // Initialize the map
@@ -3341,7 +3595,7 @@ function renderIpResults() {
           ${escapeHtml(b.address)}<br>
           ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel} · ★ ${b.rating.toFixed(1)}
         </div>
-        <a href="${getDirectionsUrl(b)}" target="_blank" rel="noopener">DIRECTIONS →</a>
+        <a href="#" data-popup-nav="${escapeHtml(b.id)}">NAVIGATE →</a>
       </div>
     `);
 
@@ -3386,10 +3640,10 @@ function renderIpResults() {
           </div>
         </div>
         <div class="actions">
-          <a class="ip-action primary" href="${getDirectionsUrl(b)}" target="_blank" rel="noopener" title="Open walking directions in Google Maps">
+          <button class="ip-action primary" data-nav="${escapeHtml(b.id)}" type="button" title="Start in-app navigation">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-            Directions
-          </a>
+            Navigate
+          </button>
           <button class="ip-action ghost" data-call-ip="${escapeHtml(b.id)}" type="button" title="Call ${b.phone}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
             Call
@@ -3417,7 +3671,7 @@ function highlightCard(id) {
   });
 }
 
-// Card click → fly map to it + open popup
+// Card click → fly map to it + open popup, or open Navigate / Call
 ipList.addEventListener('click', (e) => {
   // Call button on a card
   const callBtn = e.target.closest('[data-call-ip]');
@@ -3427,7 +3681,14 @@ ipList.addEventListener('click', (e) => {
     if (biz) openCallModal(biz);
     return;
   }
-  // Don't trigger card focus on Directions link
+  // Navigate button on a card → start in-app turn-by-turn
+  const navBtn = e.target.closest('[data-nav]');
+  if (navBtn) {
+    e.preventDefault();
+    const biz = ipState.results.find(b => b.id === navBtn.dataset.nav);
+    if (biz) startNavigation(biz);
+    return;
+  }
   if (e.target.closest('a')) return;
 
   const card = e.target.closest('.ip-card');
@@ -3440,6 +3701,307 @@ ipList.addEventListener('click', (e) => {
     highlightCard(biz.id);
   }
 });
+
+/* ====================== IN-APP NAVIGATION (rideshare-style) ====================== */
+const navPanel = document.getElementById('navPanel');
+
+let routeLine = null;
+let routeShadow = null;
+let routeRemaining = null; // future: traveled vs remaining segmentation
+let positionWatcher = null;
+let navState = {
+  active: false,
+  destination: null,
+  steps: [],
+  totalDistance: 0,
+  totalDuration: 0,
+  currentStepIdx: 0
+};
+
+async function startNavigation(business) {
+  if (!userPosition) {
+    showToast('Location needed for navigation');
+    return;
+  }
+  if (!mapInstance) return;
+
+  navPanel.innerHTML = `
+    <div class="nav-top">
+      <div class="nav-dest">
+        <div class="lbl">Calculating route…</div>
+        <h3>${escapeHtml(business.name)}</h3>
+      </div>
+      <button class="nav-close" id="navCloseEarly" title="Cancel">×</button>
+    </div>
+    <div style="padding:30px 20px;text-align:center;color:rgba(255,255,255,0.7);">
+      <div class="map-spinner" style="margin:0 auto 12px;"></div>
+      <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;">Finding the best ${ipState.mode === 'walking' ? 'walking' : 'driving'} path…</div>
+    </div>
+  `;
+  navPanel.classList.add('active');
+  document.getElementById('navCloseEarly').addEventListener('click', endNavigation);
+
+  // OSRM public demo server (free, no API key, rate-limited).
+  // For production, self-host OSRM or use a paid routing service.
+  const profile = ipState.mode === 'walking' ? 'foot' : 'driving';
+  const url = `https://router.project-osrm.org/route/v1/${profile}/`
+    + `${userPosition.lng},${userPosition.lat};${business.coords.lng},${business.coords.lat}`
+    + `?overview=full&geometries=geojson&steps=true`;
+
+  let route;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.code !== 'Ok' || !data.routes || !data.routes.length) {
+      throw new Error('No route returned');
+    }
+    route = data.routes[0];
+  } catch (err) {
+    navPanel.innerHTML = `
+      <div class="nav-top">
+        <div class="nav-dest">
+          <div class="lbl" style="color:#FCA5A5;">Routing failed</div>
+          <h3>${escapeHtml(business.name)}</h3>
+        </div>
+        <button class="nav-close" id="navCloseFail">×</button>
+      </div>
+      <div style="padding:24px 20px;text-align:center;color:rgba(255,255,255,0.75);font-size:13px;line-height:1.5;">
+        Couldn't fetch a route. Check your internet connection and try again, or open in
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${business.coords.lat},${business.coords.lng}&travelmode=${ipState.mode === 'walking' ? 'walking' : 'driving'}" target="_blank" style="color:var(--yellow);">Google Maps</a>.
+      </div>
+    `;
+    document.getElementById('navCloseFail').addEventListener('click', endNavigation);
+    return;
+  }
+
+  navState.active = true;
+  navState.destination = business;
+  navState.steps = route.legs[0].steps;
+  navState.totalDistance = route.distance; // meters
+  navState.totalDuration = route.duration; // seconds
+  navState.currentStepIdx = 0;
+
+  // Draw route polyline (yellow on dark shadow for visibility)
+  if (routeLine) routeLine.remove();
+  if (routeShadow) routeShadow.remove();
+
+  const coords = route.geometry.coordinates.map(c => [c[1], c[0]]); // GeoJSON [lng,lat] → Leaflet [lat,lng]
+  routeShadow = L.polyline(coords, { color: '#000', weight: 9, opacity: 0.45 }).addTo(mapInstance);
+  routeLine = L.polyline(coords, {
+    color: '#FFD60A', weight: 5, opacity: 1,
+    lineCap: 'round', lineJoin: 'round'
+  }).addTo(mapInstance);
+
+  // Fit map to show full route
+  mapInstance.fitBounds(routeLine.getBounds(), { padding: [50, 50], maxZoom: 17 });
+
+  // Render the navigation panel
+  renderNavPanel(business);
+
+  // Start watching user position so the marker (and current step) updates live
+  if ('geolocation' in navigator) {
+    positionWatcher = navigator.geolocation.watchPosition(
+      handleNavPositionUpdate,
+      (err) => console.warn('watchPosition error:', err),
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 }
+    );
+  }
+}
+
+function renderNavPanel(business) {
+  const distMi = navState.totalDistance / 1609.34;
+  const durMin = Math.max(1, Math.round(navState.totalDuration / 60));
+  const arrival = new Date(Date.now() + navState.totalDuration * 1000);
+  const arrivalStr = arrival.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  const currentStep = navState.steps[navState.currentStepIdx] || navState.steps[0];
+  const upcomingSteps = navState.steps.slice(navState.currentStepIdx + 1);
+
+  navPanel.innerHTML = `
+    <div class="nav-top">
+      <div class="nav-dest">
+        <div class="lbl">Navigating to</div>
+        <h3>${escapeHtml(business.name)}</h3>
+      </div>
+      <button class="nav-close" id="navCloseBtn" title="End navigation">×</button>
+    </div>
+
+    <div class="nav-summary">
+      <div class="stat"><span class="num">${distMi.toFixed(2)}</span><span class="lbl">mi left</span></div>
+      <div class="stat"><span class="num">${durMin}</span><span class="lbl">min</span></div>
+      <div class="stat"><span class="num">${arrivalStr}</span><span class="lbl">ETA</span></div>
+    </div>
+
+    <div class="nav-current">
+      <div class="arrow">${maneuverIconSvg(currentStep, 26)}</div>
+      <div class="text">
+        <div class="instr">${stepInstruction(currentStep)}</div>
+        <div class="dist">in ${formatDist(currentStep.distance)}</div>
+      </div>
+    </div>
+
+    <div class="nav-steps">
+      ${upcomingSteps.map(s => `
+        <div class="nav-step">
+          <div class="arrow">${maneuverIconSvg(s, 14)}</div>
+          <div class="text">
+            <div class="instr">${stepInstruction(s)}</div>
+            <div class="dist">${formatDist(s.distance)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('navCloseBtn').addEventListener('click', endNavigation);
+}
+
+// Update navigation as the user moves
+function handleNavPositionUpdate(pos) {
+  const newPos = {
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude,
+    accuracy: pos.coords.accuracy,
+    heading: pos.coords.heading
+  };
+  userPosition = newPos;
+  if (userMarker) userMarker.setLatLng([newPos.lat, newPos.lng]);
+
+  if (!navState.active || !navState.destination) return;
+
+  // Distance to destination
+  const distToDest = haversineMiles(newPos, navState.destination.coords) * 1609.34; // meters
+
+  // Arrived if within ~25 meters
+  if (distToDest < 25) {
+    onArrived();
+    return;
+  }
+
+  // Find which step we're on by checking distance to each step's start point
+  let nearestIdx = navState.currentStepIdx;
+  let nearestDist = Infinity;
+  for (let i = navState.currentStepIdx; i < navState.steps.length; i++) {
+    const s = navState.steps[i];
+    if (!s.maneuver || !s.maneuver.location) continue;
+    const stepLoc = { lat: s.maneuver.location[1], lng: s.maneuver.location[0] };
+    const d = haversineMiles(newPos, stepLoc) * 1609.34;
+    if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+  }
+  // Advance to next step if we're past the current one
+  if (nearestIdx > navState.currentStepIdx) {
+    navState.currentStepIdx = nearestIdx;
+    renderNavPanel(navState.destination);
+  }
+}
+
+function onArrived() {
+  if (positionWatcher !== null) {
+    navigator.geolocation.clearWatch(positionWatcher);
+    positionWatcher = null;
+  }
+  navState.active = false;
+  navPanel.innerHTML = `
+    <div class="nav-top">
+      <div class="nav-dest">
+        <div class="lbl" style="color:#22c55e;">Arrived</div>
+        <h3>${escapeHtml(navState.destination.name)}</h3>
+      </div>
+      <button class="nav-close" id="navCloseArrived">×</button>
+    </div>
+    <div class="nav-arrived">
+      ✓ You're here
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);letter-spacing:1px;margin-top:6px;font-family:'Inter',sans-serif;">${escapeHtml(navState.destination.address)}</div>
+    </div>
+  `;
+  document.getElementById('navCloseArrived').addEventListener('click', endNavigation);
+  showToast('You\'ve arrived at ' + navState.destination.name);
+}
+
+function endNavigation() {
+  navState.active = false;
+  navState.destination = null;
+  if (positionWatcher !== null) {
+    navigator.geolocation.clearWatch(positionWatcher);
+    positionWatcher = null;
+  }
+  if (routeLine) { routeLine.remove(); routeLine = null; }
+  if (routeShadow) { routeShadow.remove(); routeShadow = null; }
+  navPanel.classList.remove('active');
+  navPanel.innerHTML = '';
+  if (userPosition && mapInstance) {
+    mapInstance.setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
+  }
+}
+
+// Build a human-friendly instruction from an OSRM step
+function stepInstruction(step) {
+  const m = step.maneuver || {};
+  const street = step.name && step.name.trim() ? step.name : null;
+  const mod = m.modifier || '';
+
+  const verbs = {
+    'depart':         'Head out',
+    'arrive':         'Arrive at destination',
+    'turn':           mod ? `Turn ${mod}` : 'Turn',
+    'continue':       mod ? `Continue ${mod}` : 'Continue straight',
+    'new name':       'Continue',
+    'merge':          mod ? `Merge ${mod}` : 'Merge',
+    'on ramp':        mod ? `Take the ramp ${mod}` : 'Take the ramp',
+    'off ramp':       'Take the off-ramp',
+    'fork':           mod ? `Keep ${mod} at the fork` : 'Keep at the fork',
+    'end of road':    mod ? `At the end of the road, turn ${mod}` : 'At the end of the road',
+    'roundabout':     'Enter the roundabout',
+    'exit roundabout':'Exit the roundabout',
+    'rotary':         'Enter the rotary',
+    'exit rotary':    'Exit the rotary',
+    'use lane':       'Use lane'
+  };
+  let text = verbs[m.type] || (m.type ? m.type[0].toUpperCase() + m.type.slice(1) : 'Continue');
+  if (street && m.type !== 'arrive') text += ` onto ${street}`;
+  return text;
+}
+
+function maneuverIconSvg(step, size) {
+  const m = step.maneuver || {};
+  const t = m.type;
+  const mod = (m.modifier || '').toLowerCase();
+  // SVG content varies by type/modifier
+  const stroke = `stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+  let svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><line x1="12" y1="20" x2="12" y2="6"/><polyline points="6 12 12 6 18 12"/></svg>`; // straight up
+  if (t === 'arrive') {
+    svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>`;
+  } else if (mod.includes('left')) {
+    const sharp = mod.includes('sharp');
+    const slight = mod.includes('slight');
+    if (sharp) {
+      svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><path d="M12 21V12 L4 12"/><polyline points="8 8 4 12 8 16"/></svg>`;
+    } else if (slight) {
+      svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><path d="M12 21V12 L7 7"/><polyline points="11 7 7 7 7 11"/></svg>`;
+    } else {
+      svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><path d="M12 21V8 H6"/><polyline points="10 4 6 8 10 12"/></svg>`;
+    }
+  } else if (mod.includes('right')) {
+    const sharp = mod.includes('sharp');
+    const slight = mod.includes('slight');
+    if (sharp) {
+      svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><path d="M12 21V12 L20 12"/><polyline points="16 8 20 12 16 16"/></svg>`;
+    } else if (slight) {
+      svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><path d="M12 21V12 L17 7"/><polyline points="13 7 17 7 17 11"/></svg>`;
+    } else {
+      svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><path d="M12 21V8 H18"/><polyline points="14 4 18 8 14 12"/></svg>`;
+    }
+  } else if (t === 'roundabout' || t === 'rotary' || t === 'exit roundabout' || t === 'exit rotary') {
+    svg = `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${stroke}><circle cx="12" cy="12" r="6"/><line x1="12" y1="20" x2="12" y2="18"/></svg>`;
+  }
+  return svg;
+}
+
+function formatDist(meters) {
+  const ft = meters * 3.28084;
+  if (meters < 160) return `${Math.round(ft / 10) * 10} ft`;
+  const mi = meters / 1609.34;
+  return `${mi.toFixed(2)} mi`;
+}
 
 // Type & mode controls
 ipBizType.addEventListener('change', () => {
@@ -3469,6 +4031,16 @@ recenterBtn.addEventListener('click', () => {
 
 // Mini logo → home
 ipMiniLogo.addEventListener('click', () => showView('home'));
+
+// Delegate clicks on popup "NAVIGATE" links
+document.addEventListener('click', (e) => {
+  const popupNav = e.target.closest('[data-popup-nav]');
+  if (popupNav) {
+    e.preventDefault();
+    const biz = ipState.results.find(b => b.id === popupNav.dataset.popupNav);
+    if (biz) startNavigation(biz);
+  }
+});
 </script>
 </body>
 </html>
