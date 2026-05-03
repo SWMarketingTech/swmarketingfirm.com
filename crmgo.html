@@ -296,9 +296,22 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 14px;
     overflow: hidden;
-    height: 440px;
+    min-height: 440px;
     margin-bottom: 16px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+    display: flex;
+    flex-direction: column;
+    transition: min-height 350ms ease;
+  }
+  .map-wrap.has-nav { min-height: 620px; }
+
+  /* Map frame fills the remaining vertical space below the (optional) nav panel.
+     This keeps the map cleanly framed instead of having the nav panel overlay it. */
+  .map-frame {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 240px;
+    overflow: hidden;
   }
   #mapContainer { width: 100%; height: 100%; background: #0F2B36; }
 
@@ -348,6 +361,13 @@
     color: white;
     box-shadow: 0 4px 14px rgba(59,130,246,0.5), 0 0 0 4px rgba(59,130,246,0.18);
   }
+  .follow-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+    background: rgba(255,255,255,0.7);
+  }
+  .follow-btn:disabled:hover { transform: none; }
 
   /* === Follow mode: 3D third-person camera ===
      - rotateX tilts the ground plane back (camera angle)
@@ -658,17 +678,19 @@
     margin-left: 4px;
   }
 
-  /* === In-app navigation panel (rideshare-style) === */
+  /* === In-app navigation panel (rideshare-style) ===
+     Lives as a flex item ABOVE the map frame (not as an overlay), so the map
+     fits cleanly underneath in the remaining vertical space.
+  */
   .nav-panel {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    z-index: 420;
+    position: relative;
     background: linear-gradient(180deg, #0E232C 0%, #11353F 100%);
     border-bottom: 2px solid var(--yellow);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
     display: none;
     color: white;
-    max-height: 60%;
+    flex-shrink: 0;
+    max-height: 360px;
     overflow: hidden;
   }
   .nav-panel.active { display: flex; flex-direction: column; }
@@ -1981,23 +2003,28 @@
       <div class="ip-stats" id="ipStats"></div>
 
       <div class="map-wrap">
-        <div id="mapContainer"></div>
+        <!-- Loading overlay covers the whole wrap -->
         <div class="map-loading" id="mapLoading">
           <div class="map-spinner"></div>
           <div>Loading map…</div>
         </div>
-        <div class="geo-status" id="geoStatus"></div>
 
-        <!-- In-app navigation panel (rideshare-style) -->
+        <!-- In-app navigation panel — flex item on top of map frame when active -->
         <div class="nav-panel" id="navPanel"></div>
 
-        <button class="recenter-btn" id="recenterBtn" title="Re-center & zoom out">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
-        </button>
+        <!-- Map frame: fills remaining vertical space below the nav panel -->
+        <div class="map-frame">
+          <div id="mapContainer"></div>
+          <div class="geo-status" id="geoStatus"></div>
 
-        <button class="follow-btn" id="followBtn" title="Follow my location (3D)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-        </button>
+          <button class="recenter-btn" id="recenterBtn" title="Re-center & zoom out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+          </button>
+
+          <button class="follow-btn" id="followBtn" title="Start navigation to enable" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          </button>
+        </div>
       </div>
 
       <div class="ip-list-title" id="ipListTitle">Nearby</div>
@@ -3872,10 +3899,19 @@ async function startNavigation(business) {
   // Render the navigation panel
   renderNavPanel(business);
 
-  // If follow mode is on, mark wrap and re-pan so cursor sits below the nav panel
+  // Mark the wrap as having a nav panel so the layout grows + the gradient overlay knows
+  mapWrap.classList.add('has-nav');
+
+  // Now that navigation is active, the follow / 3D button becomes available
+  followBtn.disabled = false;
+  followBtn.title = 'Follow my location (3D)';
+
+  // Tell Leaflet the visible map area shrank (nav panel now occupies space above)
+  setTimeout(() => mapInstance.invalidateSize({ animate: false, pan: false }), 350);
+
+  // If follow mode is on, re-pan so cursor sits in the lower portion of the new visible area
   if (followMode) {
-    mapWrap.classList.add('has-nav');
-    setTimeout(() => panToFollowView({ animate: true }), 250);
+    setTimeout(() => panToFollowView({ animate: true }), 400);
   }
 
   // Start watching user position so the marker (and current step) updates live
@@ -4010,13 +4046,27 @@ function endNavigation() {
   if (routeShadow) { routeShadow.remove(); routeShadow = null; }
   navPanel.classList.remove('active');
   navPanel.innerHTML = '';
-  // If we're still in follow mode, re-pan so the cursor sits in the lower portion
-  // of the now-larger visible area. Otherwise reset the view.
+
+  // Force follow / 3D mode off — it's only available during active navigation
   if (followMode) {
-    mapWrap.classList.remove('has-nav');
-    panToFollowView({ animate: true });
-  } else if (userPosition && mapInstance) {
-    mapInstance.setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
+    followMode = false;
+    followBtn.classList.remove('active');
+    mapWrap.classList.remove('follow-mode');
+    document.documentElement.style.setProperty('--map-rotation', '0deg');
+    window.removeEventListener('deviceorientationabsolute', handleCompass, true);
+    window.removeEventListener('deviceorientation', handleCompass, true);
+  }
+  mapWrap.classList.remove('has-nav');
+
+  // Disable the follow button until the next navigation begins
+  followBtn.disabled = true;
+  followBtn.title = 'Start navigation to enable';
+
+  // Map area just expanded back to full height — let Leaflet redraw at the new size
+  setTimeout(() => { if (mapInstance) mapInstance.invalidateSize({ animate: false, pan: false }); }, 400);
+
+  if (userPosition && mapInstance) {
+    mapInstance.flyTo([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14, { duration: 0.5 });
   }
 }
 
@@ -4186,6 +4236,11 @@ function updateArrowHeading(headingDeg) {
 }
 
 function toggleFollowMode() {
+  // Follow / 3D mode is only available while a navigation route is active.
+  if (!navState.active) {
+    showToast('Tap Navigate on a spot first');
+    return;
+  }
   if (!userPosition) {
     showToast('Need your location to follow');
     return;
