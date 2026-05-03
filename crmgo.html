@@ -4178,19 +4178,10 @@ function setUserMarkerToDefault() {
 function updateArrowHeading(headingDeg) {
   if (!userMarker) return;
   lastHeading = headingDeg;
-  const el = userMarker.getElement();
-  if (!el) return;
-  const arrow = el.querySelector('.arrow');
-  if (!arrow) return;
-
   if (followMode) {
     // Rideshare-style: rotate the MAP so the heading direction is "up" on screen.
-    // The cursor itself counter-rotates to compensate, so it always appears pointing UP.
+    // The cursor stays as a simple dot — no rotation needed on the cursor itself.
     document.documentElement.style.setProperty('--map-rotation', `${-headingDeg}deg`);
-    arrow.style.transform = `rotate(${headingDeg}deg)`;
-  } else {
-    // Not in follow mode — just rotate the cursor to indicate heading; map stays north-up.
-    arrow.style.transform = `rotate(${headingDeg}deg)`;
   }
 }
 
@@ -4214,10 +4205,8 @@ function enableFollowMode() {
   // Mark the wrap so the gradient overlay knows the nav panel is up (no double overlay)
   if (navState.active) mapWrap.classList.add('has-nav');
 
-  setUserMarkerToArrow();
-
-  // Apply current heading to the map IMMEDIATELY so it orients to the user's direction
-  // and the cursor reads as "right side up" before the camera even finishes flying in.
+  // Cursor stays as the default pulsing blue dot — no swap to a directional arrow.
+  // Apply current heading to the map IMMEDIATELY so it orients to the user's direction.
   updateArrowHeading(lastHeading || 0);
 
   // Step 1: zoom in tight on user. Step 2: offset so cursor sits in lower portion.
@@ -4269,7 +4258,7 @@ function disableFollowMode() {
   // Reset map rotation back to north-up
   document.documentElement.style.setProperty('--map-rotation', '0deg');
   mapWrap.classList.remove('has-nav');
-  setUserMarkerToDefault();
+  // Cursor stays as the dot — nothing to swap back.
   if (mapInstance && userPosition) {
     mapInstance.flyTo([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14, { duration: 0.5 });
   }
