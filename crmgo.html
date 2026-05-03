@@ -324,9 +324,10 @@
   }
   @keyframes spinIp { to { transform: rotate(360deg); } }
 
-  .recenter-btn {
+  .recenter-btn,
+  .follow-btn {
     position: absolute;
-    bottom: 16px; right: 16px;
+    bottom: 16px;
     z-index: 400;
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -336,10 +337,42 @@
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-    transition: transform 150ms ease;
+    transition: transform 150ms ease, background 200ms ease, color 200ms ease;
   }
-  .recenter-btn:hover { transform: scale(1.08); }
-  .recenter-btn svg { width: 22px; height: 22px; }
+  .recenter-btn { right: 16px; }
+  .follow-btn { left: 16px; }
+  .recenter-btn:hover, .follow-btn:hover { transform: scale(1.08); }
+  .recenter-btn svg, .follow-btn svg { width: 22px; height: 22px; }
+  .follow-btn.active {
+    background: #3B82F6;
+    color: white;
+    box-shadow: 0 4px 14px rgba(59,130,246,0.5), 0 0 0 4px rgba(59,130,246,0.18);
+  }
+
+  /* === Follow mode: 3D perspective tilt === */
+  .map-wrap.follow-mode #mapContainer {
+    transform: perspective(1400px) rotateX(48deg);
+    transform-origin: center 65%;
+    transition: transform 600ms cubic-bezier(.2,.8,.2,1);
+  }
+  .map-wrap:not(.follow-mode) #mapContainer {
+    transform: none;
+    transition: transform 500ms cubic-bezier(.2,.8,.2,1);
+  }
+  .map-wrap.follow-mode .leaflet-control-attribution { opacity: 0.4; }
+
+  /* In follow mode, swap pulsing dot for a directional arrow */
+  .user-marker.follow-arrow .pulse,
+  .user-marker.follow-arrow .dot { display: none; }
+  .user-marker.follow-arrow .arrow {
+    position: absolute;
+    inset: -8px;
+    width: 40px; height: 40px;
+    transform-origin: 50% 50%;
+    transition: transform 250ms ease;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,0.55));
+  }
+  .user-marker.follow-arrow .arrow svg { width: 100%; height: 100%; display: block; }
 
   /* User pin (blue dot with pulse) */
   .user-marker { background: transparent; border: none; }
@@ -539,8 +572,10 @@
     .ip-card .actions .ip-action.primary { flex: 1; justify-content: center; padding: 12px; }
     .ip-card .actions .ip-action.ghost { padding: 12px 14px; }
     .ip-controls { gap: 10px; }
-    .recenter-btn { width: 52px; height: 52px; bottom: 20px; right: 20px; }
-    .recenter-btn svg { width: 26px; height: 26px; }
+    .recenter-btn, .follow-btn { width: 52px; height: 52px; bottom: 20px; }
+    .recenter-btn { right: 20px; }
+    .follow-btn { left: 20px; }
+    .recenter-btn svg, .follow-btn svg { width: 26px; height: 26px; }
   }
 
   /* === Geolocation helper banner (shown when locating / failed) === */
@@ -1921,8 +1956,12 @@
         <!-- In-app navigation panel (rideshare-style) -->
         <div class="nav-panel" id="navPanel"></div>
 
-        <button class="recenter-btn" id="recenterBtn" title="Re-center on me">
+        <button class="recenter-btn" id="recenterBtn" title="Re-center & zoom out">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        </button>
+
+        <button class="follow-btn" id="followBtn" title="Follow my location (3D)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
         </button>
       </div>
 
@@ -3855,7 +3894,7 @@ function renderNavPanel(business) {
   document.getElementById('navCloseBtn').addEventListener('click', endNavigation);
 }
 
-// Update navigation as the user moves
+// Update navigation + follow mode as the user moves
 function handleNavPositionUpdate(pos) {
   const newPos = {
     lat: pos.coords.latitude,
@@ -3866,18 +3905,23 @@ function handleNavPositionUpdate(pos) {
   userPosition = newPos;
   if (userMarker) userMarker.setLatLng([newPos.lat, newPos.lng]);
 
-  if (!navState.active || !navState.destination) return;
-
-  // Distance to destination
-  const distToDest = haversineMiles(newPos, navState.destination.coords) * 1609.34; // meters
-
-  // Arrived if within ~25 meters
-  if (distToDest < 25) {
-    onArrived();
-    return;
+  // === Follow mode: pan to keep user centered, rotate the arrow to heading ===
+  if (followMode) {
+    if (mapInstance) {
+      mapInstance.panTo([newPos.lat, newPos.lng], { animate: true, duration: 0.3 });
+    }
+    if (newPos.heading !== null && !isNaN(newPos.heading)) {
+      lastHeading = newPos.heading;
+      updateArrowHeading(lastHeading);
+    }
   }
 
-  // Find which step we're on by checking distance to each step's start point
+  // === Navigation: advance current step / detect arrival ===
+  if (!navState.active || !navState.destination) return;
+
+  const distToDest = haversineMiles(newPos, navState.destination.coords) * 1609.34; // meters
+  if (distToDest < 25) { onArrived(); return; }
+
   let nearestIdx = navState.currentStepIdx;
   let nearestDist = Infinity;
   for (let i = navState.currentStepIdx; i < navState.steps.length; i++) {
@@ -3887,7 +3931,6 @@ function handleNavPositionUpdate(pos) {
     const d = haversineMiles(newPos, stepLoc) * 1609.34;
     if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
   }
-  // Advance to next step if we're past the current one
   if (nearestIdx > navState.currentStepIdx) {
     navState.currentStepIdx = nearestIdx;
     renderNavPanel(navState.destination);
@@ -4041,6 +4084,136 @@ document.addEventListener('click', (e) => {
     if (biz) startNavigation(biz);
   }
 });
+
+/* ====================== FOLLOW MODE (3D third-person) ====================== */
+const followBtn = document.getElementById('followBtn');
+const mapWrap = document.querySelector('.map-wrap');
+let followMode = false;
+let lastHeading = 0;
+
+const ARROW_SVG = `
+  <div class="arrow">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="arrGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#60A5FA"/>
+          <stop offset="100%" stop-color="#1E40AF"/>
+        </linearGradient>
+      </defs>
+      <path d="M20 3 L33 35 L20 28 L7 35 Z" fill="url(#arrGrad)" stroke="white" stroke-width="2.2" stroke-linejoin="round"/>
+    </svg>
+  </div>
+`;
+
+const DEFAULT_USER_HTML = '<div class="user-pin"><div class="pulse"></div><div class="dot"></div></div>';
+
+function setUserMarkerToArrow() {
+  if (!userMarker) return;
+  const icon = L.divIcon({
+    className: 'user-marker follow-arrow',
+    html: `<div class="user-pin">${ARROW_SVG}</div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  });
+  userMarker.setIcon(icon);
+  // Apply current heading immediately
+  setTimeout(() => updateArrowHeading(lastHeading), 50);
+}
+
+function setUserMarkerToDefault() {
+  if (!userMarker) return;
+  const icon = L.divIcon({
+    className: 'user-marker',
+    html: DEFAULT_USER_HTML,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+  });
+  userMarker.setIcon(icon);
+}
+
+function updateArrowHeading(headingDeg) {
+  if (!userMarker) return;
+  const el = userMarker.getElement();
+  if (!el) return;
+  const arrow = el.querySelector('.arrow');
+  if (arrow) arrow.style.transform = `rotate(${headingDeg}deg)`;
+}
+
+function toggleFollowMode() {
+  if (!userPosition) {
+    showToast('Need your location to follow');
+    return;
+  }
+  followMode = !followMode;
+  followBtn.classList.toggle('active', followMode);
+  mapWrap.classList.toggle('follow-mode', followMode);
+
+  if (followMode) {
+    enableFollowMode();
+  } else {
+    disableFollowMode();
+  }
+}
+
+function enableFollowMode() {
+  // Zoom in tight on the user (third-person feel)
+  mapInstance.flyTo([userPosition.lat, userPosition.lng], 18, { duration: 0.6 });
+  setUserMarkerToArrow();
+
+  // Start position watcher if not already running (navigation may already have one)
+  if (positionWatcher === null && navigator.geolocation) {
+    positionWatcher = navigator.geolocation.watchPosition(
+      handleNavPositionUpdate,
+      (err) => console.warn('watchPosition error:', err),
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 }
+    );
+  }
+
+  // Some browsers expose a separate compass via DeviceOrientationEvent.
+  // Use it as a heading source when GPS heading isn't available (e.g., standing still).
+  if (window.DeviceOrientationEvent) {
+    // iOS 13+ requires explicit permission for orientation events
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then((state) => {
+        if (state === 'granted') {
+          window.addEventListener('deviceorientationabsolute', handleCompass, true);
+          window.addEventListener('deviceorientation', handleCompass, true);
+        }
+      }).catch(() => {});
+    } else {
+      window.addEventListener('deviceorientationabsolute', handleCompass, true);
+      window.addEventListener('deviceorientation', handleCompass, true);
+    }
+  }
+}
+
+function handleCompass(e) {
+  if (!followMode) return;
+  // webkitCompassHeading is iOS Safari; alpha is everything else (0 = north on absolute)
+  let heading = null;
+  if (typeof e.webkitCompassHeading === 'number') heading = e.webkitCompassHeading;
+  else if (e.absolute && typeof e.alpha === 'number') heading = 360 - e.alpha;
+  if (heading === null) return;
+  lastHeading = heading;
+  updateArrowHeading(heading);
+}
+
+function disableFollowMode() {
+  setUserMarkerToDefault();
+  if (mapInstance && userPosition) {
+    mapInstance.flyTo([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14, { duration: 0.5 });
+  }
+  // Stop watcher if not navigating (otherwise nav still needs it)
+  if (!navState.active && positionWatcher !== null) {
+    navigator.geolocation.clearWatch(positionWatcher);
+    positionWatcher = null;
+  }
+  // Detach compass listener
+  window.removeEventListener('deviceorientationabsolute', handleCompass, true);
+  window.removeEventListener('deviceorientation', handleCompass, true);
+}
+
+followBtn.addEventListener('click', toggleFollowMode);
 </script>
 </body>
 </html>
