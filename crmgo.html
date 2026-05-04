@@ -296,21 +296,22 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 14px;
     overflow: hidden;
-    min-height: 440px;
+    /* Explicit height so flex children can compute their size reliably across browsers */
+    height: 440px;
     margin-bottom: 16px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.35);
     display: flex;
     flex-direction: column;
-    transition: min-height 350ms ease;
+    transition: height 350ms ease;
   }
-  .map-wrap.has-nav { min-height: 620px; }
+  .map-wrap.has-nav { height: 620px; }
 
   /* Map frame fills the remaining vertical space below the (optional) nav panel.
      This keeps the map cleanly framed instead of having the nav panel overlay it. */
   .map-frame {
     position: relative;
-    flex: 1 1 auto;
-    min-height: 240px;
+    flex: 1 1 0;
+    min-height: 0;
     overflow: hidden;
   }
   #mapContainer { width: 100%; height: 100%; background: #0F2B36; }
@@ -618,7 +619,8 @@
 
   @media (max-width: 600px) {
     .ip-shell { padding: 16px 14px 60px; }
-    .map-wrap { height: 60vh; min-height: 360px; }
+    .map-wrap { height: 460px; }
+    .map-wrap.has-nav { height: 620px; }
     .ip-card { grid-template-columns: auto 1fr; }
     .ip-card .actions {
       grid-column: 1 / -1;
@@ -3972,6 +3974,7 @@ function renderNavPanel(business) {
 }
 
 // Update navigation + follow mode as the user moves
+let lastFollowPanAt = 0;
 function handleNavPositionUpdate(pos) {
   const newPos = {
     lat: pos.coords.latitude,
@@ -3979,15 +3982,23 @@ function handleNavPositionUpdate(pos) {
     accuracy: pos.coords.accuracy,
     heading: pos.coords.heading
   };
+
+  // Distance from previous position (meters) — used to ignore GPS jitter when stationary
+  const prevPos = userPosition;
+  const distMovedM = prevPos ? haversineMiles(prevPos, newPos) * 1609.34 : Infinity;
+
   userPosition = newPos;
   if (userMarker) userMarker.setLatLng([newPos.lat, newPos.lng]);
 
-  // === Follow mode: keep user in the lower portion of visible map, rotate arrow ===
+  // === Follow mode: pan only on real movement (>1.5m) or every 2.5s as a safety refresh ===
   if (followMode) {
-    panToFollowView({ animate: true });
+    const now = performance.now();
+    if (distMovedM > 1.5 || now - lastFollowPanAt > 2500) {
+      panToFollowView({ animate: true });
+      lastFollowPanAt = now;
+    }
     if (newPos.heading !== null && !isNaN(newPos.heading)) {
-      lastHeading = newPos.heading;
-      updateArrowHeading(lastHeading);
+      maybeUpdateHeading(newPos.heading);
     }
   }
 
@@ -4264,12 +4275,17 @@ function enableFollowMode() {
   // Apply current heading to the map IMMEDIATELY so it orients to the user's direction.
   updateArrowHeading(lastHeading || 0);
 
+  // Reset the pan throttle so the entry pan always fires
+  lastFollowPanAt = 0;
+
   // Step 1: zoom in tight on user. Step 2: offset so cursor sits in lower portion.
   mapInstance.flyTo([userPosition.lat, userPosition.lng], 18, { duration: 0.4, easeLinearity: 0.25 });
-  // After the zoom completes, pan to put user in the lower part of the visible area
-  setTimeout(() => panToFollowView({ animate: true }), 450);
-  // After CSS transition finishes, force Leaflet to re-render tiles for the new visible area
-  setTimeout(() => mapInstance.invalidateSize({ animate: false, pan: false }), 800);
+  // After flyTo + CSS transition finish, do the offset pan and re-render tiles.
+  setTimeout(() => {
+    if (mapInstance) mapInstance.invalidateSize({ animate: false, pan: false });
+    panToFollowView({ animate: true });
+    lastFollowPanAt = performance.now();
+  }, 600);
 
   // Start position watcher if not already running (navigation may already have one)
   if (positionWatcher === null && navigator.geolocation) {
@@ -4305,8 +4321,28 @@ function handleCompass(e) {
   if (typeof e.webkitCompassHeading === 'number') heading = e.webkitCompassHeading;
   else if (e.absolute && typeof e.alpha === 'number') heading = 360 - e.alpha;
   if (heading === null) return;
-  lastHeading = heading;
-  updateArrowHeading(heading);
+  maybeUpdateHeading(heading);
+}
+
+/* Deadbanded + throttled heading updates — keeps the map from jittering when the
+   compass / GPS heading wobbles within a few degrees (which it does constantly). */
+let _lastHeadingSent = null;
+let _lastHeadingSentAt = 0;
+function maybeUpdateHeading(deg) {
+  const now = performance.now();
+  if (_lastHeadingSent === null) {
+    _lastHeadingSent = deg; _lastHeadingSentAt = now;
+    updateArrowHeading(deg);
+    return;
+  }
+  // Compute shortest angular distance
+  let diff = Math.abs(deg - _lastHeadingSent);
+  if (diff > 180) diff = 360 - diff;
+  // Skip if change is < 4° AND we updated recently (within 250ms)
+  if (diff < 4 && now - _lastHeadingSentAt < 250) return;
+  _lastHeadingSent = deg;
+  _lastHeadingSentAt = now;
+  updateArrowHeading(deg);
 }
 
 function disableFollowMode() {
@@ -4354,7 +4390,8 @@ function panToFollowView({ animate = true } = {}) {
   const target = mapInstance.unproject(targetPoint, zoom);
 
   if (animate) {
-    mapInstance.panTo(target, { animate: true, duration: 0.35, easeLinearity: 0.4 });
+    // Short, snappy pan so successive position updates don't queue overlapping animations
+    mapInstance.panTo(target, { animate: true, duration: 0.18, easeLinearity: 0.5, noMoveStart: true });
   } else {
     mapInstance.setView(target, zoom, { animate: false });
   }
