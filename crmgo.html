@@ -370,65 +370,14 @@
   }
   .follow-btn:disabled:hover { transform: none; }
 
-  /* === Follow mode: 3D third-person camera ===
-     - rotateX tilts the ground plane back (camera angle)
-     - rotateZ spins the map so the user's heading direction is "up" on screen.
-       Driven by --map-rotation, set in JS from GPS / compass heading.
-     - scale enlarges (~2x) so even when rotated at any angle, no blank
-       corners of the wrap show through.
-     - translateY pushes the rendered tiles down a bit so the bottom is
-       solid map (not empty background).
-     - transform-origin around 70% keeps the lower portion visually anchored.
+  /* === Follow mode (3D third-person camera) ===
+     We let MapLibre handle 3D natively (via pitch + bearing on the WebGL canvas),
+     so no CSS transforms are needed on the map container itself.
   */
-  .map-wrap.follow-mode #mapContainer {
-    transform:
-      perspective(800px)
-      rotateX(60deg)
-      rotateZ(var(--map-rotation, 0deg))
-      scale(2.0)
-      translateY(-10%);
-    transform-origin: center 70%;
-    transition: transform 420ms cubic-bezier(.25,.8,.3,1);
+  .map-wrap.follow-mode .maplibregl-canvas {
+    filter: brightness(1.04) contrast(1.04) saturate(1.05);
   }
-  .map-wrap:not(.follow-mode) #mapContainer {
-    transform: none;
-    transition: transform 500ms cubic-bezier(.2,.8,.2,1);
-  }
-  .map-wrap.follow-mode .leaflet-tile-pane {
-    filter: brightness(1.06) contrast(1.05) saturate(1.08);
-  }
-  .map-wrap.follow-mode .leaflet-control-attribution,
-  .map-wrap.follow-mode .leaflet-control-zoom { opacity: 0.35; }
-
-  /* Atmospheric fade at the top — sells the "horizon" look */
-  .map-wrap.follow-mode::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 38%;
-    background: linear-gradient(180deg, rgba(7,50,65,0.55) 0%, rgba(7,50,65,0.18) 50%, transparent 100%);
-    pointer-events: none;
-    z-index: 410;
-  }
-  .map-wrap.follow-mode.has-nav::before { display: none; }
-
-  /* In follow mode: swap pulsing dot for a big directional arrow that sits ABOVE everything */
-  .user-marker.follow-arrow {
-    z-index: 1100 !important;
-  }
-  .user-marker.follow-arrow .pulse,
-  .user-marker.follow-arrow .dot { display: none; }
-  .user-marker.follow-arrow .arrow {
-    position: absolute;
-    inset: -22px;
-    width: 64px; height: 64px;
-    transform-origin: 50% 50%;
-    transition: transform 420ms cubic-bezier(.25,.8,.3,1);
-    filter: drop-shadow(0 10px 18px rgba(0,0,0,0.65));
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-  }
-  .user-marker.follow-arrow .arrow svg { width: 100%; height: 100%; display: block; }
+  .map-wrap.follow-mode .maplibregl-ctrl-attrib { opacity: 0.4; }
 
   /* User pin (blue dot with pulse) */
   .user-marker { background: transparent; border: none; }
@@ -480,21 +429,26 @@
   }
   .biz-marker.selected .biz-pin .num { color: white; }
 
-  /* Override Leaflet popup look to match theme */
-  .leaflet-popup-content-wrapper {
+  /* Override MapLibre popup look to match theme */
+  .maplibregl-popup-content {
     background: #11212A !important;
     color: white !important;
     border-radius: 10px !important;
     border: 1px solid rgba(255,214,10,0.3) !important;
     box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
-  }
-  .leaflet-popup-tip { background: #11212A !important; }
-  .leaflet-popup-content {
-    margin: 12px 14px !important;
+    padding: 12px 14px !important;
     font-family: 'Inter', sans-serif !important;
     min-width: 180px;
   }
-  .leaflet-popup-close-button { color: rgba(255,255,255,0.5) !important; }
+  .maplibregl-popup-tip { border-top-color: #11212A !important; border-bottom-color: #11212A !important; }
+  .maplibregl-popup-close-button { color: rgba(255,255,255,0.5) !important; font-size: 16px !important; padding: 6px 10px !important; }
+  .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: #11212A !important; }
+  .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: #11212A !important; }
+  .maplibregl-ctrl-attrib {
+    background: rgba(0,0,0,0.4) !important;
+    color: rgba(255,255,255,0.7) !important;
+  }
+  .maplibregl-ctrl-attrib a { color: rgba(255,255,255,0.85) !important; }
   .popup-content h4 {
     font-family: 'Russo One', sans-serif;
     font-size: 14px;
@@ -2331,9 +2285,9 @@ function showView(name) {
   } else if (name === 'search' || name === 'inperson') {
     backBtn.classList.add('visible');
     window.scrollTo({ top: 0, behavior: 'instant' });
-    // Leaflet needs a kick when its container becomes visible
-    if (name === 'inperson' && window.L && mapInstance) {
-      setTimeout(() => mapInstance.invalidateSize(), 50);
+    // MapLibre needs a kick when its container becomes visible
+    if (name === 'inperson' && window.maplibregl && mapInstance) {
+      setTimeout(() => mapInstance.resize(), 50);
     }
   }
 }
@@ -3482,23 +3436,19 @@ const ipState = {
   results: []
 };
 
-function loadLeaflet() {
-  if (window.L) return Promise.resolve();
+function loadMapLibrary() {
+  if (window.maplibregl) return Promise.resolve();
   if (leafletPromise) return leafletPromise;
   leafletPromise = new Promise((resolve, reject) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    css.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
-    css.crossOrigin = '';
+    css.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
     document.head.appendChild(css);
 
     const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-    script.crossOrigin = '';
+    script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
     script.onload = resolve;
-    script.onerror = () => reject(new Error('Failed to load Leaflet'));
+    script.onerror = () => reject(new Error('Failed to load MapLibre GL'));
     document.head.appendChild(script);
   });
   return leafletPromise;
@@ -3604,9 +3554,9 @@ async function startInPerson() {
   mapLoading.classList.remove('hidden');
   mapLoading.querySelector('div:last-child').textContent = 'Loading map…';
 
-  // Load Leaflet (~150 KB)
+  // Load MapLibre GL (~700 KB) — gives us native WebGL 3D rendering
   try {
-    await loadLeaflet();
+    await loadMapLibrary();
   } catch (err) {
     mapLoading.innerHTML = '<div style="color:#FCA5A5;padding:20px;text-align:center;">Failed to load map. Check your internet connection and try again.</div>';
     return;
@@ -3630,35 +3580,57 @@ async function startInPerson() {
 
   // Initialize the map
   if (!mapInstance) {
-    mapInstance = L.map(mapContainer, {
-      zoomControl: true,
-      attributionControl: false
-    }).setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
+    mapInstance = new maplibregl.Map({
+      container: mapContainer,
+      style: {
+        version: 8,
+        sources: {
+          'osm': {
+            type: 'raster',
+            tiles: [
+              'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            attribution: '© OpenStreetMap'
+          }
+        },
+        layers: [{ id: 'osm-layer', type: 'raster', source: 'osm' }]
+      },
+      center: [userPosition.lng, userPosition.lat],
+      zoom: ipState.mode === 'walking' ? 16 : 14,
+      pitch: 0,
+      bearing: 0,
+      attributionControl: false,
+      maxPitch: 70
+    });
+    mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+    mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      crossOrigin: true
-    }).addTo(mapInstance);
-
-    L.control.attribution({ prefix: false, position: 'bottomleft' })
-      .addAttribution('© OpenStreetMap')
-      .addTo(mapInstance);
+    // Wait for map to load before doing anything else
+    await new Promise((resolve) => {
+      if (mapInstance.loaded()) resolve();
+      else mapInstance.once('load', resolve);
+    });
   } else {
-    mapInstance.setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
-    setTimeout(() => mapInstance.invalidateSize(), 80);
+    mapInstance.jumpTo({
+      center: [userPosition.lng, userPosition.lat],
+      zoom: ipState.mode === 'walking' ? 16 : 14,
+      pitch: 0,
+      bearing: 0
+    });
+    setTimeout(() => mapInstance.resize(), 80);
   }
 
-  // User marker (replace if exists)
+  // User marker (replace if exists) — uses a custom DOM element
   if (userMarker) userMarker.remove();
-  const userIcon = L.divIcon({
-    className: 'user-marker',
-    html: '<div class="user-pin"><div class="pulse"></div><div class="dot"></div></div>',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
-  });
-  userMarker = L.marker([userPosition.lat, userPosition.lng], { icon: userIcon, zIndexOffset: 1000 })
-    .addTo(mapInstance)
-    .bindTooltip('You', { permanent: false, direction: 'top', offset: [0, -8] });
+  const userEl = document.createElement('div');
+  userEl.className = 'user-marker';
+  userEl.innerHTML = '<div class="user-pin"><div class="pulse"></div><div class="dot"></div></div>';
+  userMarker = new maplibregl.Marker({ element: userEl })
+    .setLngLat([userPosition.lng, userPosition.lat])
+    .addTo(mapInstance);
 
   mapLoading.classList.add('hidden');
   runIpSearch();
@@ -3681,28 +3653,33 @@ function renderIpResults() {
 
   // Add a marker for every business
   ipState.results.forEach((b, i) => {
-    const icon = L.divIcon({
-      className: 'biz-marker',
-      html: `<div class="biz-pin"><span class="num">${i + 1}</span></div>`,
-      iconSize: [36, 36],
-      iconAnchor: [18, 36],
-      popupAnchor: [0, -34]
-    });
-    const marker = L.marker([b.coords.lat, b.coords.lng], { icon }).addTo(mapInstance);
-
     const time = ipState.mode === 'walking' ? walkingMinutes(b.distance) : drivingMinutes(b.distance);
-    marker.bindPopup(`
-      <div class="popup-content">
-        <h4>${escapeHtml(b.name)}</h4>
-        <div class="meta">
-          ${escapeHtml(b.address)}<br>
-          ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel} · ★ ${b.rating.toFixed(1)}
-        </div>
-        <a href="#" data-popup-nav="${escapeHtml(b.id)}">NAVIGATE →</a>
-      </div>
-    `);
 
-    marker.on('click', () => highlightCard(b.id));
+    const el = document.createElement('div');
+    el.className = 'biz-marker';
+    el.innerHTML = `<div class="biz-pin"><span class="num">${i + 1}</span></div>`;
+
+    const popup = new maplibregl.Popup({ offset: 30, closeButton: true, closeOnClick: true })
+      .setHTML(`
+        <div class="popup-content">
+          <h4>${escapeHtml(b.name)}</h4>
+          <div class="meta">
+            ${escapeHtml(b.address)}<br>
+            ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel} · ★ ${b.rating.toFixed(1)}
+          </div>
+          <a href="#" data-popup-nav="${escapeHtml(b.id)}">NAVIGATE →</a>
+        </div>
+      `);
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      .setLngLat([b.coords.lng, b.coords.lat])
+      .setPopup(popup)
+      .addTo(mapInstance);
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      highlightCard(b.id);
+    });
     bizMarkers.push(marker);
   });
 
@@ -3767,7 +3744,7 @@ function getDirectionsUrl(b) {
 
 function highlightCard(id) {
   document.querySelectorAll('.ip-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
-  // Also highlight the marker
+  // Also highlight the marker (MapLibre marker.getElement returns the DOM element)
   bizMarkers.forEach((m, i) => {
     const el = m.getElement();
     if (el) el.classList.toggle('selected', ipState.results[i] && ipState.results[i].id === id);
@@ -3799,8 +3776,12 @@ ipList.addEventListener('click', (e) => {
   const idx = parseInt(card.dataset.idx, 10);
   const biz = ipState.results[idx];
   if (biz && mapInstance) {
-    mapInstance.flyTo([biz.coords.lat, biz.coords.lng], 17, { duration: 0.6 });
-    setTimeout(() => bizMarkers[idx].openPopup(), 650);
+    mapInstance.flyTo({
+      center: [biz.coords.lng, biz.coords.lat],
+      zoom: 17,
+      duration: 600
+    });
+    setTimeout(() => bizMarkers[idx].togglePopup(), 650);
     highlightCard(biz.id);
   }
 });
@@ -3884,19 +3865,34 @@ async function startNavigation(business) {
   navState.totalDuration = route.duration; // seconds
   navState.currentStepIdx = 0;
 
-  // Draw route polyline (yellow on dark shadow for visibility)
-  if (routeLine) routeLine.remove();
-  if (routeShadow) routeShadow.remove();
+  // Draw route on the map using MapLibre source + layer (GeoJSON in [lng,lat])
+  if (mapInstance.getLayer('route-line')) mapInstance.removeLayer('route-line');
+  if (mapInstance.getLayer('route-shadow')) mapInstance.removeLayer('route-shadow');
+  if (mapInstance.getSource('route')) mapInstance.removeSource('route');
 
-  const coords = route.geometry.coordinates.map(c => [c[1], c[0]]); // GeoJSON [lng,lat] → Leaflet [lat,lng]
-  routeShadow = L.polyline(coords, { color: '#000', weight: 9, opacity: 0.45 }).addTo(mapInstance);
-  routeLine = L.polyline(coords, {
-    color: '#FFD60A', weight: 5, opacity: 1,
-    lineCap: 'round', lineJoin: 'round'
-  }).addTo(mapInstance);
+  mapInstance.addSource('route', {
+    type: 'geojson',
+    data: { type: 'Feature', properties: {}, geometry: route.geometry }
+  });
+  mapInstance.addLayer({
+    id: 'route-shadow',
+    type: 'line',
+    source: 'route',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#000000', 'line-width': 9, 'line-opacity': 0.45, 'line-blur': 1 }
+  });
+  mapInstance.addLayer({
+    id: 'route-line',
+    type: 'line',
+    source: 'route',
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#FFD60A', 'line-width': 5, 'line-opacity': 1 }
+  });
 
-  // Fit map to show full route
-  mapInstance.fitBounds(routeLine.getBounds(), { padding: [50, 50], maxZoom: 17 });
+  // Fit the map to show the full route
+  const bounds = new maplibregl.LngLatBounds();
+  route.geometry.coordinates.forEach(c => bounds.extend(c));
+  mapInstance.fitBounds(bounds, { padding: 60, maxZoom: 17, duration: 600, pitch: 0, bearing: 0 });
 
   // Render the navigation panel
   renderNavPanel(business);
@@ -3908,8 +3904,8 @@ async function startNavigation(business) {
   followBtn.disabled = false;
   followBtn.title = 'Follow my location (3D)';
 
-  // Tell Leaflet the visible map area shrank (nav panel now occupies space above)
-  setTimeout(() => mapInstance.invalidateSize({ animate: false, pan: false }), 350);
+  // Tell MapLibre the visible map area shrank (nav panel now occupies space above)
+  setTimeout(() => mapInstance.resize(), 350);
 
   // If follow mode is on, re-pan so cursor sits in the lower portion of the new visible area
   if (followMode) {
@@ -3988,7 +3984,7 @@ function handleNavPositionUpdate(pos) {
   const distMovedM = prevPos ? haversineMiles(prevPos, newPos) * 1609.34 : Infinity;
 
   userPosition = newPos;
-  if (userMarker) userMarker.setLatLng([newPos.lat, newPos.lng]);
+  if (userMarker) userMarker.setLngLat([newPos.lng, newPos.lat]);
 
   // === Follow mode: pan only on real movement (>1.5m) or every 2.5s as a safety refresh ===
   if (followMode) {
@@ -4053,8 +4049,14 @@ function endNavigation() {
     navigator.geolocation.clearWatch(positionWatcher);
     positionWatcher = null;
   }
-  if (routeLine) { routeLine.remove(); routeLine = null; }
-  if (routeShadow) { routeShadow.remove(); routeShadow = null; }
+  // Remove route layers + source
+  if (mapInstance) {
+    if (mapInstance.getLayer('route-line')) mapInstance.removeLayer('route-line');
+    if (mapInstance.getLayer('route-shadow')) mapInstance.removeLayer('route-shadow');
+    if (mapInstance.getSource('route')) mapInstance.removeSource('route');
+  }
+  routeLine = null;
+  routeShadow = null;
   navPanel.classList.remove('active');
   navPanel.innerHTML = '';
 
@@ -4073,11 +4075,17 @@ function endNavigation() {
   followBtn.disabled = true;
   followBtn.title = 'Start navigation to enable';
 
-  // Map area just expanded back to full height — let Leaflet redraw at the new size
-  setTimeout(() => { if (mapInstance) mapInstance.invalidateSize({ animate: false, pan: false }); }, 400);
+  // Map area just expanded back to full height — let MapLibre redraw at the new size
+  setTimeout(() => { if (mapInstance) mapInstance.resize(); }, 400);
 
   if (userPosition && mapInstance) {
-    mapInstance.flyTo([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14, { duration: 0.5 });
+    mapInstance.flyTo({
+      center: [userPosition.lng, userPosition.lat],
+      zoom: ipState.mode === 'walking' ? 16 : 14,
+      pitch: 0,
+      bearing: 0,
+      duration: 500
+    });
   }
 }
 
@@ -4163,7 +4171,10 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.classList.add('active');
     ipState.mode = btn.dataset.mode;
     if (mapInstance && userPosition) {
-      mapInstance.setView([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14);
+      mapInstance.jumpTo({
+        center: [userPosition.lng, userPosition.lat],
+        zoom: ipState.mode === 'walking' ? 16 : 14
+      });
     }
     runIpSearch();
   });
@@ -4173,7 +4184,13 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 ipUseLocationBtn.addEventListener('click', startInPerson);
 recenterBtn.addEventListener('click', () => {
   if (mapInstance && userPosition) {
-    mapInstance.flyTo([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14, { duration: 0.6 });
+    mapInstance.flyTo({
+      center: [userPosition.lng, userPosition.lat],
+      zoom: ipState.mode === 'walking' ? 16 : 14,
+      pitch: 0,
+      bearing: 0,
+      duration: 600
+    });
   }
 });
 
@@ -4237,12 +4254,11 @@ function setUserMarkerToDefault() {
 }
 
 function updateArrowHeading(headingDeg) {
-  if (!userMarker) return;
   lastHeading = headingDeg;
-  if (followMode) {
-    // Rideshare-style: rotate the MAP so the heading direction is "up" on screen.
-    // The cursor stays as a simple dot — no rotation needed on the cursor itself.
-    document.documentElement.style.setProperty('--map-rotation', `${-headingDeg}deg`);
+  if (followMode && mapInstance) {
+    // Native WebGL rotation via bearing. easeTo only animates the bearing;
+    // the rest of the camera (zoom/pitch/center) stays as-is.
+    mapInstance.easeTo({ bearing: headingDeg, duration: 200 });
   }
 }
 
@@ -4268,24 +4284,17 @@ function toggleFollowMode() {
 }
 
 function enableFollowMode() {
-  // Mark the wrap so the gradient overlay knows the nav panel is up (no double overlay)
   if (navState.active) mapWrap.classList.add('has-nav');
-
-  // Cursor stays as the default pulsing blue dot — no swap to a directional arrow.
-  // Apply current heading to the map IMMEDIATELY so it orients to the user's direction.
-  updateArrowHeading(lastHeading || 0);
 
   // Reset the pan throttle so the entry pan always fires
   lastFollowPanAt = 0;
 
-  // Step 1: zoom in tight on user. Step 2: offset so cursor sits in lower portion.
-  mapInstance.flyTo([userPosition.lat, userPosition.lng], 18, { duration: 0.4, easeLinearity: 0.25 });
-  // After flyTo + CSS transition finish, do the offset pan and re-render tiles.
-  setTimeout(() => {
-    if (mapInstance) mapInstance.invalidateSize({ animate: false, pan: false });
-    panToFollowView({ animate: true });
-    lastFollowPanAt = performance.now();
-  }, 600);
+  // Single MapLibre easeTo handles zoom + pitch (3D tilt) + bearing (rotate to heading)
+  // + padding (cursor in lower portion) all natively via WebGL.
+  panToFollowView({ animate: true, duration: 700 });
+  lastFollowPanAt = performance.now();
+
+  setTimeout(() => { if (mapInstance) mapInstance.resize(); }, 750);
 
   // Start position watcher if not already running (navigation may already have one)
   if (positionWatcher === null && navigator.geolocation) {
@@ -4346,15 +4355,19 @@ function maybeUpdateHeading(deg) {
 }
 
 function disableFollowMode() {
-  // Reset map rotation back to north-up
-  document.documentElement.style.setProperty('--map-rotation', '0deg');
   mapWrap.classList.remove('has-nav');
-  // Cursor stays as the dot — nothing to swap back.
+  // MapLibre easeTo flattens the camera back to north-up, top-down view
   if (mapInstance && userPosition) {
-    mapInstance.flyTo([userPosition.lat, userPosition.lng], ipState.mode === 'walking' ? 16 : 14, { duration: 0.5 });
+    mapInstance.easeTo({
+      center: [userPosition.lng, userPosition.lat],
+      zoom: ipState.mode === 'walking' ? 16 : 14,
+      pitch: 0,
+      bearing: 0,
+      padding: { top: 0, bottom: 0, left: 0, right: 0 },
+      duration: 600
+    });
   }
-  // After the CSS transition resolves, ensure tiles re-render at correct bounds
-  setTimeout(() => { if (mapInstance) mapInstance.invalidateSize({ animate: false, pan: false }); }, 700);
+  setTimeout(() => { if (mapInstance) mapInstance.resize(); }, 650);
 
   // Stop watcher if not navigating (otherwise nav still needs it)
   if (!navState.active && positionWatcher !== null) {
@@ -4367,33 +4380,32 @@ function disableFollowMode() {
 }
 
 /**
- * Pan the map so the user cursor sits in the lower portion of the visible map area
- * (third-person camera feel — like Garmin/Google Maps nav). Accounts for the nav
- * panel covering the top of the map when navigation is active.
+ * Use MapLibre's native camera (pitch + bearing + padding) for a third-person view.
+ * pitch = 60° tilts the camera back, bearing rotates so the heading is "up",
+ * padding pushes the apparent center DOWN so the user cursor sits in the
+ * lower portion of the visible map (under the nav panel when present).
  */
-function panToFollowView({ animate = true } = {}) {
+function panToFollowView({ animate = true, duration = 200 } = {}) {
   if (!followMode || !userPosition || !mapInstance) return;
 
-  const zoom = mapInstance.getZoom();
-  const userPoint = mapInstance.project([userPosition.lat, userPosition.lng], zoom);
-  const mapSize = mapInstance.getSize();
+  const mapH = mapContainer.clientHeight || 440;
+  // Use bigger top padding so the target lat/lng renders in the lower 1/3 of the visible area.
+  // When the nav panel is on top of the map frame, that padding is already baked in
+  // by the layout (the map frame is just the visible portion below the nav panel).
+  const topPad = Math.round(mapH * 0.45);
 
-  // How much vertical space is occupied by the nav panel?
-  const navHeight = (navState.active && navPanel.offsetHeight) ? navPanel.offsetHeight : 0;
-  const visibleH = Math.max(120, mapSize.y - navHeight);
-
-  // Place the cursor 70% down the visible area (so the camera "looks ahead")
-  const targetCursorY = navHeight + visibleH * 0.7;
-  const yShift = targetCursorY - mapSize.y / 2;
-
-  const targetPoint = L.point(userPoint.x, userPoint.y - yShift);
-  const target = mapInstance.unproject(targetPoint, zoom);
+  const opts = {
+    center: [userPosition.lng, userPosition.lat],
+    zoom: 18,
+    pitch: 60,                   // 3D tilt — rendered natively in WebGL
+    bearing: lastHeading || 0,   // rotate so heading is "up"
+    padding: { top: topPad, bottom: 0, left: 0, right: 0 }
+  };
 
   if (animate) {
-    // Short, snappy pan so successive position updates don't queue overlapping animations
-    mapInstance.panTo(target, { animate: true, duration: 0.18, easeLinearity: 0.5, noMoveStart: true });
+    mapInstance.easeTo({ ...opts, duration });
   } else {
-    mapInstance.setView(target, zoom, { animate: false });
+    mapInstance.jumpTo(opts);
   }
 }
 
