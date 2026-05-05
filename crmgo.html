@@ -1683,6 +1683,39 @@
   }
   .wallet-history svg { width: 13px; height: 13px; }
 
+  /* Dial-tracking toggle */
+  .dial-track-toggle {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: rgba(255,214,10,0.06);
+    border: 1px dashed rgba(255,214,10,0.3);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    user-select: none;
+  }
+  .dial-track-toggle:hover { border-color: rgba(255,214,10,0.55); }
+  .dial-track-toggle input {
+    margin: 3px 0 0 0;
+    flex-shrink: 0;
+    accent-color: var(--yellow);
+  }
+  .dial-track-toggle .lbl {
+    flex: 1;
+    font-size: 12px;
+    color: white;
+    line-height: 1.4;
+  }
+  .dial-track-toggle .lbl strong { color: var(--yellow); font-weight: 700; }
+  .dial-track-toggle .lbl small {
+    display: block;
+    color: rgba(255,255,255,0.55);
+    font-size: 10.5px;
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
   .mic-error {
     background: rgba(239,68,68,0.12);
     border: 1px solid rgba(239,68,68,0.4);
@@ -2366,6 +2399,15 @@
           Copy Number
         </button>
       </div>
+
+      <!-- Track-on-dial toggle: combines tel: link with Speaker Mode mic capture -->
+      <label class="dial-track-toggle" for="trackOnDial">
+        <input type="checkbox" id="trackOnDial" />
+        <span class="lbl">
+          <strong>Auto-transcribe when I tap Dial</strong>
+          <small>Starts the mic + transcript before launching your phone's dialer. Put the call on speakerphone for clean audio capture. Best when this device isn't the one making the call (e.g. laptop browser open while you call from your phone). On iOS, the Phone app takes over the mic when you call from the same device — use a second device for transcription in that case.</small>
+        </span>
+      </label>
 
       <!-- Pre-flight instructions popup — shown when "Call Speaker" is first clicked -->
       <div class="preflight" id="preflight">
@@ -3185,6 +3227,28 @@ callModal.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && callModal.classList.contains('visible')) closeCallModal();
+});
+
+// "Auto-transcribe when I tap Dial" toggle — kicks off Speaker Mode in parallel with the tel: link
+const trackOnDialEl = document.getElementById('trackOnDial');
+callDial.addEventListener('click', (e) => {
+  if (!trackOnDialEl.checked) return; // default behaviour (just dial)
+
+  // mediaDevices is required for transcription. file:// won't have it.
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    e.preventDefault();
+    showMicError({ name: 'InsecureContextError' });
+    return;
+  }
+
+  // Start Speaker Mode (mic only) without blocking — let the tel: navigation
+  // happen on this same gesture so iOS allows it. The mic capture starts in parallel.
+  // If permission was already granted earlier in the session, this is silent.
+  startSpeakerMode({ useWebcam: false }).catch((err) => {
+    console.warn('Could not start tracking on dial:', err);
+  });
+  showToast('Tracking call — put on speakerphone');
+  // Don't preventDefault — the browser will follow the tel: href on this click
 });
 
 callCopy.addEventListener('click', async () => {
