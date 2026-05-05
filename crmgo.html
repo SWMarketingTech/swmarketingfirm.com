@@ -1332,6 +1332,357 @@
   }
   .speaker-controls .end-btn:hover { background: rgba(239,68,68,0.3); color: white; }
 
+  /* === Call analysis (live detection + earnings) === */
+  .detect-panel {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .detect-title {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .detect-title svg { width: 12px; height: 12px; color: var(--yellow); }
+  .detect-state {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+    color: white;
+    padding: 8px 0;
+  }
+  .detect-state .pulse-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--yellow);
+    animation: pulseDot 1.4s ease-out infinite;
+    flex-shrink: 0;
+  }
+  .detect-state.idle .pulse-dot { background: rgba(255,255,255,0.3); animation: none; }
+  .detect-state.success .pulse-dot { background: #22c55e; }
+  .detect-events {
+    margin-top: 6px;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+    padding-top: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .detect-event {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.7);
+    padding: 3px 0;
+    line-height: 1.3;
+  }
+  .detect-event .check {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: rgba(34,197,94,0.18);
+    color: #22c55e;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+  .detect-event .ts {
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Earnings tracker */
+  .earn-panel {
+    background: linear-gradient(180deg, rgba(255,214,10,0.08) 0%, rgba(255,214,10,0.04) 100%);
+    border: 1px solid rgba(255,214,10,0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .earn-title {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: var(--yellow);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .earn-title .total {
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+  }
+  .earn-list {
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .earn-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.06);
+  }
+  .earn-row:last-child { border-bottom: none; }
+  .earn-row .amt {
+    font-family: 'Russo One', sans-serif;
+    color: var(--yellow);
+    font-variant-numeric: tabular-nums;
+  }
+  .earn-empty {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    padding: 8px 4px;
+    font-style: italic;
+  }
+
+  /* Manual override row */
+  .override-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .override-btn {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 9px 6px;
+    border-radius: 8px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+    line-height: 1.2;
+  }
+  .override-btn:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+  .override-btn.fired {
+    background: rgba(34,197,94,0.18);
+    color: #BBF7D0;
+    border-color: rgba(34,197,94,0.4);
+    cursor: default;
+  }
+  .override-btn .amt {
+    display: block;
+    font-size: 10px;
+    color: var(--yellow);
+    margin-top: 2px;
+  }
+  .override-btn.fired .amt { color: #BBF7D0; }
+
+  /* === Live call transcript panel === */
+  .transcript-panel {
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .transcript-title {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .recording-badge {
+    background: rgba(239,68,68,0.18);
+    color: #FCA5A5;
+    border: 1px solid rgba(239,68,68,0.35);
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    display: inline-flex; align-items: center; gap: 5px;
+    text-transform: uppercase;
+    font-family: 'Russo One', sans-serif;
+  }
+  .recording-badge .red-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #EF4444;
+    animation: pulseDot 1.4s ease-out infinite;
+  }
+  .transcript-list {
+    max-height: 160px;
+    overflow-y: auto;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.92);
+    line-height: 1.4;
+  }
+  .transcript-line {
+    display: flex; gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.05);
+  }
+  .transcript-line:last-child { border-bottom: none; }
+  .transcript-line .ts {
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+    width: 36px;
+  }
+  .transcript-line .text { flex: 1; word-break: break-word; }
+  .transcript-line.interim .text {
+    color: rgba(255,255,255,0.55);
+    font-style: italic;
+  }
+  .transcript-empty,
+  .transcript-no-support {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    padding: 8px 4px;
+    font-style: italic;
+  }
+  .transcript-no-support {
+    color: rgba(252,165,165,0.75);
+    font-style: normal;
+  }
+
+  /* === Call history modal === */
+  .history-modal .modal { max-width: 600px; }
+  .history-list {
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-bottom: 14px;
+  }
+  .history-empty {
+    text-align: center;
+    color: rgba(255,255,255,0.55);
+    padding: 30px 16px;
+    font-size: 13px;
+  }
+  .history-row {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .history-row:hover {
+    border-color: rgba(255,214,10,0.4);
+    background: rgba(0,0,0,0.5);
+  }
+  .history-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .history-head .biz {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    color: white;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .history-head .earn {
+    font-family: 'Russo One', sans-serif;
+    color: var(--yellow);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+  .history-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .history-meta .sep { color: rgba(255,255,255,0.25); }
+  .history-meta .lines-tag {
+    color: rgba(34,197,94,0.85);
+  }
+  .history-detail {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px;
+    max-height: 50vh;
+    overflow-y: auto;
+    display: none;
+  }
+  .history-detail.visible { display: block; }
+  .history-detail h3 {
+    font-family: 'Russo One', sans-serif;
+    font-size: 15px;
+    color: white;
+    margin-bottom: 4px;
+  }
+  .history-detail .sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+  .history-detail .section-h {
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--yellow);
+    text-transform: uppercase;
+    margin: 12px 0 6px;
+  }
+  .history-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .history-actions button {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 9px 6px;
+    border-radius: 8px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .history-actions button:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+  .history-actions button.danger:hover {
+    border-color: #FCA5A5;
+    color: #FCA5A5;
+  }
+
+  /* "View History" link in wallet pill */
+  .wallet-history {
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 150ms ease;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .wallet-history:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+  .wallet-history svg { width: 13px; height: 13px; }
+
   .mic-error {
     background: rgba(239,68,68,0.12);
     border: 1px solid rgba(239,68,68,0.4);
@@ -1806,6 +2157,9 @@
       <span class="lbl">Balance</span>
       <span class="amount" id="walletAmount">$0.00</span>
     </div>
+    <button class="wallet-history" id="walletHistory" title="Call history & transcripts" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </button>
     <button class="wallet-withdraw" id="walletWithdraw">Request Withdraw</button>
   </div>
 
@@ -2101,6 +2455,57 @@
           </div>
         </div>
 
+        <!-- Live call transcript (Web Speech API) -->
+        <div class="transcript-panel" id="transcriptPanel">
+          <div class="transcript-title">
+            <span>Call Transcript</span>
+            <span class="recording-badge" id="transcriptBadge"><span class="red-dot"></span>Listening</span>
+          </div>
+          <div class="transcript-list" id="transcriptList">
+            <div class="transcript-empty" id="transcriptEmpty">Transcript will appear here once speech is detected…</div>
+          </div>
+        </div>
+
+        <!-- Live call analysis: state machine + detected events -->
+        <div class="detect-panel">
+          <div class="detect-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"/><path d="M12 7v5l3 3"/></svg>
+            Call Analysis
+          </div>
+          <div class="detect-state idle" id="detectState">
+            <span class="pulse-dot"></span>
+            <span id="detectStateText">Waiting for call to start…</span>
+          </div>
+          <div class="detect-events" id="detectEvents"></div>
+        </div>
+
+        <!-- Earnings accrued during this call -->
+        <div class="earn-panel">
+          <div class="earn-title">
+            <span>This Call · Earnings</span>
+            <span class="total" id="earnTotal">$0.00</span>
+          </div>
+          <div class="earn-list" id="earnList">
+            <div class="earn-empty" id="earnEmpty">Earnings will appear as events are detected…</div>
+          </div>
+        </div>
+
+        <!-- Manual override buttons in case auto-detection misses something -->
+        <div class="override-row">
+          <button class="override-btn" id="markVmReached" type="button">
+            Voicemail Reached
+            <span class="amt">+$0.10</span>
+          </button>
+          <button class="override-btn" id="markVmLeft" type="button">
+            Voicemail Left
+            <span class="amt">+$0.05</span>
+          </button>
+          <button class="override-btn" id="markAppointment" type="button">
+            Appointment Set
+            <span class="amt">+$2.00</span>
+          </button>
+        </div>
+
         <div class="speaker-controls">
           <button class="answered-btn" id="answeredBtn">Mark Answered</button>
           <button class="end-btn" id="endCallBtn">End Call</button>
@@ -2251,6 +2656,29 @@
       <div class="withdraw-actions">
         <button class="cancel" id="withdrawCancel">Cancel</button>
         <button class="confirm" id="withdrawConfirm" disabled>Request Withdraw</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= CALL HISTORY MODAL ============= -->
+  <div class="modal-backdrop history-modal" id="historyModal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;text-align:center;margin-bottom:4px;">Call History</h2>
+      <div class="biz-sub" style="text-align:center;">Every Call Is Transcribed &amp; Saved</div>
+
+      <!-- List view: shows all past calls -->
+      <div id="historyListView">
+        <div class="history-list" id="historyList">
+          <div class="history-empty">No calls yet. Make a call in Speaker Mode and the transcript will be saved here.</div>
+        </div>
+      </div>
+
+      <!-- Detail view: shows a single call's transcript -->
+      <div class="history-detail" id="historyDetail"></div>
+
+      <div class="modal-actions" style="margin-top:14px;">
+        <button class="copy" id="historyBack" style="display:none;">← All Calls</button>
+        <button class="copy" id="historyClose">Close</button>
       </div>
     </div>
   </div>
@@ -2869,6 +3297,568 @@ pfStart.addEventListener('click', () => {
 endCallBtn.addEventListener('click', () => stopSpeakerMode({ silent: false }));
 answeredBtn.addEventListener('click', markAnswered);
 
+/* ====================== CALL ANALYSIS / EARNINGS ====================== */
+// Listens to the live audio stream from speaker mode and figures out what's
+// happening on the call so we can auto-award earnings the right way.
+const detectStateEl = document.getElementById('detectState');
+const detectStateText = document.getElementById('detectStateText');
+const detectEventsEl = document.getElementById('detectEvents');
+const earnTotalEl = document.getElementById('earnTotal');
+const earnListEl = document.getElementById('earnList');
+const earnEmptyEl = document.getElementById('earnEmpty');
+const markVmReached = document.getElementById('markVmReached');
+const markVmLeft = document.getElementById('markVmLeft');
+const markAppointment = document.getElementById('markAppointment');
+
+// Earnings amounts (kept in one place so they're easy to tune)
+const PAY = {
+  COMPLETED_CALL: 0.10,    // call rang and reached voicemail
+  VOICEMAIL_LEFT: 0.05,    // user actually recorded a message
+  APPOINTMENT:    2.00,    // user scheduled an appointment
+  LONG_CALL:      0.70     // talked >2 minutes with a human
+};
+
+// Per-call analysis state — gets reset when speaker mode starts/stops
+const callAnalysis = {
+  state: 'idle',                 // idle | ringing | answered | voicemail | leaving_voicemail | conversation | ended
+  startedAt: 0,
+  answeredAt: 0,
+  events: [],                    // detection log
+  awardedFlags: {                // ensures we never double-pay
+    completed: false,
+    vmLeft: false,
+    appointment: false,
+    longCall: false
+  },
+  // Audio sub-detectors
+  voicemailBeepSeenAt: 0,
+  longSpeechFrames: 0,           // continuous "speech" frames
+  silenceFrames: 0,
+  speechSegments: [],            // [{ startMs, endMs }] for back-and-forth detection
+  inSpeech: false,
+  segmentStartMs: 0,
+  // Speech recognition + transcript
+  speechRecognizer: null,
+  detectedKeywords: new Set(),
+  transcript: []                 // [{ ts, text, isFinal }] — captured by Web Speech
+};
+
+function resetCallAnalysis() {
+  callAnalysis.state = 'idle';
+  callAnalysis.startedAt = performance.now();
+  callAnalysis.answeredAt = 0;
+  callAnalysis.events = [];
+  callAnalysis.awardedFlags = { completed: false, vmLeft: false, appointment: false, longCall: false };
+  callAnalysis.voicemailBeepSeenAt = 0;
+  callAnalysis.longSpeechFrames = 0;
+  callAnalysis.silenceFrames = 0;
+  callAnalysis.speechSegments = [];
+  callAnalysis.inSpeech = false;
+  callAnalysis.segmentStartMs = 0;
+  callAnalysis.detectedKeywords = new Set();
+  callAnalysis.transcript = [];
+  setDetectState('idle', 'Waiting for call to start…');
+  detectEventsEl.innerHTML = '';
+  earnListEl.innerHTML = '<div class="earn-empty" id="earnEmpty">Earnings will appear as events are detected…</div>';
+  earnTotalEl.textContent = '$0.00';
+  callAnalysis._totalThisCall = 0;
+  // Clear transcript display
+  if (transcriptListEl) {
+    transcriptListEl.innerHTML = '<div class="transcript-empty" id="transcriptEmpty">Transcript will appear here once speech is detected…</div>';
+  }
+  if (transcriptBadgeEl) transcriptBadgeEl.style.display = '';
+  // Clear override button states
+  [markVmReached, markVmLeft, markAppointment].forEach(b => b.classList.remove('fired'));
+}
+
+function setDetectState(stateClass, text) {
+  detectStateEl.classList.remove('idle', 'success');
+  if (stateClass) detectStateEl.classList.add(stateClass);
+  detectStateText.textContent = text;
+}
+
+function logDetectEvent(text) {
+  const elapsed = formatDuration((performance.now() - callAnalysis.startedAt) / 1000);
+  callAnalysis.events.push({ text, elapsed });
+  const row = document.createElement('div');
+  row.className = 'detect-event';
+  row.innerHTML = `<span class="check">✓</span><span>${escapeHtml(text)}</span><span class="ts">${elapsed}</span>`;
+  detectEventsEl.appendChild(row);
+  detectEventsEl.scrollTop = detectEventsEl.scrollHeight;
+}
+
+function awardCallEarning(amount, reason) {
+  callAnalysis._totalThisCall = (callAnalysis._totalThisCall || 0) + amount;
+  earnTotalEl.textContent = '$' + callAnalysis._totalThisCall.toFixed(2);
+  // Hide "empty" placeholder
+  if (earnEmptyEl && earnEmptyEl.parentNode) earnEmptyEl.parentNode.removeChild(earnEmptyEl);
+  // Add a row for this earning
+  const row = document.createElement('div');
+  row.className = 'earn-row';
+  row.innerHTML = `<span>${escapeHtml(reason)}</span><span class="amt">+$${amount.toFixed(2)}</span>`;
+  earnListEl.appendChild(row);
+  // Hook into the wallet (existing addEarnings function)
+  if (typeof addEarnings === 'function') addEarnings(amount, reason);
+  // Also log it as a detection event
+  logDetectEvent(`Earned $${amount.toFixed(2)} — ${reason}`);
+}
+
+/* ----- Acoustic detection helpers ----- */
+function processCallAudioFrame(timeBuf, freqBuf, sampleRate, fftSize, rms) {
+  if (!callAnalysis.startedAt) return;
+  const now = performance.now();
+
+  // === Voice Activity Detection (VAD) — speech vs silence ===
+  // We classify a frame as "speech" if RMS exceeds an adaptive threshold AND
+  // there's energy in the human-voice band (300–3400 Hz, telephony band).
+  const binHz = sampleRate / fftSize;
+  const voiceLowBin = Math.round(300 / binHz);
+  const voiceHighBin = Math.round(3400 / binHz);
+  let voiceEnergy = 0; let voiceCount = 0;
+  for (let i = voiceLowBin; i <= voiceHighBin && i < freqBuf.length; i++) {
+    voiceEnergy += freqBuf[i]; voiceCount++;
+  }
+  const avgVoiceDb = voiceCount ? voiceEnergy / voiceCount : -100;
+  const isSpeechFrame = rms > 0.01 && avgVoiceDb > -65;
+
+  // Track speech / silence transitions for back-and-forth (conversation) detection
+  if (isSpeechFrame) {
+    callAnalysis.silenceFrames = 0;
+    callAnalysis.longSpeechFrames++;
+    if (!callAnalysis.inSpeech) {
+      callAnalysis.inSpeech = true;
+      callAnalysis.segmentStartMs = now;
+    }
+  } else {
+    callAnalysis.silenceFrames++;
+    if (callAnalysis.inSpeech && callAnalysis.silenceFrames > 12) { // ~200ms silence
+      callAnalysis.inSpeech = false;
+      callAnalysis.speechSegments.push({
+        startMs: callAnalysis.segmentStartMs,
+        endMs: now,
+        durationMs: now - callAnalysis.segmentStartMs
+      });
+      // Keep only the last 30 segments
+      if (callAnalysis.speechSegments.length > 30) callAnalysis.speechSegments.shift();
+    }
+    callAnalysis.longSpeechFrames = Math.max(0, callAnalysis.longSpeechFrames - 1);
+  }
+
+  // === Voicemail "beep" detection ===
+  // The end-of-greeting beep is typically a short tone around 800–1500 Hz.
+  // We look for a strong narrow-band peak in that range with no surrounding voice.
+  if (callAnalysis.state === 'answered' || callAnalysis.state === 'voicemail') {
+    const beepLowBin = Math.round(800 / binHz);
+    const beepHighBin = Math.round(1500 / binHz);
+    let maxDb = -100; let peakBin = 0;
+    for (let i = beepLowBin; i <= beepHighBin && i < freqBuf.length; i++) {
+      if (freqBuf[i] > maxDb) { maxDb = freqBuf[i]; peakBin = i; }
+    }
+    // Reference: the noise floor a few hundred Hz away
+    const refBin = Math.round(2500 / binHz);
+    const refDb = (refBin < freqBuf.length) ? freqBuf[refBin] : -100;
+    const isLikelyBeep = (maxDb - refDb > 18) && (maxDb > -45);
+    if (isLikelyBeep && now - callAnalysis.voicemailBeepSeenAt > 2000) {
+      callAnalysis.voicemailBeepSeenAt = now;
+      logDetectEvent('Voicemail beep detected');
+      if (callAnalysis.state !== 'voicemail') {
+        callAnalysis.state = 'leaving_voicemail';
+        setDetectState('success', 'Voicemail beep — recording started');
+      } else {
+        callAnalysis.state = 'leaving_voicemail';
+        setDetectState('success', 'Recording your voicemail…');
+      }
+    }
+  }
+
+  // === Long-monologue detection (likely voicemail greeting) ===
+  // If continuous speech for >12 seconds with no back-and-forth, treat as voicemail.
+  if (callAnalysis.state === 'answered'
+      && callAnalysis.longSpeechFrames > 720      // ~12s at 60fps
+      && !callAnalysis.awardedFlags.completed) {
+    const recentSegments = callAnalysis.speechSegments.slice(-6);
+    const hasBackAndForth = recentSegments.length >= 4 &&
+      recentSegments.some(s => s.durationMs < 2500); // short turns suggest dialogue
+    if (!hasBackAndForth) {
+      callAnalysis.state = 'voicemail';
+      setDetectState('success', 'Voicemail greeting detected');
+      logDetectEvent('Long monologue → voicemail reached');
+      awardCallEarning(PAY.COMPLETED_CALL, 'Reached voicemail');
+      callAnalysis.awardedFlags.completed = true;
+    }
+  }
+
+  // === Voicemail-left detection ===
+  // After beep, if user speech is heard for >5 seconds, count as VM left.
+  if (callAnalysis.state === 'leaving_voicemail'
+      && !callAnalysis.awardedFlags.vmLeft
+      && callAnalysis.voicemailBeepSeenAt > 0
+      && now - callAnalysis.voicemailBeepSeenAt > 5000
+      && callAnalysis.longSpeechFrames > 60) {  // ~1s of speech post-beep
+    awardCallEarning(PAY.VOICEMAIL_LEFT, 'Left voicemail');
+    callAnalysis.awardedFlags.vmLeft = true;
+  }
+
+  // === Conversation / 2+ minute call ===
+  // Once "answered" is set, if we see proper back-and-forth, mark as conversation.
+  if (callAnalysis.state === 'answered' || callAnalysis.state === 'conversation') {
+    const recentSegments = callAnalysis.speechSegments.slice(-8);
+    const shortTurns = recentSegments.filter(s => s.durationMs < 4000).length;
+    if (recentSegments.length >= 4 && shortTurns >= 3 && callAnalysis.state !== 'conversation') {
+      callAnalysis.state = 'conversation';
+      setDetectState('success', 'Conversation in progress');
+      logDetectEvent('Live conversation detected');
+    }
+  }
+
+  // === 2-minute long-call bonus ===
+  if (callAnalysis.answeredAt
+      && !callAnalysis.awardedFlags.longCall
+      && (now - callAnalysis.answeredAt) > 120000) {
+    awardCallEarning(PAY.LONG_CALL, 'Call > 2 minutes');
+    callAnalysis.awardedFlags.longCall = true;
+  }
+}
+
+/* ----- Web Speech API: live transcript + keyword detection ----- */
+const transcriptListEl = document.getElementById('transcriptList');
+const transcriptBadgeEl = document.getElementById('transcriptBadge');
+
+function startCallSpeechRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    // Browser doesn't support it (Safari, Firefox desktop, etc.) — show notice
+    transcriptListEl.innerHTML = '<div class="transcript-no-support">Live transcription requires Chrome or Edge browser. (Audio is still being analyzed for tones and beeps.)</div>';
+    if (transcriptBadgeEl) transcriptBadgeEl.style.display = 'none';
+    return;
+  }
+  try {
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = 'en-US';
+    rec.onresult = (e) => {
+      let interimText = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const result = e.results[i];
+        const text = (result[0].transcript || '').trim();
+        if (!text) continue;
+        if (result.isFinal) {
+          addTranscriptLine(text, true);
+          // Run keyword detection on final segments only
+          scanTranscriptForKeywords(text.toLowerCase(), true);
+        } else {
+          interimText += text + ' ';
+        }
+      }
+      if (interimText) updateInterimTranscript(interimText.trim());
+    };
+    rec.onerror = () => {};
+    rec.onend = () => {
+      // Restart if call is still active
+      if (speakerState.active && callAnalysis.speechRecognizer === rec) {
+        try { rec.start(); } catch {}
+      }
+    };
+    rec.start();
+    callAnalysis.speechRecognizer = rec;
+  } catch (e) {}
+}
+
+function addTranscriptLine(text, isFinal) {
+  if (!text) return;
+  const ts = (performance.now() - callAnalysis.startedAt) / 1000;
+  callAnalysis.transcript.push({ ts, text, isFinal: !!isFinal });
+  // Hide the empty placeholder if still there
+  const empty = document.getElementById('transcriptEmpty');
+  if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
+  // Remove any existing interim line — final replaces it
+  const interim = transcriptListEl.querySelector('.transcript-line.interim');
+  if (interim) interim.remove();
+  const line = document.createElement('div');
+  line.className = 'transcript-line';
+  line.innerHTML = `<span class="ts">${formatDuration(ts)}</span><span class="text">${escapeHtml(text)}</span>`;
+  transcriptListEl.appendChild(line);
+  transcriptListEl.scrollTop = transcriptListEl.scrollHeight;
+}
+
+function updateInterimTranscript(text) {
+  if (!text) return;
+  const empty = document.getElementById('transcriptEmpty');
+  if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
+  let interimLine = transcriptListEl.querySelector('.transcript-line.interim');
+  if (!interimLine) {
+    interimLine = document.createElement('div');
+    interimLine.className = 'transcript-line interim';
+    interimLine.innerHTML = '<span class="ts">…</span><span class="text"></span>';
+    transcriptListEl.appendChild(interimLine);
+  }
+  interimLine.querySelector('.text').textContent = text;
+  transcriptListEl.scrollTop = transcriptListEl.scrollHeight;
+}
+
+function stopCallSpeechRecognition() {
+  if (callAnalysis.speechRecognizer) {
+    try { callAnalysis.speechRecognizer.stop(); } catch {}
+    callAnalysis.speechRecognizer = null;
+  }
+}
+
+const APPOINTMENT_PATTERNS = [
+  /\b(schedule|set up|book|arrange|pencil (?:you|me) in)\b.*\b(appointment|meeting|consultation|visit|estimate|service|call back|callback)\b/,
+  /\b(appointment|meeting|consultation)\s+(?:for|on|next|this)\b/,
+  /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s+(?:at|morning|afternoon|evening)\b/,
+  /\b(?:tomorrow|next week|next monday|next tuesday|next wednesday)\b.*\b(at|works?|good)\b/,
+  /\b(see you|stop by|come by|drop by|swing by)\b.*\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next)\b/,
+  /\bI('ll| will) (be there|see you|stop by)\b/,
+  /\bsounds good\b.*\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next|appointment)\b/
+];
+
+function scanTranscriptForKeywords(text, isFinal) {
+  if (callAnalysis.awardedFlags.appointment) return;
+  // Only fire on final segments to avoid noisy interim matches
+  if (!isFinal) return;
+  for (const pattern of APPOINTMENT_PATTERNS) {
+    if (pattern.test(text)) {
+      logDetectEvent(`Heard "${text.trim().slice(0, 40)}…" → appointment`);
+      awardCallEarning(PAY.APPOINTMENT, 'Appointment scheduled');
+      callAnalysis.awardedFlags.appointment = true;
+      markAppointment.classList.add('fired');
+      return;
+    }
+  }
+}
+
+/* ----- Manual override buttons (in case auto-detection misses) ----- */
+markVmReached.addEventListener('click', () => {
+  if (callAnalysis.awardedFlags.completed) return;
+  callAnalysis.awardedFlags.completed = true;
+  callAnalysis.state = 'voicemail';
+  setDetectState('success', 'Voicemail reached (manual)');
+  awardCallEarning(PAY.COMPLETED_CALL, 'Reached voicemail (manual)');
+  markVmReached.classList.add('fired');
+});
+markVmLeft.addEventListener('click', () => {
+  if (callAnalysis.awardedFlags.vmLeft) return;
+  callAnalysis.awardedFlags.vmLeft = true;
+  awardCallEarning(PAY.VOICEMAIL_LEFT, 'Left voicemail (manual)');
+  markVmLeft.classList.add('fired');
+});
+markAppointment.addEventListener('click', () => {
+  if (callAnalysis.awardedFlags.appointment) return;
+  callAnalysis.awardedFlags.appointment = true;
+  awardCallEarning(PAY.APPOINTMENT, 'Appointment scheduled (manual)');
+  markAppointment.classList.add('fired');
+});
+
+/* ====================== CALL HISTORY (transcripts saved per call) ====================== */
+const CALL_HISTORY_KEY = 'crmgo_call_history_v1';
+
+function saveCallRecord() {
+  // Don't save empty records (e.g., user opened modal but never made a call)
+  const finalLines = (callAnalysis.transcript || []).filter(t => t.isFinal);
+  if (finalLines.length === 0
+      && (callAnalysis._totalThisCall || 0) === 0
+      && callAnalysis.events.length === 0) return;
+
+  const now = performance.now();
+  const totalSec = speakerState.startedAt ? Math.round((now - speakerState.startedAt) / 1000) : 0;
+  const talkSec = callAnalysis.answeredAt ? Math.round((now - callAnalysis.answeredAt) / 1000) : 0;
+
+  const record = {
+    id: 'call_' + Date.now(),
+    date: new Date().toISOString(),
+    businessName: callBizName ? callBizName.textContent : '',
+    phone: callNumber ? callNumber.textContent : '',
+    durationSec: totalSec,
+    talkTimeSec: talkSec,
+    ringCount: speakerState.ringCount,
+    answered: !!speakerState.answered,
+    earned: callAnalysis._totalThisCall || 0,
+    finalState: callAnalysis.state,
+    detectionEvents: (callAnalysis.events || []).map(e => ({ text: e.text, elapsed: e.elapsed })),
+    transcript: finalLines.map(t => ({ ts: t.ts, text: t.text }))
+  };
+
+  try {
+    const existing = JSON.parse(localStorage.getItem(CALL_HISTORY_KEY) || '[]');
+    existing.unshift(record);
+    if (existing.length > 200) existing.length = 200; // keep last 200 calls
+    localStorage.setItem(CALL_HISTORY_KEY, JSON.stringify(existing));
+  } catch (e) {}
+}
+
+function loadCallHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(CALL_HISTORY_KEY) || '[]');
+  } catch { return []; }
+}
+
+const historyModal = document.getElementById('historyModal');
+const historyList = document.getElementById('historyList');
+const historyDetail = document.getElementById('historyDetail');
+const historyListView = document.getElementById('historyListView');
+const historyBack = document.getElementById('historyBack');
+const historyClose = document.getElementById('historyClose');
+const walletHistoryBtn = document.getElementById('walletHistory');
+
+function formatDateShort(iso) {
+  const d = new Date(iso);
+  const opts = { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+  return d.toLocaleString([], opts);
+}
+
+function renderHistoryList() {
+  const records = loadCallHistory();
+  if (records.length === 0) {
+    historyList.innerHTML = '<div class="history-empty">No calls yet. Make a call in Speaker Mode and the transcript will be saved here.</div>';
+    return;
+  }
+  historyList.innerHTML = records.map(r => {
+    const lines = (r.transcript || []).length;
+    const dur = formatDuration(r.durationSec || 0);
+    return `
+      <div class="history-row" data-id="${escapeHtml(r.id)}">
+        <div class="history-head">
+          <span class="biz">${escapeHtml(r.businessName || 'Unknown')}</span>
+          <span class="earn">+$${(r.earned || 0).toFixed(2)}</span>
+        </div>
+        <div class="history-meta">
+          <span>${escapeHtml(formatDateShort(r.date))}</span>
+          <span class="sep">·</span>
+          <span>${escapeHtml(r.phone || '')}</span>
+          <span class="sep">·</span>
+          <span>${dur}</span>
+          <span class="sep">·</span>
+          <span class="lines-tag">${lines} transcript line${lines === 1 ? '' : 's'}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function showHistoryDetail(id) {
+  const records = loadCallHistory();
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  const dur = formatDuration(r.durationSec || 0);
+  const transcriptHtml = (r.transcript || []).length === 0
+    ? '<div class="transcript-empty">No transcript captured for this call.</div>'
+    : (r.transcript || []).map(t =>
+        `<div class="transcript-line"><span class="ts">${formatDuration(t.ts || 0)}</span><span class="text">${escapeHtml(t.text)}</span></div>`
+      ).join('');
+  const eventsHtml = (r.detectionEvents || []).length === 0
+    ? '<div class="transcript-empty">No detection events.</div>'
+    : (r.detectionEvents || []).map(e =>
+        `<div class="detect-event"><span class="check">✓</span><span>${escapeHtml(e.text)}</span><span class="ts">${escapeHtml(e.elapsed || '')}</span></div>`
+      ).join('');
+
+  historyDetail.innerHTML = `
+    <h3>${escapeHtml(r.businessName || 'Unknown')}</h3>
+    <div class="sub">${escapeHtml(formatDateShort(r.date))} · ${escapeHtml(r.phone || '')} · ${dur} · ${r.ringCount || 0} rings · <strong style="color:var(--yellow);">+$${(r.earned || 0).toFixed(2)}</strong></div>
+
+    <div class="section-h">Transcript</div>
+    <div class="transcript-list" style="max-height:200px;">${transcriptHtml}</div>
+
+    <div class="section-h">Detection Events</div>
+    ${eventsHtml}
+
+    <div class="history-actions">
+      <button id="histCopy">Copy Text</button>
+      <button id="histDownload">Download .txt</button>
+      <button id="histDelete" class="danger">Delete Record</button>
+    </div>
+  `;
+  historyDetail.classList.add('visible');
+  historyListView.style.display = 'none';
+  historyBack.style.display = '';
+
+  // Wire up the buttons in the detail panel
+  document.getElementById('histCopy').addEventListener('click', () => copyTranscript(r));
+  document.getElementById('histDownload').addEventListener('click', () => downloadTranscript(r));
+  document.getElementById('histDelete').addEventListener('click', () => deleteCallRecord(r.id));
+}
+
+function copyTranscript(r) {
+  const text = buildTranscriptText(r);
+  navigator.clipboard.writeText(text).then(
+    () => showToast('Transcript copied'),
+    () => showToast('Copy failed — select & copy manually')
+  );
+}
+
+function downloadTranscript(r) {
+  const text = buildTranscriptText(r);
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeName = (r.businessName || 'call').replace(/[^a-z0-9]+/gi, '_').slice(0, 40);
+  a.download = `${safeName}_${r.id}.txt`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+function buildTranscriptText(r) {
+  const lines = [];
+  lines.push(`Call: ${r.businessName || 'Unknown'}`);
+  lines.push(`Date: ${formatDateShort(r.date)}`);
+  lines.push(`Phone: ${r.phone || ''}`);
+  lines.push(`Duration: ${formatDuration(r.durationSec || 0)}  ·  Rings: ${r.ringCount || 0}  ·  Earned: $${(r.earned || 0).toFixed(2)}`);
+  lines.push('');
+  lines.push('=== TRANSCRIPT ===');
+  if ((r.transcript || []).length === 0) lines.push('(no transcript captured)');
+  else (r.transcript || []).forEach(t => {
+    lines.push(`[${formatDuration(t.ts || 0)}] ${t.text}`);
+  });
+  lines.push('');
+  lines.push('=== DETECTION EVENTS ===');
+  (r.detectionEvents || []).forEach(e => lines.push(`[${e.elapsed || ''}] ${e.text}`));
+  return lines.join('\n');
+}
+
+function deleteCallRecord(id) {
+  if (!confirm('Delete this call record? This cannot be undone.')) return;
+  try {
+    const records = loadCallHistory().filter(r => r.id !== id);
+    localStorage.setItem(CALL_HISTORY_KEY, JSON.stringify(records));
+  } catch {}
+  // Go back to list
+  historyDetail.classList.remove('visible');
+  historyListView.style.display = '';
+  historyBack.style.display = 'none';
+  renderHistoryList();
+  showToast('Record deleted');
+}
+
+function openHistoryModal() {
+  renderHistoryList();
+  historyDetail.classList.remove('visible');
+  historyListView.style.display = '';
+  historyBack.style.display = 'none';
+  historyModal.classList.add('visible');
+}
+function closeHistoryModal() { historyModal.classList.remove('visible'); }
+
+walletHistoryBtn.addEventListener('click', openHistoryModal);
+historyClose.addEventListener('click', closeHistoryModal);
+historyBack.addEventListener('click', () => {
+  historyDetail.classList.remove('visible');
+  historyListView.style.display = '';
+  historyBack.style.display = 'none';
+});
+historyModal.addEventListener('click', (e) => {
+  if (e.target === historyModal) closeHistoryModal();
+});
+historyList.addEventListener('click', (e) => {
+  const row = e.target.closest('.history-row');
+  if (!row) return;
+  showHistoryDetail(row.dataset.id);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && historyModal.classList.contains('visible')) closeHistoryModal();
+});
+
 function openPreflight() {
   // Hide the standard action area while the pre-flight popup is shown
   modalActionsEl.style.display = 'none';
@@ -2903,6 +3893,9 @@ async function startSpeakerMode({ useWebcam = false } = {}) {
   levelFill.style.width = '0%';
   speakerPanel.classList.add('active');
   voipNote.style.display = 'none';
+
+  // Reset call analysis state for this new call
+  resetCallAnalysis();
 
   // Reset detection state
   Object.assign(speakerState, {
@@ -3009,6 +4002,12 @@ async function startSpeakerMode({ useWebcam = false } = {}) {
         speakerState.ringCount++;
         ringCountEl.textContent = speakerState.ringCount;
         flashMetric(ringCountEl);
+        // Update analysis state: we're definitely ringing now
+        if (callAnalysis.state === 'idle') {
+          callAnalysis.state = 'ringing';
+          setDetectState(null, 'Ringing — waiting for answer or voicemail…');
+          logDetectEvent('Outgoing call ringing');
+        }
       }
       speakerState.inRing = false;
       speakerState.lastRingEndAt = now;
@@ -3020,6 +4019,10 @@ async function startSpeakerMode({ useWebcam = false } = {}) {
         && !speakerState.inRing) {
       markAnswered({ auto: true });
     }
+
+    // Hand the same audio frame off to the call-analysis layer so it can
+    // detect voicemail beeps, monologues, conversation, keywords, etc.
+    processCallAudioFrame(timeBuffer, freqBuffer, sampleRate, analyser.fftSize, rms);
 
     speakerState.rafId = requestAnimationFrame(tick);
   }
@@ -3083,6 +4086,16 @@ function markAnswered({ auto = false } = {}) {
   showToast(auto ? 'Call answered (auto)' : 'Call marked as answered');
   // Reset timer base so "Talk Time" starts at 00:00
   callTimerEl.textContent = '00:00';
+
+  // Update call analysis: we're now past ringing
+  callAnalysis.answeredAt = performance.now();
+  if (callAnalysis.state === 'ringing' || callAnalysis.state === 'idle') {
+    callAnalysis.state = 'answered';
+    setDetectState(null, 'Listening — voicemail or human?');
+    logDetectEvent('Call answered (analyzing audio)');
+  }
+  // Kick off speech recognition for keyword detection (appointments, etc.)
+  startCallSpeechRecognition();
 }
 
 function stopSpeakerMode({ silent = false } = {}) {
@@ -3129,9 +4142,19 @@ function stopSpeakerMode({ silent = false } = {}) {
   ocrTimer.classList.add('dim');
   ocrNumCard.classList.remove('match');
 
+  // Stop the speech recognizer if it was running
+  stopCallSpeechRecognition();
+
   if (!silent && speakerState.active) {
     const totalSec = (performance.now() - speakerState.startedAt) / 1000;
-    showToast(`Call ended · ${speakerState.ringCount} ring${speakerState.ringCount === 1 ? '' : 's'} · ${formatDuration(totalSec)}`);
+    const earned = (callAnalysis._totalThisCall || 0).toFixed(2);
+    callAnalysis.state = 'ended';
+    setDetectState('idle', 'Call ended');
+    // Persist the call (transcript + metadata + detection events + earnings) to localStorage
+    saveCallRecord();
+    const transcriptCount = (callAnalysis.transcript || []).filter(t => t.isFinal).length;
+    const transcriptNote = transcriptCount > 0 ? ` · ${transcriptCount} lines saved` : '';
+    showToast(`Call ended · ${speakerState.ringCount} ring${speakerState.ringCount === 1 ? '' : 's'} · ${formatDuration(totalSec)} · +$${earned}${transcriptNote}`);
   }
 
   speakerState.active = false;
