@@ -2208,6 +2208,207 @@
     filter: grayscale(0.4);
   }
 
+  /* ============= CALLED-ROW MARKER (turns text red after a call is logged) ============= */
+  .list-row.called .cell-name,
+  .list-row.called .cell-address,
+  .list-row.called .cell-number,
+  .list-row.called .cell-rating .stars,
+  .list-row.called .cell-rating .meta { color: #FF6B7E; }
+  .list-row.called .cell-address .distance { color: rgba(255, 107, 126, 0.55); }
+  .list-row.called .called-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 107, 126, 0.14);
+    color: #FF6B7E;
+    border: 1px solid rgba(255, 107, 126, 0.4);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-left: 6px;
+    vertical-align: 2px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .list-row.called .called-tag svg { width: 9px; height: 9px; }
+
+  /* ============= CONTACT SYNC ROW (inside call modal) ============= */
+  .sync-row {
+    display: flex; align-items: stretch; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .sync-btn {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: rgba(255,255,255,0.04);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .sync-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+  .sync-btn svg { width: 14px; height: 14px; }
+  .sync-btn.synced {
+    background: rgba(34,197,94,0.14);
+    color: #BBF7D0;
+    border-color: rgba(34,197,94,0.4);
+  }
+  .sync-status {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(34,197,94,0.10);
+    border: 1px solid rgba(34,197,94,0.35);
+    color: #BBF7D0;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+  .sync-status .check-mini {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: white;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .sync-status .check-mini svg { width: 10px; height: 10px; }
+  .sync-status strong { color: white; font-weight: 700; }
+  .sync-status .manage-link {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--yellow);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0;
+  }
+  .sync-status .manage-link:hover { text-decoration: underline; }
+
+  /* ============= CONTACT-SYNC MODAL ============= */
+  .cs-intro {
+    font-size: 13px;
+    color: rgba(255,255,255,0.78);
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .cs-option-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .cs-option {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    text-align: left;
+    width: 100%;
+    color: white;
+    font-family: inherit;
+  }
+  .cs-option:hover { border-color: var(--yellow); background: rgba(0,0,0,0.5); }
+  .cs-option:disabled { opacity: 0.45; cursor: not-allowed; }
+  .cs-option:disabled:hover { border-color: rgba(255,255,255,0.08); background: rgba(0,0,0,0.35); }
+  .cs-option .ico {
+    width: 38px; height: 38px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: rgba(255,214,10,0.14);
+    color: var(--yellow);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cs-option .ico svg { width: 20px; height: 20px; }
+  .cs-option .body { flex: 1; min-width: 0; }
+  .cs-option .body .ttl {
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    color: white;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+  .cs-option .body .desc {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.4;
+  }
+  .cs-option .body .unavail-tag {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 10px;
+    color: #FCA5A5;
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.3);
+    padding: 1px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-family: 'Russo One', sans-serif;
+    font-weight: 600;
+  }
+  .cs-summary {
+    background: linear-gradient(180deg, rgba(255,214,10,0.08) 0%, rgba(255,214,10,0.04) 100%);
+    border: 1px solid rgba(255,214,10,0.3);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .cs-summary .lbl {
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    color: var(--yellow);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .cs-summary .num {
+    font-family: 'Russo One', sans-serif;
+    font-size: 24px;
+    color: white;
+    font-variant-numeric: tabular-nums;
+  }
+  .cs-summary .num small {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-left: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .cs-summary .actions {
+    margin-top: 10px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .cs-summary .actions button {
+    flex: 1;
+    min-width: 100px;
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .cs-summary .actions button:hover { border-color: var(--yellow); color: var(--yellow); }
+  .cs-summary .actions button.danger:hover { border-color: #FCA5A5; color: #FCA5A5; }
+  input[type="file"].cs-hidden { display: none; }
+
   /* ============= USER SWITCHER (top-left, narrow icon-only pill) ============= */
   .user-switcher {
     position: fixed;
@@ -2827,6 +3028,21 @@
         </button>
       </div>
 
+      <!-- Contact sync (unsynced state) -->
+      <div class="sync-row" id="syncRow">
+        <button class="sync-btn" id="syncBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+          Sync Contacts
+        </button>
+      </div>
+
+      <!-- Contact sync (synced state) -->
+      <div class="sync-status" id="syncStatus" style="display:none;">
+        <span class="check-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span><strong id="syncStatusCount">0</strong> contacts synced<span id="syncMatchNote"></span></span>
+        <button class="manage-link" id="syncManageBtn" type="button">Manage</button>
+      </div>
+
       <label class="dial-track-toggle" for="trackOnDial">
         <input type="checkbox" id="trackOnDial" />
         <span class="lbl">
@@ -3138,6 +3354,78 @@
         <button class="copy" id="historyBack" style="display:none;">← All Calls</button>
         <button class="copy" id="historyClose">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============= CONTACT SYNC MODAL ============= -->
+  <div class="modal-backdrop" id="contactSyncModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width: 480px;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;text-align:center;margin-bottom:4px;">Contact Sync</h2>
+      <div class="biz-sub" style="text-align:center;">Match Dialed Numbers to Names</div>
+
+      <p class="cs-intro" id="csIntro">
+        Sync your phone's contacts so when you dial a number, your call log shows the contact name, time, and call length automatically. Everything stays on your device — nothing is uploaded.
+      </p>
+
+      <!-- Summary (shown when contacts are present) -->
+      <div class="cs-summary" id="csSummary" style="display:none;">
+        <div class="lbl">Synced Contacts</div>
+        <div class="num"><span id="csSummaryCount">0</span><small>contacts available for match</small></div>
+        <div class="actions">
+          <button id="csReplace" type="button">Replace</button>
+          <button id="csClear" type="button" class="danger">Clear All</button>
+        </div>
+      </div>
+
+      <!-- Option list -->
+      <div class="cs-option-list" id="csOptionList">
+        <button class="cs-option" id="csPickerBtn" type="button">
+          <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <span class="body">
+            <span class="ttl">Pick from Phone Contacts</span>
+            <span class="desc">Open your phone's contact picker and select which contacts to sync. Recommended on Android Chrome.</span>
+            <span id="csPickerUnavail" class="unavail-tag" style="display:none;">Not supported on this browser</span>
+          </span>
+        </button>
+
+        <button class="cs-option" id="csVcardBtn" type="button">
+          <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="14" r="2"/><path d="M9 18a3 3 0 0 1 6 0"/></svg>
+          </span>
+          <span class="body">
+            <span class="ttl">Import vCard (.vcf) File</span>
+            <span class="desc">Export your contacts from your phone (Contacts → Share / Export) and upload the .vcf file here. Works on every device.</span>
+          </span>
+        </button>
+
+        <button class="cs-option" id="csManualBtn" type="button">
+          <span class="ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          </span>
+          <span class="body">
+            <span class="ttl">Add a Contact Manually</span>
+            <span class="desc">Enter a name and phone number to add a single contact. Useful for quick tests or sales prospects you want to track.</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Manual add form (toggled by csManualBtn) -->
+      <div id="csManualForm" style="display:none; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; margin-bottom:14px;">
+        <label style="display:block; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.7); font-weight:600; margin-bottom:6px;">Name</label>
+        <input type="text" id="csManualName" placeholder="e.g. Maria's Bakery" style="width:100%; background:var(--black); color:white; border:2px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px 14px; font-size:14px; font-family:'Inter',sans-serif; margin-bottom:10px;" />
+        <label style="display:block; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.7); font-weight:600; margin-bottom:6px;">Phone Number</label>
+        <input type="tel" id="csManualPhone" placeholder="(555) 123-4567" style="width:100%; background:var(--black); color:white; border:2px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px 14px; font-size:14px; font-family:'Inter',sans-serif; margin-bottom:10px;" />
+        <div style="display:grid; grid-template-columns:1fr 1.4fr; gap:8px;">
+          <button id="csManualCancel" type="button" style="padding:11px; background:transparent; color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.18); border-radius:10px; font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer;">Cancel</button>
+          <button id="csManualSave" type="button" style="padding:11px; background:var(--yellow); color:var(--black); border:none; border-radius:10px; font-family:'Russo One',sans-serif; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; box-shadow:0 4px 0 var(--yellow-shadow);">Add Contact</button>
+        </div>
+      </div>
+
+      <input type="file" id="csVcardInput" class="cs-hidden" accept=".vcf,text/vcard,text/x-vcard,text/directory" />
+
+      <button class="modal-close" id="csClose">Close</button>
     </div>
   </div>
 
@@ -3652,9 +3940,15 @@ function render() {
     </div>
   `;
 
-  const rowsHtml = slice.map(b => `
-    <div class="list-row">
-      <div class="cell-name" title="${escapeHtml(b.name)}">${escapeHtml(b.name)}</div>
+  const calledSet = loadCalledSet();
+  const rowsHtml = slice.map(b => {
+    const isCalled = calledSet.has(b.id);
+    const calledTag = isCalled
+      ? ` <span class="called-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Called</span>`
+      : '';
+    return `
+    <div class="list-row${isCalled ? ' called' : ''}" data-bizid="${escapeHtml(b.id)}">
+      <div class="cell-name" title="${escapeHtml(b.name)}">${escapeHtml(b.name)}${calledTag}</div>
       <div class="cell-address" title="${escapeHtml(b.address)}">
         ${escapeHtml(b.address)}<span class="distance">· ${b.distance.toFixed(1)} mi</span>
       </div>
@@ -3672,7 +3966,8 @@ function render() {
         </a>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   grid.innerHTML = headerHtml + rowsHtml;
 
@@ -3738,8 +4033,19 @@ const callCopy = document.getElementById('callCopy');
 const callClose = document.getElementById('callClose');
 const toast = document.getElementById('toast');
 
+// Tracks which business the current call modal is for — used by the sync UI
+// to show whether the dialed number matches a synced contact.
+let currentBizForCall = null;
+
 function openCallModal(biz) {
-  callBizName.textContent = biz.name;
+  currentBizForCall = biz;
+  // If the dialed number matches a synced contact, prefix the contact name
+  const match = findContactByNumber(biz.phone);
+  if (match && match.name && match.name.toLowerCase() !== biz.name.toLowerCase()) {
+    callBizName.textContent = `${biz.name} · ${match.name}`;
+  } else {
+    callBizName.textContent = biz.name;
+  }
   callNumber.textContent = biz.phone;
   callDial.href = telLink(biz.phone);
   callCopy.classList.remove('copied');
@@ -3748,12 +4054,14 @@ function openCallModal(biz) {
     Copy Number
   `;
   stopSpeakerMode({ silent: true });
+  updateSyncUI();
   callModal.classList.add('visible');
 }
 
 function closeCallModal() {
   stopSpeakerMode({ silent: true });
   callModal.classList.remove('visible');
+  currentBizForCall = null;
 }
 
 callClose.addEventListener('click', closeCallModal);
@@ -3766,6 +4074,13 @@ document.addEventListener('keydown', (e) => {
 
 const trackOnDialEl = document.getElementById('trackOnDial');
 callDial.addEventListener('click', (e) => {
+  // ALWAYS log the dialed call against the active account's history.
+  // This is the primary call-tracking path on a phone (Dial is preferable to
+  // Speaker Mode there, since the Phone app takes over the mic).
+  if (currentBizForCall) startDialedCall(currentBizForCall);
+
+  // Speaker mode is opt-in via the "Auto-transcribe" toggle (typically
+  // used on a separate computer while the phone makes the actual call)
   if (!trackOnDialEl.checked) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     e.preventDefault();
@@ -4205,11 +4520,17 @@ function saveCallRecord() {
   const totalSec = speakerState.startedAt ? Math.round((now - speakerState.startedAt) / 1000) : 0;
   const talkSec = callAnalysis.answeredAt ? Math.round((now - callAnalysis.answeredAt) / 1000) : 0;
 
+  // Track contact name if the number matches a synced contact
+  const numberText = callNumber ? callNumber.textContent : '';
+  const contact = findContactByNumber(numberText);
+
   const record = {
     id: 'call_' + Date.now(),
     date: new Date().toISOString(),
     businessName: callBizName ? callBizName.textContent : '',
-    phone: callNumber ? callNumber.textContent : '',
+    contactName: contact ? contact.name : '',
+    phone: numberText,
+    bizId: currentBizForCall ? currentBizForCall.id : null,
     durationSec: totalSec,
     talkTimeSec: talkSec,
     ringCount: speakerState.ringCount,
@@ -4217,11 +4538,14 @@ function saveCallRecord() {
     earned: callAnalysis._totalThisCall || 0,
     finalState: callAnalysis.state,
     detectionEvents: (callAnalysis.events || []).map(e => ({ text: e.text, elapsed: e.elapsed })),
-    transcript: finalLines.map(t => ({ ts: t.ts, text: t.text }))
+    transcript: finalLines.map(t => ({ ts: t.ts, text: t.text })),
+    source: 'speaker'
   };
 
+  // Mark the business as called (turns its row red on the search list)
+  if (currentBizForCall) markBusinessCalled(currentBizForCall.id);
+
   try {
-    // Save under the active account's history key
     const key = historyKeyForActive();
     const existing = JSON.parse(localStorage.getItem(key) || '[]');
     existing.unshift(record);
@@ -4253,16 +4577,27 @@ function formatDateShort(iso) {
 function renderHistoryList() {
   const records = loadCallHistory();
   if (records.length === 0) {
-    historyList.innerHTML = '<div class="history-empty">No calls yet. Make a call in Speaker Mode and the transcript will be saved here.</div>';
+    historyList.innerHTML = '<div class="history-empty">No calls yet. Make a call from the dialer or in Speaker Mode and it will be logged here.</div>';
     return;
   }
   historyList.innerHTML = records.map(r => {
     const lines = (r.transcript || []).length;
     const dur = formatDuration(r.durationSec || 0);
+    const contactTag = r.contactName
+      ? ` <span style="color:#86EFAC;font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:1px;margin-left:4px;">· ${escapeHtml(r.contactName)}</span>`
+      : '';
+    const sourceTag = r.source === 'dialer'
+      ? ` <span style="font-family:'Russo One',sans-serif;font-size:9px;letter-spacing:1px;color:rgba(255,214,10,0.9);background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);padding:1px 6px;border-radius:999px;margin-left:6px;text-transform:uppercase;vertical-align:1px;">Dialer</span>`
+      : (r.source === 'speaker'
+          ? ` <span style="font-family:'Russo One',sans-serif;font-size:9px;letter-spacing:1px;color:#86EFAC;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);padding:1px 6px;border-radius:999px;margin-left:6px;text-transform:uppercase;vertical-align:1px;">Speaker</span>`
+          : '');
+    const transcriptInfo = lines > 0
+      ? `<span class="sep">·</span><span class="lines-tag">${lines} transcript line${lines === 1 ? '' : 's'}</span>`
+      : '';
     return `
       <div class="history-row" data-id="${escapeHtml(r.id)}">
         <div class="history-head">
-          <span class="biz">${escapeHtml(r.businessName || 'Unknown')}</span>
+          <span class="biz">${escapeHtml(r.businessName || 'Unknown')}${contactTag}${sourceTag}</span>
           <span class="earn">+$${(r.earned || 0).toFixed(2)}</span>
         </div>
         <div class="history-meta">
@@ -4271,8 +4606,7 @@ function renderHistoryList() {
           <span>${escapeHtml(r.phone || '')}</span>
           <span class="sep">·</span>
           <span>${dur}</span>
-          <span class="sep">·</span>
-          <span class="lines-tag">${lines} transcript line${lines === 1 ? '' : 's'}</span>
+          ${transcriptInfo}
         </div>
       </div>
     `;
@@ -6023,6 +6357,7 @@ function switchActiveUser(newId) {
   userSwitcher.classList.remove('open');
   renderUserSwitcher();
   loadWallet(); // wallet is per-account
+  updateSyncUI(); // contacts are per-account too
   applyAdminLocks();
   // If a view is active, re-run with the new account's assignment
   if (currentView === 'search') runSearch();
@@ -6159,9 +6494,348 @@ function applyAdminLocks() {
   document.getElementById('ipLockedBanner').classList.toggle('visible', locked && currentView === 'inperson');
 }
 
+/* ====================== CONTACT SYNC ====================== */
+// Each account (admin or user) has its own contact list, stored locally.
+// Contacts are { name, phone, digits } where `digits` is the digit-only form
+// used for matching (so we can match across formatting variants).
+function contactsKeyForActive() {
+  return isAdmin() ? 'crmgo_contacts_admin' : ('crmgo_contacts_' + adminState.activeUserId);
+}
+function loadContacts() {
+  try { return JSON.parse(localStorage.getItem(contactsKeyForActive()) || '[]'); }
+  catch { return []; }
+}
+function saveContacts(list) {
+  try { localStorage.setItem(contactsKeyForActive(), JSON.stringify(list)); } catch {}
+}
+function normalizeDigits(s) {
+  return String(s || '').replace(/\D/g, '');
+}
+function matchKey(digits) {
+  // Use the last 10 digits to absorb leading country codes
+  return digits.slice(-10);
+}
+function findContactByNumber(number) {
+  const target = matchKey(normalizeDigits(number));
+  if (target.length < 7) return null;
+  const list = loadContacts();
+  return list.find(c => matchKey(c.digits) === target) || null;
+}
+
+const syncRow = document.getElementById('syncRow');
+const syncBtn = document.getElementById('syncBtn');
+const syncStatusEl = document.getElementById('syncStatus');
+const syncStatusCount = document.getElementById('syncStatusCount');
+const syncMatchNote = document.getElementById('syncMatchNote');
+const syncManageBtn = document.getElementById('syncManageBtn');
+
+function updateSyncUI() {
+  const list = loadContacts();
+  const count = list.length;
+  if (count === 0) {
+    syncRow.style.display = '';
+    syncStatusEl.style.display = 'none';
+  } else {
+    syncRow.style.display = 'none';
+    syncStatusEl.style.display = '';
+    syncStatusCount.textContent = count;
+    // If the call modal is open and we have a number, note whether it matched
+    if (currentBizForCall) {
+      const match = findContactByNumber(currentBizForCall.phone);
+      syncMatchNote.textContent = match ? ` · matched as "${match.name}"` : ' · no match for this number';
+    } else {
+      syncMatchNote.textContent = '';
+    }
+  }
+}
+
+syncBtn.addEventListener('click', () => openContactSyncModal());
+syncManageBtn.addEventListener('click', () => openContactSyncModal());
+
+/* ----- Contact Sync Modal ----- */
+const contactSyncModal = document.getElementById('contactSyncModal');
+const csClose = document.getElementById('csClose');
+const csSummary = document.getElementById('csSummary');
+const csSummaryCount = document.getElementById('csSummaryCount');
+const csReplace = document.getElementById('csReplace');
+const csClear = document.getElementById('csClear');
+const csOptionList = document.getElementById('csOptionList');
+const csPickerBtn = document.getElementById('csPickerBtn');
+const csPickerUnavail = document.getElementById('csPickerUnavail');
+const csVcardBtn = document.getElementById('csVcardBtn');
+const csVcardInput = document.getElementById('csVcardInput');
+const csManualBtn = document.getElementById('csManualBtn');
+const csManualForm = document.getElementById('csManualForm');
+const csManualName = document.getElementById('csManualName');
+const csManualPhone = document.getElementById('csManualPhone');
+const csManualCancel = document.getElementById('csManualCancel');
+const csManualSave = document.getElementById('csManualSave');
+
+function openContactSyncModal() {
+  refreshContactSyncModal();
+  contactSyncModal.classList.add('visible');
+}
+function closeContactSyncModal() {
+  contactSyncModal.classList.remove('visible');
+  csManualForm.style.display = 'none';
+}
+csClose.addEventListener('click', closeContactSyncModal);
+contactSyncModal.addEventListener('click', (e) => {
+  if (e.target === contactSyncModal) closeContactSyncModal();
+});
+
+function refreshContactSyncModal() {
+  const list = loadContacts();
+  if (list.length > 0) {
+    csSummary.style.display = '';
+    csSummaryCount.textContent = list.length;
+  } else {
+    csSummary.style.display = 'none';
+  }
+  // Detect Contact Picker API availability
+  const hasPicker = !!(navigator.contacts && typeof navigator.contacts.select === 'function');
+  csPickerBtn.disabled = !hasPicker;
+  csPickerUnavail.style.display = hasPicker ? 'none' : '';
+}
+
+csReplace.addEventListener('click', () => {
+  if (!confirm('Replace your current contacts? This will clear the existing list first.')) return;
+  saveContacts([]);
+  refreshContactSyncModal();
+  updateSyncUI();
+  showToast('Contacts cleared — choose a source below');
+});
+csClear.addEventListener('click', () => {
+  if (!confirm('Remove all synced contacts? This cannot be undone.')) return;
+  saveContacts([]);
+  refreshContactSyncModal();
+  updateSyncUI();
+  showToast('Contacts cleared');
+});
+
+/* --- Contact Picker (Android Chrome) --- */
+csPickerBtn.addEventListener('click', async () => {
+  if (!navigator.contacts || typeof navigator.contacts.select !== 'function') {
+    showToast('Your browser does not support the contact picker');
+    return;
+  }
+  try {
+    const picked = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+    if (!picked || picked.length === 0) { showToast('No contacts selected'); return; }
+    const added = [];
+    picked.forEach(c => {
+      const name = (c.name && c.name[0]) || 'Unknown';
+      (c.tel || []).forEach(t => {
+        const digits = normalizeDigits(t);
+        if (digits.length >= 7) added.push({ name, phone: t, digits });
+      });
+    });
+    const list = loadContacts().concat(added);
+    saveContacts(list);
+    refreshContactSyncModal();
+    updateSyncUI();
+    showToast(`Added ${added.length} contact${added.length === 1 ? '' : 's'} from your phone`);
+  } catch (err) {
+    showToast('Contact picker was cancelled or denied');
+  }
+});
+
+/* --- vCard import --- */
+csVcardBtn.addEventListener('click', () => csVcardInput.click());
+csVcardInput.addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = parseVCard(text);
+    if (parsed.length === 0) {
+      showToast('No phone numbers found in that file');
+      return;
+    }
+    const list = loadContacts().concat(parsed);
+    saveContacts(list);
+    refreshContactSyncModal();
+    updateSyncUI();
+    showToast(`Imported ${parsed.length} contact${parsed.length === 1 ? '' : 's'} from vCard`);
+  } catch (err) {
+    showToast('Could not read that vCard file');
+  } finally {
+    csVcardInput.value = '';
+  }
+});
+
+function parseVCard(text) {
+  // Minimal vCard 3.0/4.0 parser — collects every TEL with its enclosing FN
+  const out = [];
+  const cards = text.split(/BEGIN:VCARD/i).slice(1);
+  for (const raw of cards) {
+    const block = raw.split(/END:VCARD/i)[0];
+    // Unfold lines (a vCard line continued on the next line starts with a space)
+    const unfolded = block.replace(/\r?\n[ \t]/g, '');
+    const lines = unfolded.split(/\r?\n/);
+    let name = '';
+    const tels = [];
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      // Strip parameters (e.g., TEL;TYPE=CELL: → TEL:)
+      const colonIdx = line.indexOf(':');
+      if (colonIdx === -1) continue;
+      const head = line.slice(0, colonIdx).toUpperCase();
+      const value = line.slice(colonIdx + 1).trim();
+      if (head === 'FN' || head.startsWith('FN;')) {
+        if (!name) name = value;
+      } else if (head === 'N' || head.startsWith('N;')) {
+        // N: family;given;additional;prefix;suffix → use "given family"
+        if (!name) {
+          const parts = value.split(';');
+          const given = (parts[1] || '').trim();
+          const family = (parts[0] || '').trim();
+          name = [given, family].filter(Boolean).join(' ') || value;
+        }
+      } else if (head === 'TEL' || head.startsWith('TEL;') || head.startsWith('TEL,')) {
+        const digits = normalizeDigits(value);
+        if (digits.length >= 7) tels.push({ raw: value, digits });
+      }
+    }
+    if (!name) name = 'Unknown';
+    tels.forEach(t => out.push({ name, phone: t.raw, digits: t.digits }));
+  }
+  return out;
+}
+
+/* --- Manual add --- */
+csManualBtn.addEventListener('click', () => {
+  csManualForm.style.display = '';
+  csManualName.value = '';
+  csManualPhone.value = '';
+  csManualName.focus();
+});
+csManualCancel.addEventListener('click', () => { csManualForm.style.display = 'none'; });
+csManualSave.addEventListener('click', () => {
+  const name = (csManualName.value || '').trim();
+  const phone = (csManualPhone.value || '').trim();
+  const digits = normalizeDigits(phone);
+  if (!name) { showToast('Name required'); csManualName.focus(); return; }
+  if (digits.length < 7) { showToast('Phone number looks too short'); csManualPhone.focus(); return; }
+  const list = loadContacts();
+  list.push({ name, phone, digits });
+  saveContacts(list);
+  csManualForm.style.display = 'none';
+  refreshContactSyncModal();
+  updateSyncUI();
+  showToast(`Added ${name}`);
+});
+
+/* ====================== CALLED-SET (per active account) ======================
+   Tracks which business IDs have already been dialed/called from the search
+   list so the row text can render red the next time the list shows. */
+function calledKeyForActive() {
+  return isAdmin() ? 'crmgo_called_admin' : ('crmgo_called_' + adminState.activeUserId);
+}
+function loadCalledSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(calledKeyForActive()) || '[]')); }
+  catch { return new Set(); }
+}
+function saveCalledSet(set) {
+  try { localStorage.setItem(calledKeyForActive(), JSON.stringify([...set])); } catch {}
+}
+function markBusinessCalled(bizId) {
+  if (!bizId) return;
+  const set = loadCalledSet();
+  set.add(bizId);
+  saveCalledSet(set);
+  // Visually mark the matching row right away (if it's on screen)
+  document.querySelectorAll(`.list-row[data-bizid="${cssEscape(bizId)}"]`).forEach(r => r.classList.add('called'));
+}
+function cssEscape(s) {
+  // Minimal CSS attribute selector escaping
+  return String(s).replace(/(["\\])/g, '\\$1');
+}
+
+/* ====================== DIALED-CALL AUTO-LOGGING ======================
+   When the user taps Dial (the tel: link), we kick off a "dialed call"
+   record that captures the start time. After they come back, we ask
+   roughly how long the call was so we can save a proper history entry. */
+let dialedCallContext = null;
+
+function startDialedCall(biz) {
+  if (!biz) return;
+  const contact = findContactByNumber(biz.phone);
+  dialedCallContext = {
+    biz: { id: biz.id, name: biz.name, phone: biz.phone, address: biz.address },
+    contactName: contact ? contact.name : null,
+    startedAt: Date.now(),
+    awaitingReturn: true
+  };
+  // Mark the row red immediately — the user has initiated a call
+  markBusinessCalled(biz.id);
+  // Save a "placeholder" record now so it survives a page reload
+  saveDialedCallRecord({ tentative: true });
+}
+
+function saveDialedCallRecord({ tentative = false, durationSec = null } = {}) {
+  if (!dialedCallContext) return;
+  const ctx = dialedCallContext;
+  const startedAt = ctx.startedAt;
+  const now = Date.now();
+  const dur = (durationSec !== null) ? durationSec : Math.max(0, Math.round((now - startedAt) / 1000));
+  const record = {
+    id: 'dial_' + startedAt,
+    date: new Date(startedAt).toISOString(),
+    businessName: ctx.biz.name,
+    contactName: ctx.contactName || '',
+    phone: ctx.biz.phone,
+    bizId: ctx.biz.id,
+    durationSec: dur,
+    talkTimeSec: dur,
+    ringCount: 0,
+    answered: dur > 5,
+    earned: 0,
+    finalState: tentative ? 'dialed_pending' : 'dialed',
+    detectionEvents: [{ text: 'Dialed from app', elapsed: '00:00' }],
+    transcript: [],
+    source: 'dialer'
+  };
+  try {
+    const key = historyKeyForActive();
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    // If we already have a tentative record for this dial, replace it
+    const placeholderIdx = existing.findIndex(r => r.id === record.id);
+    if (placeholderIdx !== -1) existing[placeholderIdx] = record;
+    else existing.unshift(record);
+    if (existing.length > 200) existing.length = 200;
+    localStorage.setItem(key, JSON.stringify(existing));
+  } catch {}
+}
+
+function finalizeDialedCall() {
+  if (!dialedCallContext || !dialedCallContext.awaitingReturn) return;
+  // The user has come back to the tab — finalize using elapsed time as a
+  // best-effort duration estimate. They can also adjust manually later.
+  saveDialedCallRecord({ tentative: false });
+  const ctx = dialedCallContext;
+  const dur = Math.max(0, Math.round((Date.now() - ctx.startedAt) / 1000));
+  showToast(`Call logged · ${ctx.contactName || ctx.biz.name} · ${formatDuration(dur)}`);
+  dialedCallContext = null;
+}
+
+// Detect when the user returns to the tab (came back from the Phone app)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && dialedCallContext && dialedCallContext.awaitingReturn) {
+    // Small delay to allow the page to settle
+    setTimeout(finalizeDialedCall, 600);
+  }
+});
+window.addEventListener('focus', () => {
+  if (dialedCallContext && dialedCallContext.awaitingReturn) {
+    setTimeout(finalizeDialedCall, 600);
+  }
+});
+
 /* ====================== BOOT ====================== */
 renderUserSwitcher();
 loadWallet();
+updateSyncUI();
 applyAdminLocks();
 
 </script>
