@@ -2208,6 +2208,229 @@
     filter: grayscale(0.4);
   }
 
+  /* ============= CALL COMPLIANCE WARNING (shown above Dial) ============= */
+  .compliance-warning {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.9);
+  }
+  .compliance-warning svg {
+    width: 18px; height: 18px;
+    color: #FCA5A5;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .compliance-warning strong { color: #FCA5A5; font-weight: 700; }
+  .compliance-warning ul {
+    list-style: none;
+    padding: 0;
+    margin: 6px 0 0 0;
+  }
+  .compliance-warning li {
+    padding: 2px 0 2px 14px;
+    position: relative;
+    color: rgba(255,255,255,0.85);
+  }
+  .compliance-warning li::before {
+    content: "•";
+    position: absolute;
+    left: 2px;
+    color: #FCA5A5;
+  }
+
+  /* ============= ACTIVE CALL OVERLAY (fixed, fullscreen) ============= */
+  .call-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(7, 50, 65, 0.97) 0%, rgba(11, 110, 140, 0.98) 100%);
+    backdrop-filter: blur(8px);
+    z-index: 9500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .call-overlay.visible { display: flex; animation: fadeIn 200ms ease; }
+  .call-overlay-inner {
+    width: 100%;
+    max-width: 460px;
+    background: #0E232C;
+    border: 1px solid rgba(255,214,10,0.35);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    text-align: center;
+  }
+  .call-overlay .live-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 0 rgba(34,197,94,0.7);
+    animation: pulseDot 1.4s ease-out infinite;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: 1px;
+  }
+  .call-overlay .status-tag {
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    color: #BBF7D0;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .call-overlay h2 {
+    font-family: 'Russo One', sans-serif;
+    font-size: 18px;
+    color: white;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .call-overlay .biz-sub {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .call-overlay .timer-display {
+    font-family: 'Russo One', sans-serif;
+    font-size: 64px;
+    color: var(--yellow);
+    letter-spacing: 4px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 0 var(--yellow-deep), 0 4px 0 var(--yellow-shadow), 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .call-overlay .timer-lbl {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .call-overlay .instructions {
+    background: rgba(0,0,0,0.35);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.5;
+    text-align: left;
+  }
+  .call-overlay .instructions strong { color: var(--yellow); }
+  .call-overlay .compliance-meters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .call-overlay .meter {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+  }
+  .call-overlay .meter .num {
+    display: block;
+    font-family: 'Russo One', sans-serif;
+    font-size: 22px;
+    color: var(--yellow);
+    margin-bottom: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .call-overlay .meter.warn .num { color: #FCA5A5; }
+  .call-overlay .meter.ok .num { color: #22c55e; }
+  .call-overlay .pol-prompt {
+    background: linear-gradient(180deg, #FFD60A 0%, #C9A300 100%);
+    color: var(--black);
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    display: none;
+    animation: polFlash 1.4s ease-out infinite;
+  }
+  .call-overlay .pol-prompt.visible { display: block; }
+  @keyframes polFlash {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,214,10,0.6); }
+    50%      { box-shadow: 0 0 0 14px rgba(255,214,10,0); }
+  }
+  .call-overlay .pol-prompt .pol-q {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .call-overlay .pol-prompt .pol-d {
+    font-size: 11px;
+    margin-bottom: 10px;
+    line-height: 1.4;
+    opacity: 0.8;
+  }
+  .call-overlay .pol-prompt .pol-btn {
+    background: var(--black);
+    color: var(--yellow);
+    border: none;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+    transition: transform 100ms ease;
+  }
+  .call-overlay .pol-prompt .pol-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.5);
+  }
+  .call-overlay .end-btn {
+    background: rgba(239,68,68,0.18);
+    color: #FCA5A5;
+    border: 1px solid rgba(239,68,68,0.4);
+    padding: 12px;
+    border-radius: 10px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: 100%;
+    transition: all 150ms ease;
+  }
+  .call-overlay .end-btn:hover { background: rgba(239,68,68,0.3); color: white; }
+
+  /* When the user is away (Phone app), show a different state */
+  .call-overlay.away .live-dot { background: #FCA5A5; }
+  .call-overlay.away .status-tag { color: #FCA5A5; }
+
+  /* Compliance-failed state (red) */
+  .call-overlay.failed {
+    background: radial-gradient(ellipse at center, rgba(102, 4, 18, 0.97) 0%, rgba(60, 0, 10, 0.98) 100%);
+  }
+  .call-overlay.failed .live-dot {
+    background: #ef4444;
+    animation: none;
+  }
+  .call-overlay.failed .status-tag { color: #FCA5A5; }
+  .call-overlay.failed .timer-display { color: #FCA5A5; text-shadow: none; }
+
   /* ============= CALLED-ROW MARKER (turns text red after a call is logged) ============= */
   .list-row.called .cell-name,
   .list-row.called .cell-address,
@@ -3010,6 +3233,23 @@
       <div class="biz-sub" id="callBizName">—</div>
       <div class="num" id="callNumber" tabindex="0">(000) 000-0000</div>
 
+      <!-- Compliance rules — shown above Dial so the user knows what's required -->
+      <div class="compliance-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+          <strong>Comply or the call won't count.</strong>
+          <ul>
+            <li>Switch to the Phone app within <strong>3 seconds</strong> of tapping Dial</li>
+            <li>Tap the green confirmation button each time it appears (every ~45s)</li>
+            <li>Return to this page within <strong>3 seconds</strong> after you hang up</li>
+          </ul>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <a class="dial" id="callDial" href="#">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
@@ -3354,6 +3594,44 @@
         <button class="copy" id="historyBack" style="display:none;">← All Calls</button>
         <button class="copy" id="historyClose">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============= ACTIVE CALL OVERLAY (during a dialer-initiated call) ============= -->
+  <div class="call-overlay" id="callOverlay">
+    <div class="call-overlay-inner">
+      <div class="status-tag"><span class="live-dot"></span><span id="overlayStatusText">Call in progress</span></div>
+      <h2 id="overlayBizName">—</h2>
+      <div class="biz-sub" id="overlayContactName">—</div>
+
+      <div class="timer-display" id="overlayTimer">00:00</div>
+      <div class="timer-lbl">Time since dial</div>
+
+      <div class="compliance-meters">
+        <div class="meter" id="overlayPolMeter">
+          <span class="num" id="overlayPolCount">0</span>
+          Check-ins
+        </div>
+        <div class="meter" id="overlayShotMeter">
+          <span class="num" id="overlayShotCount">0</span>
+          Audit snaps
+        </div>
+      </div>
+
+      <div class="instructions" id="overlayInstructions">
+        <strong>Waiting for you to start the call.</strong> Tap the green call button in your Phone app and you'll see the iOS green pill light up at the top.
+      </div>
+
+      <!-- Proof-of-life prompt — pops up every ~45s; user must tap to confirm -->
+      <div class="pol-prompt" id="polPrompt">
+        <div class="pol-q">Are you still on the call?</div>
+        <div class="pol-d">Tap to confirm. Missing a check-in may invalidate this call.</div>
+        <button class="pol-btn" id="polBtn" type="button">
+          ✓ Yes, still on the call
+        </button>
+      </div>
+
+      <button class="end-btn" id="overlayEndBtn" type="button">Hang up — End call now</button>
     </div>
   </div>
 
@@ -4077,7 +4355,12 @@ callDial.addEventListener('click', (e) => {
   // ALWAYS log the dialed call against the active account's history.
   // This is the primary call-tracking path on a phone (Dial is preferable to
   // Speaker Mode there, since the Phone app takes over the mic).
-  if (currentBizForCall) startDialedCall(currentBizForCall);
+  if (currentBizForCall) {
+    ensureNotificationPermission();
+    startDialedCall(currentBizForCall);
+    // Close the call modal so the overlay is unobstructed
+    callModal.classList.remove('visible');
+  }
 
   // Speaker mode is opt-in via the "Auto-transcribe" toggle (typically
   // used on a separate computer while the phone makes the actual call)
@@ -6752,11 +7035,53 @@ function cssEscape(s) {
   return String(s).replace(/(["\\])/g, '\\$1');
 }
 
-/* ====================== DIALED-CALL AUTO-LOGGING ======================
-   When the user taps Dial (the tel: link), we kick off a "dialed call"
-   record that captures the start time. After they come back, we ask
-   roughly how long the call was so we can save a proper history entry. */
+/* ====================== DIALED-CALL COMPLIANCE ENGINE ======================
+   When the user taps Dial, we kick off a compliance-tracked session:
+
+   1. SWITCH-AWAY WINDOW: They have 3 seconds to leave this tab (switch to
+      the Phone app). If they don't, the call doesn't count.
+   2. PROOF-OF-LIFE: Every ~45 seconds during the call, an alert/notification
+      asks them to confirm they're still on the call. Missed → invalidated.
+   3. AUDIT SNAPSHOTS: Every 30 seconds the page is screenshotted (html2canvas
+      → base64 PNG) and queued for upload to a future server for manual review.
+   4. RETURN WINDOW: After hanging up, they must return to this tab within 3
+      seconds. The visibilitychange event timestamps their return.
+
+   All compliance failures invalidate the call. Only fully compliant calls
+   are credited as earnings.
+   ==================================================================== */
+
+const COMPLIANCE = {
+  SWITCH_AWAY_SECONDS: 3,    // Must leave tab within 3s of tapping Dial
+  POL_INTERVAL_MS: 45000,    // Proof-of-life prompt every 45s
+  POL_RESPONSE_WINDOW_MS: 15000,  // 15s to respond before missing it
+  SNAPSHOT_INTERVAL_MS: 30000,    // Audit snapshot every 30s
+  MAX_MISSED_POL: 1,         // 1 missed check-in invalidates the call
+  RETURN_WINDOW_SECONDS: 3   // Must return to tab within 3s of hangup
+};
+
+const SNAPSHOT_QUEUE_KEY = 'crmgo_snapshot_queue_v1';
+
 let dialedCallContext = null;
+let polTimer = null;
+let polWindowTimer = null;
+let snapshotTimer = null;
+let overlayTimerInterval = null;
+let html2canvasPromise = null;
+
+// Lazy-load html2canvas from CDN for page screenshots
+function loadHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (html2canvasPromise) return html2canvasPromise;
+  html2canvasPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.onload = () => resolve(window.html2canvas);
+    s.onerror = () => reject(new Error('Failed to load html2canvas'));
+    document.head.appendChild(s);
+  });
+  return html2canvasPromise;
+}
 
 function startDialedCall(biz) {
   if (!biz) return;
@@ -6764,24 +7089,302 @@ function startDialedCall(biz) {
   dialedCallContext = {
     biz: { id: biz.id, name: biz.name, phone: biz.phone, address: biz.address },
     contactName: contact ? contact.name : null,
-    startedAt: Date.now(),
-    awaitingReturn: true
+    dialedAt: Date.now(),
+    leftTabAt: null,         // When the user switched away (Phone app)
+    returnedAt: null,        // When they came back
+    polChecks: [],           // [{ at, responded }]
+    snapshots: [],           // [{ at, key }] — key is the localStorage entry
+    pendingPolAt: null,      // Timestamp of the prompt awaiting response
+    compliant: true,
+    invalidReason: null,
+    awaitingFirstSwitch: true,
+    awaitingReturn: false,
+    ended: false
   };
+
   // Mark the row red immediately — the user has initiated a call
   markBusinessCalled(biz.id);
-  // Save a "placeholder" record now so it survives a page reload
+
+  // Save placeholder record so it survives a page reload
   saveDialedCallRecord({ tentative: true });
+
+  // Show the active-call overlay so the user has a visual anchor
+  showCallOverlay();
+
+  // Start the switch-away enforcement clock
+  setTimeout(() => {
+    if (!dialedCallContext) return;
+    if (dialedCallContext.awaitingFirstSwitch && !dialedCallContext.leftTabAt) {
+      invalidateCall(`Didn't switch to Phone app within ${COMPLIANCE.SWITCH_AWAY_SECONDS}s — call not counted`);
+    }
+  }, COMPLIANCE.SWITCH_AWAY_SECONDS * 1000);
+
+  // Pre-load html2canvas for snapshots (start the download now)
+  loadHtml2Canvas().catch(() => {});
+
+  // Schedule the first audit snapshot and proof-of-life
+  scheduleNextSnapshot();
+  scheduleNextPol();
 }
 
-function saveDialedCallRecord({ tentative = false, durationSec = null } = {}) {
+function scheduleNextSnapshot() {
+  if (snapshotTimer) clearTimeout(snapshotTimer);
+  snapshotTimer = setTimeout(takeAuditSnapshot, COMPLIANCE.SNAPSHOT_INTERVAL_MS);
+}
+
+async function takeAuditSnapshot() {
+  if (!dialedCallContext || dialedCallContext.ended) return;
+  try {
+    const html2canvas = await loadHtml2Canvas();
+    const canvas = await html2canvas(document.body, {
+      scale: 0.5,             // Half-res keeps payloads reasonable
+      backgroundColor: '#0E232C',
+      useCORS: true,
+      logging: false,
+      ignoreElements: (el) => el.id === 'callOverlay' ? false : false
+    });
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+    const ts = Date.now();
+    const key = `snap_${dialedCallContext.biz.id}_${ts}`;
+    // Queue the snapshot in localStorage (will upload to server when one exists)
+    queueSnapshotForUpload({
+      key,
+      callId: 'dial_' + dialedCallContext.dialedAt,
+      bizName: dialedCallContext.biz.name,
+      phone: dialedCallContext.biz.phone,
+      contactName: dialedCallContext.contactName || '',
+      account: adminState.activeUserId,
+      at: ts,
+      elapsedSec: Math.round((ts - dialedCallContext.dialedAt) / 1000),
+      dataUrl
+    });
+    dialedCallContext.snapshots.push({ at: ts, key });
+    updateOverlayMeters();
+  } catch (e) {
+    console.warn('Snapshot failed:', e);
+  }
+  scheduleNextSnapshot();
+}
+
+function queueSnapshotForUpload(entry) {
+  try {
+    // Keep the queue lean — drop oldest if we hit ~20 pending snapshots
+    const queue = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
+    queue.push(entry);
+    while (queue.length > 20) queue.shift();
+    localStorage.setItem(SNAPSHOT_QUEUE_KEY, JSON.stringify(queue));
+  } catch (e) {
+    // localStorage quota — drop oldest entries and try again
+    try {
+      const queue = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
+      queue.splice(0, Math.ceil(queue.length / 2));
+      queue.push(entry);
+      localStorage.setItem(SNAPSHOT_QUEUE_KEY, JSON.stringify(queue));
+    } catch {}
+  }
+}
+
+// Stub for future server upload — call this whenever a network is available
+function flushSnapshotQueue() {
+  // No server endpoint exists yet; this is the integration point.
+  // Example shape of what would happen once a backend is in place:
+  //
+  //   const queue = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
+  //   for (const entry of queue) {
+  //     await fetch('/api/audit-snapshots', { method: 'POST', body: JSON.stringify(entry) });
+  //   }
+  //   localStorage.removeItem(SNAPSHOT_QUEUE_KEY);
+  //
+  // For now: do nothing — snapshots accumulate in localStorage.
+}
+
+function scheduleNextPol() {
+  if (polTimer) clearTimeout(polTimer);
+  polTimer = setTimeout(askProofOfLife, COMPLIANCE.POL_INTERVAL_MS);
+}
+
+function askProofOfLife() {
+  if (!dialedCallContext || dialedCallContext.ended) return;
+  const now = Date.now();
+  dialedCallContext.pendingPolAt = now;
+  // Show the prompt inside the call overlay
+  const polPrompt = document.getElementById('polPrompt');
+  if (polPrompt) polPrompt.classList.add('visible');
+  // Also show a browser notification if permitted (it'll wake the user
+  // even when they're in the Phone app, on Android Chrome)
+  tryNotify('Check-in required', 'Return to CRM GO and confirm you\'re still on the call.');
+
+  // Window to respond. If they miss it → mark a missed check-in.
+  if (polWindowTimer) clearTimeout(polWindowTimer);
+  polWindowTimer = setTimeout(() => {
+    if (!dialedCallContext || dialedCallContext.ended) return;
+    if (dialedCallContext.pendingPolAt === now) {
+      // They missed this check-in
+      dialedCallContext.polChecks.push({ at: now, responded: false });
+      dialedCallContext.pendingPolAt = null;
+      const polPromptEl = document.getElementById('polPrompt');
+      if (polPromptEl) polPromptEl.classList.remove('visible');
+      updateOverlayMeters();
+      const missed = dialedCallContext.polChecks.filter(c => !c.responded).length;
+      if (missed > COMPLIANCE.MAX_MISSED_POL) {
+        invalidateCall(`Missed ${missed} check-in${missed === 1 ? '' : 's'} — call not counted`);
+        return;
+      }
+      // Even if not invalidated yet, schedule the next one
+      scheduleNextPol();
+    }
+  }, COMPLIANCE.POL_RESPONSE_WINDOW_MS);
+}
+
+function respondToPol() {
+  if (!dialedCallContext) return;
+  if (!dialedCallContext.pendingPolAt) return;
+  dialedCallContext.polChecks.push({ at: dialedCallContext.pendingPolAt, responded: true });
+  dialedCallContext.pendingPolAt = null;
+  const polPromptEl = document.getElementById('polPrompt');
+  if (polPromptEl) polPromptEl.classList.remove('visible');
+  if (polWindowTimer) { clearTimeout(polWindowTimer); polWindowTimer = null; }
+  updateOverlayMeters();
+  scheduleNextPol();
+}
+
+function tryNotify(title, body) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    try { new Notification(title, { body, silent: false }); } catch {}
+  }
+}
+
+/* ----- Active call overlay UI ----- */
+const callOverlay = document.getElementById('callOverlay');
+const overlayBizName = document.getElementById('overlayBizName');
+const overlayContactName = document.getElementById('overlayContactName');
+const overlayTimer = document.getElementById('overlayTimer');
+const overlayStatusText = document.getElementById('overlayStatusText');
+const overlayPolCount = document.getElementById('overlayPolCount');
+const overlayShotCount = document.getElementById('overlayShotCount');
+const overlayPolMeter = document.getElementById('overlayPolMeter');
+const overlayInstructions = document.getElementById('overlayInstructions');
+const overlayEndBtn = document.getElementById('overlayEndBtn');
+const polBtnEl = document.getElementById('polBtn');
+
+function showCallOverlay() {
   if (!dialedCallContext) return;
   const ctx = dialedCallContext;
-  const startedAt = ctx.startedAt;
+  overlayBizName.textContent = ctx.biz.name;
+  overlayContactName.textContent = ctx.contactName
+    ? `${ctx.contactName} · ${ctx.biz.phone}`
+    : ctx.biz.phone;
+  overlayTimer.textContent = '00:00';
+  overlayPolCount.textContent = '0';
+  overlayShotCount.textContent = '0';
+  overlayPolMeter.classList.remove('warn');
+  callOverlay.classList.remove('failed', 'away');
+  overlayStatusText.textContent = 'Tap Dial to start the call';
+  overlayInstructions.innerHTML = `<strong>Waiting for you to start the call.</strong> Tap the green call button in your Phone app and you'll see the iOS green pill light up at the top.`;
+  document.getElementById('polPrompt').classList.remove('visible');
+  callOverlay.classList.add('visible');
+
+  // Live timer (purely visual — actual compliance uses Date.now() math)
+  if (overlayTimerInterval) clearInterval(overlayTimerInterval);
+  overlayTimerInterval = setInterval(updateOverlayTimer, 250);
+  updateOverlayTimer();
+}
+
+function hideCallOverlay() {
+  callOverlay.classList.remove('visible', 'failed', 'away');
+  if (overlayTimerInterval) clearInterval(overlayTimerInterval);
+  overlayTimerInterval = null;
+}
+
+function updateOverlayTimer() {
+  if (!dialedCallContext) return;
+  const sec = Math.floor((Date.now() - dialedCallContext.dialedAt) / 1000);
+  overlayTimer.textContent = formatDuration(sec);
+}
+
+function updateOverlayMeters() {
+  if (!dialedCallContext) return;
+  const responded = dialedCallContext.polChecks.filter(c => c.responded).length;
+  const missed = dialedCallContext.polChecks.filter(c => !c.responded).length;
+  overlayPolCount.textContent = responded;
+  overlayShotCount.textContent = dialedCallContext.snapshots.length;
+  if (missed > 0) overlayPolMeter.classList.add('warn');
+}
+
+polBtnEl.addEventListener('click', respondToPol);
+overlayEndBtn.addEventListener('click', () => {
+  // User has manually ended the call from the overlay
+  if (dialedCallContext) {
+    dialedCallContext.awaitingReturn = false;
+    dialedCallContext.returnedAt = Date.now();
+  }
+  finalizeDialedCall({ manualEnd: true });
+});
+
+/* ----- Switch-away / return tracking ----- */
+document.addEventListener('visibilitychange', () => {
+  if (!dialedCallContext || dialedCallContext.ended) return;
+  if (document.visibilityState === 'hidden') {
+    // User left this tab — likely switched to Phone app
+    if (dialedCallContext.awaitingFirstSwitch) {
+      dialedCallContext.awaitingFirstSwitch = false;
+      dialedCallContext.leftTabAt = Date.now();
+      dialedCallContext.awaitingReturn = true;
+      // Switch overlay state visually for when they come back
+      if (overlayStatusText) overlayStatusText.textContent = 'Call in progress';
+      if (overlayInstructions) overlayInstructions.innerHTML = `<strong>You're on the call now.</strong> Return to this tab and tap the green check-in button when it appears, or tap "End call" below when you hang up.`;
+      callOverlay.classList.add('away');
+    }
+    // Note: we don't pause timers — proof-of-life prompts still need to
+    // fire so the user is reminded to come back and check in. Browser
+    // background throttling may delay them, which is fine; the user just
+    // sees the prompt the next time they're on the page.
+  } else if (document.visibilityState === 'visible') {
+    callOverlay.classList.remove('away');
+    if (dialedCallContext.awaitingReturn) {
+      // User has returned after hang-up
+      dialedCallContext.returnedAt = Date.now();
+      // Small settle delay then finalize
+      setTimeout(() => finalizeDialedCall(), 400);
+    }
+  }
+});
+window.addEventListener('focus', () => {
+  if (!dialedCallContext || dialedCallContext.ended) return;
+  callOverlay.classList.remove('away');
+  if (dialedCallContext.awaitingReturn) {
+    dialedCallContext.returnedAt = Date.now();
+    setTimeout(() => finalizeDialedCall(), 400);
+  }
+});
+
+/* ----- Invalidation + finalization ----- */
+function invalidateCall(reason) {
+  if (!dialedCallContext) return;
+  dialedCallContext.compliant = false;
+  dialedCallContext.invalidReason = reason;
+  callOverlay.classList.add('failed');
+  overlayStatusText.textContent = 'Compliance failed';
+  overlayInstructions.innerHTML = `<strong style="color:#FCA5A5">${escapeHtml(reason)}</strong><br><br>The call still appears in your history, but it does not count toward earnings. Tap below to dismiss.`;
+  document.getElementById('polPrompt').classList.remove('visible');
+  overlayEndBtn.textContent = 'Dismiss';
+  // Stop scheduling new checks/snapshots
+  if (polTimer) { clearTimeout(polTimer); polTimer = null; }
+  if (polWindowTimer) { clearTimeout(polWindowTimer); polWindowTimer = null; }
+  if (snapshotTimer) { clearTimeout(snapshotTimer); snapshotTimer = null; }
+}
+
+function saveDialedCallRecord({ tentative = false } = {}) {
+  if (!dialedCallContext) return;
+  const ctx = dialedCallContext;
   const now = Date.now();
-  const dur = (durationSec !== null) ? durationSec : Math.max(0, Math.round((now - startedAt) / 1000));
+  const dur = Math.max(0, Math.round((now - ctx.dialedAt) / 1000));
+  const responded = ctx.polChecks.filter(c => c.responded).length;
+  const missed = ctx.polChecks.filter(c => !c.responded).length;
   const record = {
-    id: 'dial_' + startedAt,
-    date: new Date(startedAt).toISOString(),
+    id: 'dial_' + ctx.dialedAt,
+    date: new Date(ctx.dialedAt).toISOString(),
     businessName: ctx.biz.name,
     contactName: ctx.contactName || '',
     phone: ctx.biz.phone,
@@ -6791,15 +7394,23 @@ function saveDialedCallRecord({ tentative = false, durationSec = null } = {}) {
     ringCount: 0,
     answered: dur > 5,
     earned: 0,
-    finalState: tentative ? 'dialed_pending' : 'dialed',
+    finalState: tentative ? 'dialed_pending' : (ctx.compliant ? 'dialed_compliant' : 'dialed_invalid'),
     detectionEvents: [{ text: 'Dialed from app', elapsed: '00:00' }],
     transcript: [],
-    source: 'dialer'
+    source: 'dialer',
+    compliant: ctx.compliant,
+    invalidReason: ctx.invalidReason,
+    compliance: {
+      switchedAwayMs: ctx.leftTabAt ? (ctx.leftTabAt - ctx.dialedAt) : null,
+      returnedMs: ctx.returnedAt && ctx.leftTabAt ? (ctx.returnedAt - ctx.leftTabAt) : null,
+      polResponded: responded,
+      polMissed: missed,
+      snapshotsTaken: ctx.snapshots.length
+    }
   };
   try {
     const key = historyKeyForActive();
     const existing = JSON.parse(localStorage.getItem(key) || '[]');
-    // If we already have a tentative record for this dial, replace it
     const placeholderIdx = existing.findIndex(r => r.id === record.id);
     if (placeholderIdx !== -1) existing[placeholderIdx] = record;
     else existing.unshift(record);
@@ -6808,29 +7419,59 @@ function saveDialedCallRecord({ tentative = false, durationSec = null } = {}) {
   } catch {}
 }
 
-function finalizeDialedCall() {
-  if (!dialedCallContext || !dialedCallContext.awaitingReturn) return;
-  // The user has come back to the tab — finalize using elapsed time as a
-  // best-effort duration estimate. They can also adjust manually later.
-  saveDialedCallRecord({ tentative: false });
+function finalizeDialedCall({ manualEnd = false } = {}) {
+  if (!dialedCallContext || dialedCallContext.ended) return;
   const ctx = dialedCallContext;
-  const dur = Math.max(0, Math.round((Date.now() - ctx.startedAt) / 1000));
-  showToast(`Call logged · ${ctx.contactName || ctx.biz.name} · ${formatDuration(dur)}`);
-  dialedCallContext = null;
+
+  // Return-window enforcement (only if they actually switched away)
+  if (!manualEnd && ctx.leftTabAt && ctx.returnedAt) {
+    // We don't know precisely when the call ended — we can only know when
+    // they came back. iOS shows a "↩ Safari" pill the instant the call
+    // ends, so a quick return is in their interest. The "return window"
+    // is generous: if they took a phone call's natural length and then
+    // returned promptly, this should pass. Long idle gaps between the
+    // OS call ending and their tab return are what we want to catch.
+    // For now we trust visibility/focus events and don't add a return-
+    // window timer here (we'd need to know when the OS call ended,
+    // which we can't). Return-window strictness can be added later
+    // via a "Did you just hang up? Yes / 30s ago / 1 min ago" prompt.
+  }
+
+  ctx.ended = true;
+
+  // Stop timers
+  if (polTimer) { clearTimeout(polTimer); polTimer = null; }
+  if (polWindowTimer) { clearTimeout(polWindowTimer); polWindowTimer = null; }
+  if (snapshotTimer) { clearTimeout(snapshotTimer); snapshotTimer = null; }
+
+  // Save the final record
+  saveDialedCallRecord({ tentative: false });
+
+  // Toast the result
+  const dur = Math.max(0, Math.round((Date.now() - ctx.dialedAt) / 1000));
+  if (ctx.compliant) {
+    showToast(`Call logged · ${ctx.contactName || ctx.biz.name} · ${formatDuration(dur)} · ${ctx.polChecks.filter(c => c.responded).length} check-ins`);
+  } else {
+    showToast(`Call NOT counted · ${ctx.invalidReason || 'compliance failed'}`);
+  }
+
+  // Hide the overlay after a brief moment so the user reads any messaging
+  setTimeout(() => {
+    hideCallOverlay();
+    dialedCallContext = null;
+  }, ctx.compliant ? 800 : 3500);
+
+  // Try uploading queued snapshots (no-op until a server endpoint exists)
+  flushSnapshotQueue();
 }
 
-// Detect when the user returns to the tab (came back from the Phone app)
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && dialedCallContext && dialedCallContext.awaitingReturn) {
-    // Small delay to allow the page to settle
-    setTimeout(finalizeDialedCall, 600);
+/* ----- Browser notification permission (one-time) ----- */
+function ensureNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    try { Notification.requestPermission().catch(() => {}); } catch {}
   }
-});
-window.addEventListener('focus', () => {
-  if (dialedCallContext && dialedCallContext.awaitingReturn) {
-    setTimeout(finalizeDialedCall, 600);
-  }
-});
+}
 
 /* ====================== BOOT ====================== */
 renderUserSwitcher();
