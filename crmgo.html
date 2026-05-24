@@ -2975,9 +2975,567 @@
     cursor: pointer;
   }
   .ue-delete:hover { background: rgba(239,68,68,0.1); color: white; }
+  /* ============= AUTH GATE (login / signup / pending / denied) ============= */
+  .auth-gate {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at top, #0B6E8C 0%, #073241 100%);
+    z-index: 10000;
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 40px 18px;
+  }
+  .auth-gate.visible { display: flex; }
+  .auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: #0E232C;
+    border: 1px solid rgba(255,214,10,0.25);
+    border-radius: 20px;
+    padding: 32px 26px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    margin: auto 0;
+  }
+  .auth-logo {
+    text-align: center;
+    font-family: 'Bungee', cursive;
+    font-size: 34px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .auth-logo .crm { color: white; }
+  .auth-logo .go { color: var(--yellow); }
+  .auth-sub {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 26px;
+    font-family: 'Russo One', sans-serif;
+  }
+  .auth-tabs {
+    display: flex;
+    gap: 6px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 5px;
+    margin-bottom: 22px;
+  }
+  .auth-tab {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.6);
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .auth-tab.active { background: var(--yellow); color: var(--black); }
+  .auth-field { margin-bottom: 14px; }
+  .auth-field label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-family: 'Inter', sans-serif;
+  }
+  .auth-field input {
+    width: 100%;
+    background: var(--black);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 150ms ease;
+  }
+  .auth-field input:focus { outline: none; border-color: var(--yellow); }
+  .auth-field .hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+  .auth-submit {
+    width: 100%;
+    background: linear-gradient(180deg, #FFD60A 0%, #C9A300 100%);
+    color: var(--black);
+    border: none;
+    border-radius: 12px;
+    padding: 15px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--yellow-shadow);
+    transition: transform 100ms ease, box-shadow 100ms ease;
+    margin-top: 6px;
+  }
+  .auth-submit:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--yellow-shadow); }
+  .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .auth-error {
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.4);
+    color: #FCA5A5;
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .auth-error.visible { display: block; }
+  .auth-note {
+    text-align: center;
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 18px;
+    line-height: 1.5;
+  }
+  .signup-only { display: none; }
+  .auth-gate[data-mode="signup"] .signup-only { display: block; }
+  .auth-gate[data-mode="signup"] .login-only { display: none; }
+
+  /* status screens (pending / denied) */
+  .auth-status-screen { text-align: center; display: none; }
+  .auth-status-screen.visible { display: block; }
+  .auth-status-screen .big-ico {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+  }
+  .auth-status-screen.pending .big-ico { background: rgba(255,214,10,0.15); color: var(--yellow); }
+  .auth-status-screen.denied .big-ico { background: rgba(239,68,68,0.15); color: #FCA5A5; }
+  .auth-status-screen .big-ico svg { width: 36px; height: 36px; }
+  .auth-status-screen h3 {
+    font-family: 'Russo One', sans-serif;
+    font-size: 18px;
+    color: white;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .auth-status-screen p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.55;
+    margin-bottom: 8px;
+  }
+  .auth-status-screen .sub-detail {
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin: 16px 0;
+  }
+  .auth-status-screen .sub-detail strong { color: var(--yellow); }
+  .auth-text-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.8);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+    margin-top: 8px;
+  }
+  .auth-text-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+  .auth-spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: var(--black);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: -3px;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ============= ADMIN DASHBOARD ============= */
+  .admin-dash { display: none; }
+  .admin-dash.active { display: block; }
+  .dash-shell {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 18px 60px;
+  }
+  .dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .dash-title {
+    font-family: 'Bungee', cursive;
+    font-size: 26px;
+    color: white;
+  }
+  .dash-title .accent { color: var(--admin-red, #ef4444); }
+  .dash-refresh {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: white;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 150ms ease;
+  }
+  .dash-refresh:hover { border-color: var(--yellow); color: var(--yellow); }
+  .dash-refresh svg { width: 15px; height: 15px; }
+
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 26px;
+  }
+  .dash-stat {
+    background: linear-gradient(180deg, rgba(13,40,50,0.9) 0%, rgba(8,28,36,0.9) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .dash-stat .num {
+    font-family: 'Russo One', sans-serif;
+    font-size: 30px;
+    color: var(--yellow);
+    line-height: 1;
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dash-stat .lbl {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .dash-section-title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: white;
+    margin: 26px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .dash-section-title .count-badge {
+    background: var(--yellow);
+    color: var(--black);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+  }
+  .dash-section-title .count-badge.urgent { background: #ef4444; color: white; }
+
+  .pending-card, .user-card {
+    background: linear-gradient(180deg, rgba(13,40,50,0.9) 0%, rgba(8,28,36,0.9) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .pending-card { border-color: rgba(255,214,10,0.3); }
+  .pending-card .pc-head, .user-card .uc-head {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+  }
+  .pc-avatar, .uc-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--yellow);
+    color: var(--black);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Russo One', sans-serif;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .pc-meta, .uc-meta { flex: 1; min-width: 0; }
+  .pc-name, .uc-name {
+    font-family: 'Russo One', sans-serif;
+    font-size: 15px;
+    color: white;
+    margin-bottom: 2px;
+  }
+  .pc-email, .uc-email {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pc-actions { display: flex; gap: 8px; }
+  .pc-actions button {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 11px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 100ms ease;
+  }
+  .pc-actions button:active { transform: scale(0.97); }
+  .pc-approve { background: #22c55e; color: white; }
+  .pc-deny { background: rgba(239,68,68,0.18); color: #FCA5A5; border: 1px solid rgba(239,68,68,0.4) !important; }
+
+  .uc-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .uc-stat {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .uc-stat .n {
+    font-family: 'Russo One', sans-serif;
+    font-size: 17px;
+    color: white;
+    font-variant-numeric: tabular-nums;
+  }
+  .uc-stat .n.green { color: #4ADE80; }
+  .uc-stat .n.red { color: #FF6B7E; }
+  .uc-stat .l {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+  .uc-status-pill {
+    font-family: 'Russo One', sans-serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .uc-status-pill.approved { background: rgba(34,197,94,0.18); color: #4ADE80; }
+  .uc-status-pill.pending  { background: rgba(255,214,10,0.18); color: var(--yellow); }
+  .uc-status-pill.denied   { background: rgba(239,68,68,0.18); color: #FF6B7E; }
+  .uc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .uc-actions button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.8);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 150ms ease;
+  }
+  .uc-actions button:hover { border-color: var(--yellow); color: var(--yellow); }
+  .dash-empty {
+    background: rgba(0,0,0,0.2);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 26px;
+    text-align: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+  }
+  .dash-signout {
+    position: fixed;
+    top: 18px; right: 18px;
+    z-index: 30;
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.4);
+    color: #FCA5A5;
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .dash-signout:hover { background: rgba(239,68,68,0.3); color: white; }
+
+  @media (max-width: 720px) {
+    .dash-stats { grid-template-columns: repeat(2, 1fr); }
+    .uc-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* user-detail drill-down modal reuses .modal-backdrop */
+  .ud-call-row {
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 11px 13px;
+    margin-bottom: 8px;
+    border-left: 3px solid rgba(255,255,255,0.15);
+  }
+  .ud-call-row.compliant { border-left-color: #22c55e; }
+  .ud-call-row.invalid { border-left-color: #ef4444; }
+  .ud-call-row .ud-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  }
+  .ud-call-row .ud-biz { font-family: 'Russo One', sans-serif; font-size: 13px; color: white; }
+  .ud-call-row .ud-earn { color: var(--yellow); font-family: 'Russo One', sans-serif; font-size: 13px; }
+  .ud-call-row .ud-meta { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+  .ud-call-row .ud-flag { font-size: 10px; margin-top: 4px; }
+  .ud-call-row .ud-flag.ok { color: #4ADE80; }
+  .ud-call-row .ud-flag.bad { color: #FF6B7E; }
+  .ud-snaps {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .ud-snaps img {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    cursor: pointer;
+  }
+
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
+
+  <!-- ============= AUTH GATE (login / signup / pending / denied) ============= -->
+  <div class="auth-gate" id="authGate" data-mode="login">
+    <div class="auth-card">
+      <div class="auth-logo"><span class="crm">CRM</span> <span class="go">GO</span></div>
+      <div class="auth-sub">Sign in to start earning</div>
+
+      <!-- LOGIN / SIGNUP FORM -->
+      <div id="authFormWrap">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabLogin" type="button">Log In</button>
+          <button class="auth-tab" id="tabSignup" type="button">Sign Up</button>
+        </div>
+
+        <div class="auth-error" id="authError"></div>
+
+        <div class="auth-field signup-only">
+          <label>Your Full Name</label>
+          <input type="text" id="authName" placeholder="Jordan Smith" autocomplete="name" />
+        </div>
+
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" id="authEmail" placeholder="you@email.com" autocomplete="email" />
+        </div>
+
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" />
+          <div class="hint signup-only">At least 6 characters.</div>
+        </div>
+
+        <div class="signup-only">
+          <div class="auth-field">
+            <label>Supervisor / Admin Email</label>
+            <input type="email" id="authSupEmail" placeholder="admin@company.com" />
+            <div class="hint">The email of the administrator you'll be working under. Ask your supervisor if you're unsure.</div>
+          </div>
+          <div class="auth-field">
+            <label>Supervisor / Admin Name</label>
+            <input type="text" id="authSupName" placeholder="As your supervisor gave it to you" />
+            <div class="hint">Must match the name your supervisor registered with.</div>
+          </div>
+        </div>
+
+        <button class="auth-submit" id="authSubmit" type="button">Log In</button>
+
+        <div class="auth-note login-only">
+          New here? Tap <strong>Sign Up</strong> to create your account and request access from your supervisor.
+        </div>
+        <div class="auth-note signup-only">
+          After signing up, your supervisor must approve you before you can start working.
+        </div>
+      </div>
+
+      <!-- PENDING SCREEN -->
+      <div class="auth-status-screen pending" id="pendingScreen">
+        <div class="big-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>Waiting for Approval</h3>
+        <p>Your account was created successfully. Your supervisor has been notified and needs to approve you before you can start.</p>
+        <div class="sub-detail" id="pendingDetail"></div>
+        <p style="font-size:12px;">Check back soon, or contact your supervisor directly.</p>
+        <button class="auth-text-btn" id="pendingRefresh" type="button">Check Again</button>
+        <button class="auth-text-btn" id="pendingSignout" type="button">Sign Out</button>
+      </div>
+
+      <!-- DENIED SCREEN -->
+      <div class="auth-status-screen denied" id="deniedScreen">
+        <div class="big-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <h3>Access Not Approved</h3>
+        <p>Your supervisor has not approved your account for CRM GO. If you believe this is a mistake, please reach out to them directly.</p>
+        <button class="auth-text-btn" id="deniedSignout" type="button">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============= ADMIN DASHBOARD ============= -->
+  <div class="admin-dash" id="adminDash">
+    <button class="dash-signout" id="dashSignout" type="button">Sign Out</button>
+    <div class="dash-shell">
+      <div class="dash-header">
+        <div class="dash-title">CRM <span class="accent">ADMIN</span></div>
+        <button class="dash-refresh" id="dashRefresh" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+      </div>
+
+      <div class="dash-stats" id="dashStats">
+        <div class="dash-stat"><div class="num" id="statTeam">0</div><div class="lbl">Team Members</div></div>
+        <div class="dash-stat"><div class="num" id="statCalls">0</div><div class="lbl">Total Calls</div></div>
+        <div class="dash-stat"><div class="num" id="statEarned">$0</div><div class="lbl">Team Earnings</div></div>
+        <div class="dash-stat"><div class="num" id="statCompliance">—</div><div class="lbl">Compliance Rate</div></div>
+      </div>
+
+      <div class="dash-section-title">
+        Pending Approvals <span class="count-badge" id="pendingBadge">0</span>
+      </div>
+      <div id="pendingList"></div>
+
+      <div class="dash-section-title">Team Members</div>
+      <div id="teamList"></div>
+    </div>
+  </div>
 
   <button class="back" id="backBtn">&larr; Back</button>
 
@@ -3632,6 +4190,21 @@
       </div>
 
       <button class="end-btn" id="overlayEndBtn" type="button">Hang up — End call now</button>
+    </div>
+  </div>
+
+  <!-- ============= ADMIN: USER DETAIL DRILL-DOWN ============= -->
+  <div class="modal-backdrop" id="userDetailModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width: 560px; max-height: 86vh; overflow-y: auto;">
+      <h2 id="udTitle" style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:2px;">User</h2>
+      <div class="biz-sub" id="udSubtitle">—</div>
+
+      <div class="uc-stats" id="udStats" style="margin:16px 0;"></div>
+
+      <div class="dash-section-title" style="font-size:12px;margin:18px 0 10px;">Recent Calls</div>
+      <div id="udCalls"></div>
+
+      <button class="modal-close" id="udClose">Close</button>
     </div>
   </div>
 
@@ -4835,6 +5408,9 @@ function saveCallRecord() {
     if (existing.length > 200) existing.length = 200;
     localStorage.setItem(key, JSON.stringify(existing));
   } catch (e) {}
+
+  // Mirror to cloud
+  if (typeof cloudUpsertCall === 'function') cloudUpsertCall(record);
 }
 
 function loadCallHistory() {
@@ -5473,6 +6049,8 @@ function addEarnings(amount, reason = '') {
   walletAmountEl.classList.add('bump');
   setTimeout(() => walletAmountEl.classList.remove('bump'), 240);
   if (amount > 0) showToast(`+$${amount.toFixed(2)}${reason ? ' · ' + reason : ''}`);
+  // Mirror the new balance to the cloud (fire-and-forget)
+  if (typeof cloudSetWallet === 'function') cloudSetWallet(walletBalance);
 }
 
 window.addEarnings = addEarnings;
@@ -6790,6 +7368,8 @@ function loadContacts() {
 }
 function saveContacts(list) {
   try { localStorage.setItem(contactsKeyForActive(), JSON.stringify(list)); } catch {}
+  // Mirror the full list to the cloud: clear then bulk-insert (lists are small)
+  if (typeof cloudReplaceContacts === 'function') cloudReplaceContacts(list);
 }
 function normalizeDigits(s) {
   return String(s || '').replace(/\D/g, '');
@@ -7029,6 +7609,8 @@ function markBusinessCalled(bizId) {
   saveCalledSet(set);
   // Visually mark the matching row right away (if it's on screen)
   document.querySelectorAll(`.list-row[data-bizid="${cssEscape(bizId)}"]`).forEach(r => r.classList.add('called'));
+  // Mirror to cloud
+  if (typeof cloudMarkCalled === 'function') cloudMarkCalled(bizId);
 }
 function cssEscape(s) {
   // Minimal CSS attribute selector escaping
@@ -7167,14 +7749,26 @@ async function takeAuditSnapshot() {
 }
 
 function queueSnapshotForUpload(entry) {
+  // If we're online with a cloud session, upload to Supabase Storage right away.
+  if (typeof cloudUploadSnapshot === 'function' && sb && cloudUserId) {
+    cloudUploadSnapshot(entry);
+    // Don't also persist the big base64 image to localStorage in cloud mode —
+    // it's already on its way to Storage. Keep a lightweight metadata trail.
+    try {
+      const meta = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
+      meta.push({ key: entry.key, callId: entry.callId, at: entry.at, elapsedSec: entry.elapsedSec, uploaded: true });
+      while (meta.length > 40) meta.shift();
+      localStorage.setItem(SNAPSHOT_QUEUE_KEY, JSON.stringify(meta));
+    } catch {}
+    return;
+  }
+  // Offline / local-only fallback: keep the full base64 in localStorage
   try {
-    // Keep the queue lean — drop oldest if we hit ~20 pending snapshots
     const queue = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
     queue.push(entry);
     while (queue.length > 20) queue.shift();
     localStorage.setItem(SNAPSHOT_QUEUE_KEY, JSON.stringify(queue));
   } catch (e) {
-    // localStorage quota — drop oldest entries and try again
     try {
       const queue = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
       queue.splice(0, Math.ceil(queue.length / 2));
@@ -7184,18 +7778,19 @@ function queueSnapshotForUpload(entry) {
   }
 }
 
-// Stub for future server upload — call this whenever a network is available
+// Drain any locally-queued snapshots that still hold image data up to the cloud
 function flushSnapshotQueue() {
-  // No server endpoint exists yet; this is the integration point.
-  // Example shape of what would happen once a backend is in place:
-  //
-  //   const queue = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
-  //   for (const entry of queue) {
-  //     await fetch('/api/audit-snapshots', { method: 'POST', body: JSON.stringify(entry) });
-  //   }
-  //   localStorage.removeItem(SNAPSHOT_QUEUE_KEY);
-  //
-  // For now: do nothing — snapshots accumulate in localStorage.
+  if (!(sb && cloudUserId)) return;
+  try {
+    const queue = JSON.parse(localStorage.getItem(SNAPSHOT_QUEUE_KEY) || '[]');
+    const pending = queue.filter(e => e && e.dataUrl && !e.uploaded);
+    pending.forEach(e => cloudUploadSnapshot(e));
+    // Replace the queue with lightweight metadata only
+    const meta = queue.map(e => e.dataUrl
+      ? { key: e.key, callId: e.callId, at: e.at, elapsedSec: e.elapsedSec, uploaded: true }
+      : e);
+    localStorage.setItem(SNAPSHOT_QUEUE_KEY, JSON.stringify(meta));
+  } catch {}
 }
 
 function scheduleNextPol() {
@@ -7417,6 +8012,10 @@ function saveDialedCallRecord({ tentative = false } = {}) {
     if (existing.length > 200) existing.length = 200;
     localStorage.setItem(key, JSON.stringify(existing));
   } catch {}
+
+  // Mirror to cloud (skip the tentative placeholder to avoid extra writes;
+  // the final record will upsert over it by id)
+  if (!tentative && typeof cloudUpsertCall === 'function') cloudUpsertCall(record);
 }
 
 function finalizeDialedCall({ manualEnd = false } = {}) {
@@ -7473,11 +8072,673 @@ function ensureNotificationPermission() {
   }
 }
 
-/* ====================== BOOT ====================== */
-renderUserSwitcher();
-loadWallet();
-updateSyncUI();
-applyAdminLocks();
+/* ====================== SUPABASE: AUTH + CLOUD SYNC + ADMIN DASHBOARD ======================
+   Phase 1 of the cloud integration:
+     * Real login/signup gating the whole app (tap Start -> must be signed in)
+     * Signup collects supervisor email + name; user lands 'pending' until the
+       admin approves them from the dashboard
+     * All call history, wallet, contacts, called-set, and audit snapshots mirror
+       to Supabase (localStorage stays as an offline cache)
+     * Admin login shows the Admin Dashboard instead of the calling app
+   ======================================================================== */
+
+const SUPABASE_URL = 'https://rbhonizktedhvsblyjgq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_mmmjAja48AfKAuEzQGylVg_Dq4s-RWU';
+const SNAPSHOT_BUCKET = 'audit-snapshots';
+
+let sb = null;            // Supabase client
+let sbReady = false;
+let currentSession = null;
+let currentProfile = null; // the signed-in user's profile row
+
+function initSupabase() {
+  try {
+    if (!window.supabase || !window.supabase.createClient) {
+      console.warn('Supabase SDK not loaded');
+      return false;
+    }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    });
+    sbReady = true;
+    return true;
+  } catch (e) {
+    console.warn('Supabase init failed:', e);
+    return false;
+  }
+}
+
+/* ---------- Auth gate UI wiring ---------- */
+const authGate = document.getElementById('authGate');
+const authFormWrap = document.getElementById('authFormWrap');
+const tabLogin = document.getElementById('tabLogin');
+const tabSignup = document.getElementById('tabSignup');
+const authError = document.getElementById('authError');
+const authName = document.getElementById('authName');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const authSupEmail = document.getElementById('authSupEmail');
+const authSupName = document.getElementById('authSupName');
+const authSubmit = document.getElementById('authSubmit');
+const pendingScreen = document.getElementById('pendingScreen');
+const deniedScreen = document.getElementById('deniedScreen');
+const pendingDetail = document.getElementById('pendingDetail');
+
+let authMode = 'login';
+
+function showAuthError(msg) {
+  authError.textContent = msg;
+  authError.classList.add('visible');
+}
+function clearAuthError() {
+  authError.classList.remove('visible');
+  authError.textContent = '';
+}
+function setAuthMode(mode) {
+  authMode = mode;
+  authGate.setAttribute('data-mode', mode);
+  tabLogin.classList.toggle('active', mode === 'login');
+  tabSignup.classList.toggle('active', mode === 'signup');
+  authSubmit.textContent = mode === 'login' ? 'Log In' : 'Create Account';
+  clearAuthError();
+}
+tabLogin.addEventListener('click', () => setAuthMode('login'));
+tabSignup.addEventListener('click', () => setAuthMode('signup'));
+
+function showAuthGate() {
+  authGate.classList.add('visible');
+  authFormWrap.style.display = '';
+  pendingScreen.classList.remove('visible');
+  deniedScreen.classList.remove('visible');
+}
+function hideAuthGate() { authGate.classList.remove('visible'); }
+function showPendingScreen(profile) {
+  authGate.classList.add('visible');
+  authFormWrap.style.display = 'none';
+  pendingScreen.classList.add('visible');
+  deniedScreen.classList.remove('visible');
+  const supLine = profile && profile.supervisor_name
+    ? `Supervisor: <strong>${escapeHtml(profile.supervisor_name)}</strong> (${escapeHtml(profile.supervisor_email||'')})`
+    : (profile && profile.supervisor_email
+        ? `Supervisor: <strong>${escapeHtml(profile.supervisor_email)}</strong>`
+        : `We couldn't match your supervisor. Double-check the name & email with them.`);
+  pendingDetail.innerHTML = supLine;
+}
+function showDeniedScreen() {
+  authGate.classList.add('visible');
+  authFormWrap.style.display = 'none';
+  pendingScreen.classList.remove('visible');
+  deniedScreen.classList.add('visible');
+}
+
+document.getElementById('pendingRefresh').addEventListener('click', () => refreshSessionState());
+document.getElementById('pendingSignout').addEventListener('click', () => doSignOut());
+document.getElementById('deniedSignout').addEventListener('click', () => doSignOut());
+document.getElementById('dashSignout').addEventListener('click', () => doSignOut());
+
+/* ---------- Auth actions ---------- */
+authSubmit.addEventListener('click', async () => {
+  if (!sbReady) { showAuthError('Connection not ready — please reload the page.'); return; }
+  clearAuthError();
+  const email = (authEmail.value || '').trim().toLowerCase();
+  const password = authPassword.value || '';
+  if (!email || !password) { showAuthError('Enter your email and password.'); return; }
+
+  authSubmit.disabled = true;
+  const original = authSubmit.textContent;
+  authSubmit.innerHTML = '<span class="auth-spinner"></span>' + (authMode === 'login' ? 'Signing in…' : 'Creating…');
+
+  try {
+    if (authMode === 'login') {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await refreshSessionState();
+    } else {
+      // SIGNUP
+      const name = (authName.value || '').trim();
+      const supEmail = (authSupEmail.value || '').trim().toLowerCase();
+      const supName = (authSupName.value || '').trim();
+      if (!name) { throw new Error('Enter your full name.'); }
+      if (password.length < 6) { throw new Error('Password must be at least 6 characters.'); }
+
+      const isAdminEmail = (email === 'swmarketingfirm@gmail.com');
+      if (!isAdminEmail) {
+        if (!supEmail || !supName) throw new Error('Enter your supervisor\'s email and name.');
+        // Validate the supervisor pair exists BEFORE creating the account
+        const { data: admins, error: lookErr } = await sb
+          .from('profiles').select('id,email,admin_name')
+          .eq('role', 'admin').eq('email', supEmail);
+        if (lookErr) throw lookErr;
+        const match = (admins || []).find(a =>
+          (a.admin_name || '').trim().toLowerCase() === supName.toLowerCase());
+        if (!match) {
+          throw new Error('No supervisor found with that email and name. Check the spelling with your supervisor.');
+        }
+      }
+
+      const { error } = await sb.auth.signUp({
+        email, password,
+        options: { data: {
+          display_name: name,
+          admin_name: isAdminEmail ? name : null,
+          supervisor_email: isAdminEmail ? null : supEmail,
+          supervisor_name: isAdminEmail ? null : supName
+        }}
+      });
+      if (error) throw error;
+      // Some projects require email confirmation; handle both cases
+      await refreshSessionState({ justSignedUp: true });
+    }
+  } catch (err) {
+    showAuthError(err.message || 'Something went wrong. Try again.');
+  } finally {
+    authSubmit.disabled = false;
+    authSubmit.textContent = original;
+  }
+});
+
+async function doSignOut() {
+  try { if (sb) await sb.auth.signOut(); } catch {}
+  currentSession = null;
+  currentProfile = null;
+  // Return to a clean logged-out state
+  adminDash.classList.remove('active');
+  showView('home');
+  showAuthGate();
+  setAuthMode('login');
+}
+
+/* ---------- Session resolution ---------- */
+async function fetchMyProfile() {
+  if (!sb || !currentSession) return null;
+  const uid = currentSession.user.id;
+  const { data, error } = await sb.from('profiles').select('*').eq('id', uid).maybeSingle();
+  if (error) { console.warn('profile fetch error', error); return null; }
+  return data;
+}
+
+async function refreshSessionState({ justSignedUp = false } = {}) {
+  if (!sbReady) return;
+  const { data: { session } } = await sb.auth.getSession();
+  currentSession = session;
+
+  if (!session) {
+    // Not logged in — show the gate
+    showAuthGate();
+    return;
+  }
+
+  // We have a session — get the profile (may take a beat after signup trigger)
+  let profile = await fetchMyProfile();
+  if (!profile && justSignedUp) {
+    // The signup trigger may not have committed yet; retry briefly
+    await new Promise(r => setTimeout(r, 900));
+    profile = await fetchMyProfile();
+  }
+  currentProfile = profile;
+
+  if (!profile) {
+    // Could be email-confirmation-required projects (no session yet) or a lag
+    showAuthError('Account created. If email confirmation is required, confirm via the email we sent, then log in.');
+    showAuthGate();
+    setAuthMode('login');
+    return;
+  }
+
+  // Route based on role + status
+  if (profile.role === 'admin') {
+    hideAuthGate();
+    enterAdminDashboard();
+    return;
+  }
+
+  // Regular user
+  if (profile.status === 'approved') {
+    hideAuthGate();
+    enterUserApp(profile);
+  } else if (profile.status === 'denied') {
+    showDeniedScreen();
+  } else {
+    showPendingScreen(profile);
+  }
+}
+
+/* ---------- Entering the app as an approved user ---------- */
+function enterUserApp(profile) {
+  // Bridge the cloud profile into the existing local "active user" model so all
+  // the existing search/in-person/cap logic keeps working unchanged.
+  adminDash.classList.remove('active');
+  document.querySelector('.wallet').style.display = '';
+  cloudUserId = profile.id;
+  cloudIsAdmin = false;
+
+  // Build a synthetic local user object from the cloud profile
+  const a = profile.assignment || {};
+  const localUser = {
+    id: profile.id,
+    name: profile.display_name || profile.email,
+    assignment: {
+      callBizType: a.callBizType || 'restaurant',
+      callMetro: a.callMetro || 'houston',
+      callCap: a.callCap || 20,
+      ipBizType: a.ipBizType || 'restaurant',
+      ipMetro: a.ipMetro || 'user-location',
+      ipMode: a.ipMode || 'walking',
+      ipCap: a.ipCap || 10
+    }
+  };
+  adminState = { activeUserId: profile.id, users: [localUser] };
+  walletBalance = parseFloat(profile.wallet_balance || 0);
+  renderWallet();
+
+  // Hide the multi-user switcher for regular users (single account)
+  document.getElementById('userSwitcher').style.display = 'none';
+
+  renderUserSwitcher();
+  applyAdminLocks();
+  updateSyncUI();
+  showView('home');
+
+  // Pull this user's cloud data into local cache, then refresh views
+  hydrateFromCloud().catch(e => console.warn('hydrate failed', e));
+}
+
+/* ---------- Cloud sync state ---------- */
+let cloudUserId = null;
+let cloudIsAdmin = false;
+
+// Pull the signed-in user's data from Supabase into localStorage cache
+async function hydrateFromCloud() {
+  if (!sb || !cloudUserId) return;
+  try {
+    // Calls
+    const { data: calls } = await sb.from('calls').select('*')
+      .eq('user_id', cloudUserId).order('call_date', { ascending: false }).limit(200);
+    if (calls) {
+      const mapped = calls.map(cloudCallToLocal);
+      localStorage.setItem(historyKeyForActive(), JSON.stringify(mapped));
+    }
+    // Contacts
+    const { data: contacts } = await sb.from('contacts').select('*').eq('user_id', cloudUserId);
+    if (contacts) {
+      const mapped = contacts.map(c => ({ name: c.name, phone: c.phone, digits: c.digits }));
+      localStorage.setItem(contactsKeyForActive(), JSON.stringify(mapped));
+    }
+    // Called businesses
+    const { data: called } = await sb.from('called_businesses').select('biz_id').eq('user_id', cloudUserId);
+    if (called) {
+      localStorage.setItem(calledKeyForActive(), JSON.stringify(called.map(r => r.biz_id)));
+    }
+    updateSyncUI();
+    if (currentView === 'search') runSearch();
+  } catch (e) { console.warn('hydrateFromCloud error', e); }
+}
+
+function cloudCallToLocal(c) {
+  return {
+    id: c.id,
+    date: c.call_date,
+    businessName: c.business_name,
+    contactName: c.contact_name || '',
+    phone: c.phone,
+    bizId: c.biz_id,
+    durationSec: c.duration_sec || 0,
+    talkTimeSec: c.talk_time_sec || 0,
+    ringCount: c.ring_count || 0,
+    answered: !!c.answered,
+    earned: parseFloat(c.earned || 0),
+    finalState: c.final_state,
+    compliant: c.compliant,
+    invalidReason: c.invalid_reason,
+    compliance: c.compliance,
+    detectionEvents: c.detection_events || [],
+    transcript: c.transcript || [],
+    source: c.source
+  };
+}
+
+/* ---------- Push helpers (fire-and-forget mirrors to cloud) ---------- */
+async function cloudUpsertCall(record) {
+  if (!sb || !cloudUserId) return;
+  try {
+    await sb.from('calls').upsert({
+      id: record.id,
+      user_id: cloudUserId,
+      business_name: record.businessName,
+      contact_name: record.contactName || '',
+      phone: record.phone,
+      biz_id: record.bizId || null,
+      source: record.source || null,
+      call_date: record.date,
+      duration_sec: record.durationSec || 0,
+      talk_time_sec: record.talkTimeSec || 0,
+      ring_count: record.ringCount || 0,
+      answered: !!record.answered,
+      earned: record.earned || 0,
+      final_state: record.finalState || null,
+      compliant: (typeof record.compliant === 'boolean') ? record.compliant : null,
+      invalid_reason: record.invalidReason || null,
+      compliance: record.compliance || null,
+      detection_events: record.detectionEvents || [],
+      transcript: record.transcript || []
+    }, { onConflict: 'id' });
+  } catch (e) { console.warn('cloudUpsertCall', e); }
+}
+
+async function cloudSetWallet(balance) {
+  if (!sb || !cloudUserId) return;
+  try {
+    await sb.from('profiles').update({ wallet_balance: balance }).eq('id', cloudUserId);
+  } catch (e) { console.warn('cloudSetWallet', e); }
+}
+
+async function cloudReplaceContacts(list) {
+  if (!sb || !cloudUserId) return;
+  try {
+    await sb.from('contacts').delete().eq('user_id', cloudUserId);
+    if (list && list.length) {
+      const rows = list.map(c => ({
+        user_id: cloudUserId, name: c.name, phone: c.phone, digits: c.digits
+      }));
+      await sb.from('contacts').insert(rows);
+    }
+  } catch (e) { console.warn('cloudReplaceContacts', e); }
+}
+
+async function cloudMarkCalled(bizId) {
+  if (!sb || !cloudUserId || !bizId) return;
+  try {
+    await sb.from('called_businesses').upsert(
+      { user_id: cloudUserId, biz_id: bizId }, { onConflict: 'user_id,biz_id' });
+  } catch (e) { console.warn('cloudMarkCalled', e); }
+}
+
+// Upload a base64 snapshot to Storage, then record a row referencing it
+async function cloudUploadSnapshot(entry) {
+  if (!sb || !cloudUserId) return;
+  try {
+    // entry.dataUrl is "data:image/jpeg;base64,...."
+    const base64 = entry.dataUrl.split(',')[1];
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const path = `${cloudUserId}/${entry.callId}/${entry.at}.jpg`;
+    const { error: upErr } = await sb.storage.from(SNAPSHOT_BUCKET)
+      .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
+    if (upErr) throw upErr;
+    await sb.from('audit_snapshots').insert({
+      user_id: cloudUserId,
+      call_id: entry.callId,
+      storage_path: path,
+      business_name: entry.bizName,
+      phone: entry.phone,
+      contact_name: entry.contactName || '',
+      elapsed_sec: entry.elapsedSec,
+      taken_at: new Date(entry.at).toISOString()
+    });
+  } catch (e) { console.warn('cloudUploadSnapshot', e); }
+}
+
+/* ====================== ADMIN DASHBOARD ====================== */
+const adminDash = document.getElementById('adminDash');
+const dashRefresh = document.getElementById('dashRefresh');
+dashRefresh.addEventListener('click', () => loadAdminDashboard());
+
+function enterAdminDashboard() {
+  cloudIsAdmin = true;
+  cloudUserId = currentProfile.id;
+  // Hide the calling-app chrome
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('userSwitcher').style.display = 'none';
+  document.querySelector('.wallet').style.display = 'none';
+  backBtn.classList.remove('visible');
+  adminDash.classList.add('active');
+  loadAdminDashboard();
+}
+
+async function loadAdminDashboard() {
+  if (!sb || !currentProfile) return;
+  const pendingList = document.getElementById('pendingList');
+  const teamList = document.getElementById('teamList');
+  pendingList.innerHTML = '<div class="dash-empty">Loading…</div>';
+  teamList.innerHTML = '';
+
+  // Fetch all team members (users whose supervisor_id = me)
+  const { data: team, error } = await sb.from('profiles').select('*')
+    .eq('supervisor_id', currentProfile.id).order('created_at', { ascending: false });
+  if (error) {
+    pendingList.innerHTML = `<div class="dash-empty">Error loading team: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
+
+  const members = team || [];
+  const pending = members.filter(m => m.status === 'pending');
+  const active = members.filter(m => m.status !== 'pending');
+
+  // Aggregate stats across approved team
+  const approvedIds = members.filter(m => m.status === 'approved').map(m => m.id);
+  let totalCalls = 0, totalEarned = 0, compliantCalls = 0, ratedCalls = 0;
+  const perUserStats = {};
+  if (approvedIds.length) {
+    const { data: calls } = await sb.from('calls').select('user_id,earned,compliant,final_state')
+      .in('user_id', approvedIds);
+    (calls || []).forEach(c => {
+      totalCalls++;
+      totalEarned += parseFloat(c.earned || 0);
+      const s = perUserStats[c.user_id] || { calls: 0, earned: 0, compliant: 0, rated: 0 };
+      s.calls++;
+      s.earned += parseFloat(c.earned || 0);
+      if (c.source === 'dialer' || c.final_state === 'dialed_compliant' || c.final_state === 'dialed_invalid') {
+        // count compliance only on dialer calls
+      }
+      if (c.compliant === true) { compliantCalls++; s.compliant++; s.rated++; ratedCalls++; }
+      else if (c.compliant === false) { s.rated++; ratedCalls++; }
+      perUserStats[c.user_id] = s;
+    });
+  }
+
+  document.getElementById('statTeam').textContent = members.filter(m => m.status === 'approved').length;
+  document.getElementById('statCalls').textContent = totalCalls;
+  document.getElementById('statEarned').textContent = '$' + totalEarned.toFixed(2);
+  document.getElementById('statCompliance').textContent =
+    ratedCalls > 0 ? Math.round((compliantCalls / ratedCalls) * 100) + '%' : '—';
+
+  // Pending approvals
+  document.getElementById('pendingBadge').textContent = pending.length;
+  document.getElementById('pendingBadge').classList.toggle('urgent', pending.length > 0);
+  if (pending.length === 0) {
+    pendingList.innerHTML = '<div class="dash-empty">No pending requests.</div>';
+  } else {
+    pendingList.innerHTML = pending.map(p => `
+      <div class="pending-card" data-uid="${escapeHtml(p.id)}">
+        <div class="pc-head">
+          <div class="pc-avatar">${escapeHtml(initialsFor(p.display_name || p.email))}</div>
+          <div class="pc-meta">
+            <div class="pc-name">${escapeHtml(p.display_name || 'Unnamed')}</div>
+            <div class="pc-email">${escapeHtml(p.email)}</div>
+          </div>
+        </div>
+        <div class="pc-actions">
+          <button class="pc-approve" data-approve="${escapeHtml(p.id)}">✓ Approve</button>
+          <button class="pc-deny" data-deny="${escapeHtml(p.id)}">✕ Deny</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Team members
+  if (active.length === 0) {
+    teamList.innerHTML = '<div class="dash-empty">No approved or denied members yet.</div>';
+  } else {
+    teamList.innerHTML = active.map(m => {
+      const s = perUserStats[m.id] || { calls: 0, earned: 0, compliant: 0, rated: 0 };
+      const compRate = s.rated > 0 ? Math.round((s.compliant / s.rated) * 100) + '%' : '—';
+      return `
+      <div class="user-card" data-uid="${escapeHtml(m.id)}">
+        <div class="uc-head">
+          <div class="uc-avatar">${escapeHtml(initialsFor(m.display_name || m.email))}</div>
+          <div class="uc-meta">
+            <div class="uc-name">${escapeHtml(m.display_name || 'Unnamed')} <span class="uc-status-pill ${m.status}">${m.status}</span></div>
+            <div class="uc-email">${escapeHtml(m.email)}</div>
+          </div>
+        </div>
+        <div class="uc-stats">
+          <div class="uc-stat"><div class="n">${s.calls}</div><div class="l">Calls</div></div>
+          <div class="uc-stat"><div class="n green">$${s.earned.toFixed(2)}</div><div class="l">Earned</div></div>
+          <div class="uc-stat"><div class="n">${compRate}</div><div class="l">Compliant</div></div>
+          <div class="uc-stat"><div class="n">$${parseFloat(m.wallet_balance||0).toFixed(2)}</div><div class="l">Wallet</div></div>
+        </div>
+        <div class="uc-actions">
+          <button data-view="${escapeHtml(m.id)}">View Calls & Snapshots</button>
+          ${m.status === 'denied'
+            ? `<button data-reapprove="${escapeHtml(m.id)}">Re-approve</button>`
+            : `<button data-suspend="${escapeHtml(m.id)}">Suspend</button>`}
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// Dashboard click delegation
+document.getElementById('adminDash').addEventListener('click', async (e) => {
+  const approve = e.target.closest('[data-approve]');
+  const deny = e.target.closest('[data-deny]');
+  const suspend = e.target.closest('[data-suspend]');
+  const reapprove = e.target.closest('[data-reapprove]');
+  const view = e.target.closest('[data-view]');
+
+  if (approve) { await setUserStatus(approve.dataset.approve, 'approved'); }
+  else if (deny) { await setUserStatus(deny.dataset.deny, 'denied'); }
+  else if (suspend) { await setUserStatus(suspend.dataset.suspend, 'denied'); }
+  else if (reapprove) { await setUserStatus(reapprove.dataset.reapprove, 'approved'); }
+  else if (view) { openUserDetail(view.dataset.view); }
+});
+
+async function setUserStatus(uid, status) {
+  if (!sb) return;
+  try {
+    const { error } = await sb.from('profiles').update({ status }).eq('id', uid);
+    if (error) throw error;
+    showToast(`User ${status}`);
+    loadAdminDashboard();
+  } catch (e) {
+    showToast('Update failed: ' + (e.message || 'error'));
+  }
+}
+
+/* ---------- Admin: user detail drill-down ---------- */
+const userDetailModal = document.getElementById('userDetailModal');
+document.getElementById('udClose').addEventListener('click', () => userDetailModal.classList.remove('visible'));
+userDetailModal.addEventListener('click', (e) => { if (e.target === userDetailModal) userDetailModal.classList.remove('visible'); });
+
+async function openUserDetail(uid) {
+  if (!sb) return;
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', uid).maybeSingle();
+  if (!profile) { showToast('Could not load user'); return; }
+
+  document.getElementById('udTitle').textContent = profile.display_name || profile.email;
+  document.getElementById('udSubtitle').textContent = `${profile.email} · ${profile.status}`;
+
+  const udStats = document.getElementById('udStats');
+  const udCalls = document.getElementById('udCalls');
+  udCalls.innerHTML = '<div class="dash-empty">Loading calls…</div>';
+  userDetailModal.classList.add('visible');
+
+  const { data: calls } = await sb.from('calls').select('*')
+    .eq('user_id', uid).order('call_date', { ascending: false }).limit(50);
+
+  const list = calls || [];
+  const totalEarned = list.reduce((s, c) => s + parseFloat(c.earned || 0), 0);
+  const compliant = list.filter(c => c.compliant === true).length;
+  const invalid = list.filter(c => c.compliant === false).length;
+
+  udStats.innerHTML = `
+    <div class="uc-stat"><div class="n">${list.length}</div><div class="l">Calls</div></div>
+    <div class="uc-stat"><div class="n green">$${totalEarned.toFixed(2)}</div><div class="l">Earned</div></div>
+    <div class="uc-stat"><div class="n green">${compliant}</div><div class="l">Compliant</div></div>
+    <div class="uc-stat"><div class="n red">${invalid}</div><div class="l">Invalid</div></div>
+  `;
+
+  if (list.length === 0) {
+    udCalls.innerHTML = '<div class="dash-empty">No calls logged yet.</div>';
+    return;
+  }
+
+  // Fetch snapshots for these calls
+  const callIds = list.map(c => c.id);
+  const { data: snaps } = await sb.from('audit_snapshots').select('*')
+    .eq('user_id', uid).in('call_id', callIds);
+  const snapsByCall = {};
+  (snaps || []).forEach(s => {
+    (snapsByCall[s.call_id] = snapsByCall[s.call_id] || []).push(s);
+  });
+
+  udCalls.innerHTML = '';
+  for (const c of list) {
+    const cls = c.compliant === true ? 'compliant' : (c.compliant === false ? 'invalid' : '');
+    const flag = c.compliant === true
+      ? `<div class="ud-flag ok">✓ Compliant${c.compliance ? ` · ${c.compliance.polResponded||0} check-ins · ${c.compliance.snapshotsTaken||0} snaps` : ''}</div>`
+      : (c.compliant === false ? `<div class="ud-flag bad">✕ ${escapeHtml(c.invalid_reason || 'Not counted')}</div>` : '');
+    const row = document.createElement('div');
+    row.className = `ud-call-row ${cls}`;
+    row.innerHTML = `
+      <div class="ud-head">
+        <span class="ud-biz">${escapeHtml(c.business_name || 'Unknown')}${c.contact_name ? ' · ' + escapeHtml(c.contact_name) : ''}</span>
+        <span class="ud-earn">+$${parseFloat(c.earned||0).toFixed(2)}</span>
+      </div>
+      <div class="ud-meta">${escapeHtml(formatDateShort(c.call_date))} · ${escapeHtml(c.phone||'')} · ${formatDuration(c.duration_sec||0)} · ${escapeHtml(c.source||'')}</div>
+      ${flag}
+      <div class="ud-snaps" data-snaps="${escapeHtml(c.id)}"></div>
+    `;
+    udCalls.appendChild(row);
+
+    // Load snapshot thumbnails (signed URLs since the bucket is private)
+    const snapWrap = row.querySelector(`[data-snaps="${cssEscape(c.id)}"]`);
+    const callSnaps = snapsByCall[c.id] || [];
+    for (const s of callSnaps.slice(0, 8)) {
+      try {
+        const { data: signed } = await sb.storage.from(SNAPSHOT_BUCKET)
+          .createSignedUrl(s.storage_path, 3600);
+        if (signed && signed.signedUrl) {
+          const img = document.createElement('img');
+          img.src = signed.signedUrl;
+          img.title = `+${s.elapsed_sec || 0}s`;
+          img.addEventListener('click', () => window.open(signed.signedUrl, '_blank'));
+          snapWrap.appendChild(img);
+        }
+      } catch (e) {}
+    }
+  }
+}
+
+/* ====================== BOOT (cloud-gated) ====================== */
+function bootLocalOnly() {
+  // Fallback if Supabase fails to load — run the app in offline/local mode
+  renderUserSwitcher();
+  loadWallet();
+  updateSyncUI();
+  applyAdminLocks();
+}
+
+async function boot() {
+  const ok = initSupabase();
+  if (!ok) {
+    console.warn('Running in local-only mode (no cloud).');
+    bootLocalOnly();
+    hideAuthGate();
+    return;
+  }
+  // Keep local UI initialized so views work once authed
+  renderUserSwitcher();
+  applyAdminLocks();
+
+  // React to auth changes
+  sb.auth.onAuthStateChange((_event, session) => {
+    currentSession = session;
+  });
+
+  await refreshSessionState();
+}
+
+boot();
 
 </script>
 </body>
