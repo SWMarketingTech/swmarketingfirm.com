@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com; script-src 'self' 'unsafe-inline'; connect-src https://formspree.io;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src https://formspree.io https://rbhonizktedhvsblyjgq.supabase.co wss://rbhonizktedhvsblyjgq.supabase.co;">
 <meta name="referrer" content="no-referrer">
 <title>SW — Updated Site</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -26,13 +27,101 @@
     overflow: hidden;
   }
 
-  canvas {
+  canvas#bg {
     position: fixed;
     inset: 0;
     z-index: 0;
   }
 
+  /* ── TOP MENU BAR ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 1.2rem 2rem;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .topbar .menu-actions { pointer-events: all; display: flex; gap: 0.7rem; align-items: center; }
+  /* The global Login/account bar stays visible on every screen. On the
+     Services page the Back button is shifted down (see .services-back below)
+     so it sits clear of this bar instead of being overlapped by it. */
 
+  .menu-login-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.8);
+    border: 1.5px solid rgba(0,0,0,0.14);
+    border-radius: 3px;
+    padding: 0.55rem 1.3rem;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--dark);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(6px);
+  }
+  .menu-login-btn:hover {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+  .menu-login-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Signed-in pill */
+  .menu-account {
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255,255,255,0.85);
+    border: 1.5px solid rgba(34,139,34,0.3);
+    border-radius: 999px;
+    padding: 0.4rem 0.5rem 0.4rem 0.9rem;
+    backdrop-filter: blur(6px);
+  }
+  .menu-account.show { display: inline-flex; }
+  .menu-account .acct-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--dark);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .menu-account .acct-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+  .menu-signout {
+    background: none;
+    border: none;
+    color: var(--gray);
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    transition: color 0.25s;
+  }
+  .menu-signout:hover { color: #e53935; }
 
   /* ── LANDING ── */
   #landing {
@@ -147,8 +236,8 @@
 
   .cta-btn:hover .btn-word { transform: translateY(-1.2em); color: #fff; }
 
-  /* ── CONTACT OVERLAY ── */
-  #contactPage {
+  /* ── CONTACT + AUTH OVERLAY (shared shell) ── */
+  #contactPage, #authPage {
     position: fixed;
     inset: 0;
     z-index: 20;
@@ -162,7 +251,7 @@
     backdrop-filter: blur(8px);
   }
 
-  #contactPage.show { opacity: 1; pointer-events: all; }
+  #contactPage.show, #authPage.show { opacity: 1; pointer-events: all; }
 
   .contact-glass {
     background: rgba(255,255,255,0.97);
@@ -177,8 +266,9 @@
     max-height: 92vh;
     overflow-y: auto;
   }
+  .auth-glass { width: min(440px, 94vw); }
 
-  #contactPage.show .contact-glass { transform: translateY(0); }
+  #contactPage.show .contact-glass, #authPage.show .contact-glass { transform: translateY(0); }
 
   .contact-glass::-webkit-scrollbar { width: 4px; }
   .contact-glass::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
@@ -280,14 +370,12 @@
 
   textarea { resize: none; height: 88px; line-height: 1.5; }
 
-  /* Honeypot — invisible to real users */
   .hp-field {
     position: absolute;
     left: -9999px; top: -9999px;
     opacity: 0; pointer-events: none;
   }
 
-  /* Math CAPTCHA */
   .captcha-row {
     display: flex;
     align-items: center;
@@ -383,22 +471,80 @@
   }
   .success-msg p { color: var(--gray); font-family: 'Cormorant Garamond', serif; font-size: 1rem; }
 
-  @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
-  /* ── BUTTON GROUP ── */
-  .btn-group {
+  /* ── AUTH-SPECIFIC ── */
+  .auth-tabs {
     display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    align-items: center;
-    justify-content: center;
+    gap: 0.4rem;
+    background: #eef2ee;
+    border-radius: 4px;
+    padding: 0.3rem;
+    margin-bottom: 1.4rem;
   }
-
-  .btn-inner--outline {
+  .auth-tab {
+    flex: 1;
+    padding: 0.6rem;
+    border: none;
     background: transparent;
-    border-color: var(--green) !important;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gray);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .auth-tab.active { background: var(--green); color: #fff; }
+
+  .auth-msg {
+    border-radius: 3px;
+    padding: 0.7rem 0.85rem;
+    font-size: 0.8rem;
+    font-family: 'Cormorant Garamond', serif;
+    line-height: 1.45;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .auth-msg.show { display: block; }
+  .auth-msg.error { background: rgba(229,57,53,0.08); border: 1px solid rgba(229,57,53,0.25); color: #c62828; }
+  .auth-msg.success { background: rgba(34,139,34,0.08); border: 1px solid rgba(34,139,34,0.25); color: var(--green); }
+
+  .signup-only { display: none; }
+  #authPage[data-mode="signup"] .signup-only { display: flex; }
+  #authPage[data-mode="signup"] .login-only { display: none; }
+
+  .auth-switch {
+    text-align: center;
+    margin-top: 1.1rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem;
+    color: var(--gray);
+  }
+  .auth-switch button {
+    background: none; border: none;
+    color: var(--green);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    text-decoration: underline;
   }
 
-  /* ── SERVICES SECTION ── */
+  .auth-mini-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: aspin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 6px;
+  }
+  @keyframes aspin { to { transform: rotate(360deg); } }
+
+  /* ── SERVICES SECTION (unchanged) ── */
   #servicesPage {
     position: fixed;
     inset: 0;
@@ -409,407 +555,179 @@
     transition: opacity 0.7s ease;
     background: #fff;
   }
-
-  #servicesPage.show {
-    opacity: 1;
-    pointer-events: all;
-  }
-
-  .services-wrap {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Services nav bar */
+  #servicesPage.show { opacity: 1; pointer-events: all; }
+  .services-wrap { min-height: 100vh; display: flex; flex-direction: column; }
   .services-nav {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
     padding: 1.2rem 3rem;
     background: rgba(255,255,255,0.96);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0,0,0,0.06);
   }
-
   .services-nav-logo {
-    font-family: Impact, sans-serif;
-    font-style: italic;
-    font-size: 2rem;
-    color: hsl(130, 60%, 32%);
-    letter-spacing: -0.01em;
-    user-select: none;
+    font-family: Impact, sans-serif; font-style: italic; font-size: 2rem;
+    color: hsl(130, 60%, 32%); letter-spacing: -0.01em; user-select: none;
   }
-
   .services-back {
-    background: none;
-    border: 1.5px solid rgba(0,0,0,0.15);
+    /* Floated out of the nav flow so shifting it down doesn't grow the bar */
+    position: absolute;
+    top: 100%;            /* just below the nav bar */
+    left: 0.5rem;         /* left side, under the logo */
+    margin-top: 0.6rem;
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.12);
     border-radius: 2px;
-    padding: 0.5rem 1.4rem;
-    font-family: 'Syne', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--dark);
-    cursor: pointer;
-    transition: all 0.3s ease;
+    padding: 0.4rem 1.1rem;
+    font-family: 'Syne', sans-serif; font-size: 0.66rem;
+    font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(0,0,0,0.45);
+    cursor: pointer; transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
   }
-
-  .services-back:hover {
-    background: var(--green);
-    border-color: var(--green);
-    color: #fff;
-  }
-
-  /* Hero strip */
-  /* ── SERVICES HERO — text block (light) + graphic box (dark) ── */
-  .services-hero {
-    background: #f5f7f4;
-    padding: 4rem clamp(2rem, 6vw, 6rem) 2.5rem;
-  }
-
+  .services-back:hover { background: var(--green); border-color: var(--green); color: #fff; }
+  .services-hero { background: #f5f7f4; padding: 4rem clamp(2rem, 6vw, 6rem) 0; }
   .services-hero-label {
-    font-size: 0.68rem;
-    letter-spacing: 0.35em;
-    text-transform: uppercase;
-    color: var(--green);
-    font-weight: 700;
-    margin-bottom: 1rem;
-    display: block;
+    font-size: 0.68rem; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--green); font-weight: 700; margin-bottom: 1rem; display: block;
   }
-
   .services-hero h1 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(2rem, 5vw, 4rem);
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    color: var(--dark);
-    max-width: 700px;
-    margin: 0 0 1.2rem;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(2rem, 5vw, 4rem);
+    letter-spacing: -0.03em; line-height: 1.05; color: var(--dark); max-width: 700px; margin: 0 0 1.2rem;
   }
-
-  .services-hero h1 em {
-    font-style: normal;
-    color: var(--green);
-  }
-
+  .services-hero h1 em { font-style: normal; color: var(--green); }
   .services-hero p {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.2rem;
-    color: var(--gray);
-    max-width: 560px;
-    line-height: 1.65;
-    margin-bottom: 3rem;
+    font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gray);
+    max-width: 560px; line-height: 1.65; margin-bottom: 3rem;
   }
-
-  /* The dark graphic box — all four corners rounded, padding below so bottom corners show */
   .services-hero-graphic {
-    position: relative;
-    width: 100%;
-    height: clamp(260px, 38vh, 460px);
-    border-radius: 16px;
-    overflow: hidden;
-    background: #060d06;
-    margin-bottom: 3rem;
+    position: relative; width: 100%; height: clamp(260px, 38vh, 460px);
+    border-radius: 16px; overflow: hidden; background: #060d06; margin-bottom: 3rem;
   }
-
-  .services-hero {
-    padding-bottom: 0;
-  }
-
-  #heroCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%; height: 100%;
-  }
-
-  /* Services grid */
-  /* Horizontal accordion pane layout */
+  #heroCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   .services-grid {
-    background: #ffffff;
-    display: flex;
-    flex-direction: row;
-    gap: 0.6rem;
-    padding: 2.5rem clamp(1.5rem, 4vw, 4rem) 2.5rem;
-    height: 420px;
+    background: #ffffff; display: flex; flex-direction: row; gap: 0.6rem;
+    padding: 2.5rem clamp(1.5rem, 4vw, 4rem) 2.5rem; height: 420px;
   }
-
   .service-card {
-    position: relative;
-    overflow: hidden;
-    border-radius: 10px;
-    flex: 1;
-    min-width: 60px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    cursor: pointer;
+    position: relative; overflow: hidden; border-radius: 10px; flex: 1; min-width: 60px;
+    display: flex; flex-direction: column; justify-content: flex-end; cursor: pointer;
     box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-    transition: flex 0.55s cubic-bezier(0.7,0,0.3,1),
-                box-shadow 0.4s ease;
+    transition: flex 0.55s cubic-bezier(0.7,0,0.3,1), box-shadow 0.4s ease;
   }
-
-  .service-card:hover {
-    flex: 4;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  }
-
-  /* Background image layer */
+  .service-card:hover { flex: 4; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
   .service-card-bg {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.6s ease;
-    z-index: 0;
+    position: absolute; inset: 0; background-size: cover; background-position: center;
+    transition: transform 0.6s ease; z-index: 0;
   }
-
-  .service-card:hover .service-card-bg {
-    transform: scale(1.04);
-  }
-
-  /* Dark overlay — bottom to top so text at bottom reads clearly */
+  .service-card:hover .service-card-bg { transform: scale(1.04); }
   .service-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to top,
-      rgba(0,8,0,0.90) 0%,
-      rgba(0,8,0,0.55) 45%,
-      rgba(0,8,0,0.15) 100%
-    );
-    z-index: 1;
-    transition: background 0.5s ease;
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,8,0,0.90) 0%, rgba(0,8,0,0.55) 45%, rgba(0,8,0,0.15) 100%);
+    z-index: 1; transition: background 0.5s ease;
   }
-
-  /* Green bottom accent bar */
   .service-card::before {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0;
-    width: 100%; height: 4px;
-    background: var(--green);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.4s cubic-bezier(0.7,0,0.3,1);
-    z-index: 3;
+    content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
+    background: var(--green); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.7,0,0.3,1); z-index: 3;
   }
   .service-card:hover::before { transform: scaleX(1); }
-
-  /* Content at bottom of card */
-  .service-card-content {
-    position: relative;
-    z-index: 2;
-    padding: 1.2rem 1.4rem;
-    width: 100%;
-  }
-
-  .service-row {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    white-space: nowrap;
-  }
-
+  .service-card-content { position: relative; z-index: 2; padding: 1.2rem 1.4rem; width: 100%; }
+  .service-row { display: flex; align-items: center; gap: 0.7rem; white-space: nowrap; }
   .service-num {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.25em;
-    color: hsl(130,65%,60%);
-    flex-shrink: 0;
+    font-family: 'Syne', sans-serif; font-size: 0.58rem; font-weight: 700;
+    letter-spacing: 0.25em; color: hsl(130,65%,60%); flex-shrink: 0;
   }
-
-  .service-icon {
-    width: 22px; height: 22px;
-    color: hsl(130,65%,65%);
-    opacity: 0.9;
-    flex-shrink: 0;
-  }
-
+  .service-icon { width: 22px; height: 22px; color: hsl(130,65%,65%); opacity: 0.9; flex-shrink: 0; }
   .service-card h3 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.88rem;
-    letter-spacing: -0.01em;
-    color: #ffffff;
-    line-height: 1.2;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; letter-spacing: -0.01em;
+    color: #ffffff; line-height: 1.2; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-
-  /* Expanded content fades in on hover */
   .service-expand {
-    max-width: 0;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: max-width 0.5s ease,
-                max-height 0.5s ease,
-                opacity 0.4s ease 0.1s;
+    max-width: 0; max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-width 0.5s ease, max-height 0.5s ease, opacity 0.4s ease 0.1s;
   }
-
-  .service-card:hover .service-expand {
-    max-width: 600px;
-    max-height: 200px;
-    opacity: 1;
-  }
-
+  .service-card:hover .service-expand { max-width: 600px; max-height: 200px; opacity: 1; }
   .service-card p {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.72);
-    line-height: 1.55;
-    margin-top: 0.5rem;
-    white-space: normal;
+    font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; color: rgba(255,255,255,0.72);
+    line-height: 1.55; margin-top: 0.5rem; white-space: normal;
   }
-
-  .service-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.7rem;
-  }
-
+  .service-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
   .service-tag {
-    font-size: 0.56rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 0.22rem 0.5rem;
-    border: 1px solid rgba(100,220,100,0.3);
-    border-radius: 2px;
-    color: hsl(130,65%,65%);
-    background: rgba(34,139,34,0.12);
+    font-size: 0.56rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.22rem 0.5rem; border: 1px solid rgba(100,220,100,0.3); border-radius: 2px;
+    color: hsl(130,65%,65%); background: rgba(34,139,34,0.12);
   }
-
-  /* CTA strip at bottom */
-  .services-cta {
-    background: var(--green);
-    padding: 4rem 3rem;
-    text-align: center;
-    margin-top: auto;
-  }
-
+  .services-cta { background: var(--green); padding: 4rem 3rem; text-align: center; margin-top: auto; }
   .services-cta h2 {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(1.6rem, 3.5vw, 2.5rem);
-    color: #fff;
-    letter-spacing: -0.02em;
-    margin-bottom: 0.6rem;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+    color: #fff; letter-spacing: -0.02em; margin-bottom: 0.6rem;
   }
-
   .services-cta p {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.1rem;
-    color: rgba(255,255,255,0.75);
-    margin-bottom: 2rem;
+    font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: rgba(255,255,255,0.75); margin-bottom: 2rem;
   }
-
   .services-cta-btn {
-    display: inline-block;
-    padding: 0.9rem 2.5rem;
-    background: #fff;
-    color: var(--green);
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.78rem;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 2px;
-    cursor: pointer;
+    display: inline-block; padding: 0.9rem 2.5rem; background: #fff; color: var(--green);
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.25em;
+    text-transform: uppercase; border: none; border-radius: 2px; cursor: pointer;
     transition: background 0.3s, transform 0.2s;
   }
-
-  .services-cta-btn:hover {
-    background: rgba(255,255,255,0.9);
-    transform: translateY(-2px);
-  }
-
-  /* Active class for click/tap on all screen sizes */
-  .service-card.active {
-    flex: 4;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  }
-
+  .services-cta-btn:hover { background: rgba(255,255,255,0.9); transform: translateY(-2px); }
+  .service-card.active { flex: 4; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
   .service-card.active .service-card-bg { transform: scale(1.04); }
   .service-card.active::before { transform: scaleX(1); }
-  .service-card.active .service-expand {
-    max-width: 600px;
-    max-height: 200px;
-    opacity: 1;
-  }
+  .service-card.active .service-expand { max-width: 600px; max-height: 200px; opacity: 1; }
 
   @media (max-width: 768px) {
+    .topbar { padding: 1rem 1.2rem; }
     .services-nav { padding: 1rem 1.5rem; }
-    .services-hero { padding: 3rem 1.5rem 2rem; }
+    .services-nav-right { gap: 0.5rem; }
+    .services-nav-right .menu-login-btn { padding: 0.45rem 0.9rem; font-size: 0.62rem; }
+    .services-nav-right .acct-name { max-width: 80px; }
+    .services-hero { padding: 3rem 1.5rem 0; }
     .services-cta { padding: 3rem 1.5rem; }
-    .btn-group { flex-direction: row; gap: 0.7rem; }
-    .services-grid {
-      padding: 1.5rem 0.75rem 2rem;
-      gap: 0.4rem;
-      height: 340px;
-    }
+    .services-grid { padding: 1.5rem 0.75rem 2rem; gap: 0.4rem; height: 340px; }
     .service-card { min-width: 40px; }
     .service-card h3 { font-size: 0.8rem; }
     .service-card-content { padding: 0.9rem 1rem; }
   }
-
   @media (max-width: 480px) {
     .form-row { grid-template-columns: 1fr; }
     .services-grid { height: 300px; gap: 0.3rem; }
+    .menu-login-btn { padding: 0.5rem 1rem; font-size: 0.66rem; }
   }
+
+  .btn-group { display: flex; flex-direction: row; gap: 1rem; align-items: center; justify-content: center; }
 
   /* ── SOCIAL LINKS ── */
-  .social-links {
-    display: flex;
-    align-items: center;
-    gap: 1.2rem;
-    justify-content: center;
-    margin-top: 0.6rem;
-  }
-
+  .social-links { display: flex; align-items: center; gap: 1.2rem; justify-content: center; margin-top: 0.6rem; }
   .social-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 50%;
-    color: rgba(0,0,0,0.35);
-    text-decoration: none;
-    transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+    border: 1px solid rgba(0,0,0,0.1); border-radius: 50%; color: rgba(0,0,0,0.35);
+    text-decoration: none; transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease, transform 0.2s ease;
   }
-
-  .social-link:hover {
-    border-color: var(--green);
-    background: var(--green);
-    color: #fff;
-    transform: translateY(-2px);
-  }
-
-  .social-link svg {
-    width: 15px;
-    height: 15px;
-    fill: currentColor;
-  }
-
+  .social-link:hover { border-color: var(--green); background: var(--green); color: #fff; transform: translateY(-2px); }
+  .social-link svg { width: 15px; height: 15px; fill: currentColor; }
 </style>
 </head>
 <body>
 
 <canvas id="bg"></canvas>
+
+<!-- TOP MENU BAR -->
+<div class="topbar">
+  <div class="menu-actions">
+    <button class="menu-login-btn" id="menuLoginBtn">
+      <svg viewBox="0 0 24 24"><path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/></svg>
+      Login
+    </button>
+    <div class="menu-account" id="menuAccount">
+      <div class="acct-avatar" id="acctAvatar">?</div>
+      <span class="acct-name" id="acctName">—</span>
+      <button class="menu-signout" id="menuSignout">Sign out</button>
+    </div>
+  </div>
+</div>
 
 <!-- LANDING -->
 <div id="landing">
@@ -822,43 +740,78 @@
     <button class="cta-btn" id="welcomeBtn" aria-label="View our services">
       <div class="btn-inner">
         <div class="btn-fill"></div>
-        <div class="btn-text-wrap">
-          <span class="btn-word">Welcome</span>
-        </div>
+        <div class="btn-text-wrap"><span class="btn-word">Welcome</span></div>
       </div>
     </button>
     <button class="cta-btn" id="ctaBtn" aria-label="Open contact form">
       <div class="btn-inner">
         <div class="btn-fill"></div>
-        <div class="btn-text-wrap">
-          <span class="btn-word">Contact</span>
-        </div>
+        <div class="btn-text-wrap"><span class="btn-word">Contact</span></div>
       </div>
     </button>
   </div>
 
   <div class="social-links">
-    <!-- Email -->
     <a class="social-link" href="mailto:info@swmarketingfirm.com" aria-label="Email">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-      </svg>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
     </a>
-    <!-- LinkedIn -->
     <a class="social-link" href="https://www.linkedin.com/company/swmarketingfirm" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-      </svg>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
     </a>
-    <!-- YouTube -->
     <a class="social-link" href="https://www.youtube.com/@swmarketingfirm" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-      </svg>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
     </a>
   </div>
 </div>
 
+<!-- AUTH OVERLAY -->
+<div id="authPage" data-mode="login" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="contact-glass auth-glass">
+    <button class="close-btn" id="authCloseBtn" aria-label="Close">✕</button>
+
+    <div class="contact-header">
+      <h2 id="authTitle">Welcome <span>Back</span></h2>
+      <p id="authSubtitle">Sign in to your SW account.</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" type="button">Log In</button>
+      <button class="auth-tab" id="authTabSignup" type="button">Sign Up</button>
+    </div>
+
+    <div class="auth-msg" id="authMsg"></div>
+
+    <form id="authForm" novalidate autocomplete="off">
+      <div class="form-group signup-only">
+        <label for="authName">Full Name <span class="req">*</span></label>
+        <input type="text" id="authName" placeholder="Jane Doe" maxlength="80" autocomplete="name">
+      </div>
+
+      <div class="form-group">
+        <label for="authEmail">Email <span class="req">*</span></label>
+        <input type="email" id="authEmail" placeholder="jane@example.com" maxlength="120" autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <label for="authPassword">Password <span class="req">*</span></label>
+        <input type="password" id="authPassword" placeholder="••••••••" maxlength="100" autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="submit-btn" id="authSubmitBtn">Log In</button>
+    </form>
+
+    <div class="auth-switch login-only">
+      Don't have an account? <button type="button" id="goSignup">Sign up</button>
+    </div>
+    <div class="auth-switch signup-only">
+      Already have an account? <button type="button" id="goLogin">Log in</button>
+    </div>
+
+    <p class="privacy-note" style="margin-top:1rem;">
+      One SW account works across our site and tools. We never sell or share your data.
+    </p>
+  </div>
+</div>
 
 <!-- SERVICES PAGE -->
 <div id="servicesPage">
@@ -872,13 +825,10 @@
       <span class="services-hero-label">What We Offer</span>
       <h1>Solutions Built for <em>Your</em> Business</h1>
       <p>We deliver tailored strategies and hands-on execution across four core disciplines — built to move your business forward.</p>
-      <div class="services-hero-graphic">
-        <canvas id="heroCanvas"></canvas>
-      </div>
+      <div class="services-hero-graphic"><canvas id="heroCanvas"></canvas></div>
     </div>
 
     <div class="services-grid">
-
       <div class="service-card">
         <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1547658719-da2b51169166?w=800&q=80');"></div>
         <div class="service-card-content">
@@ -889,16 +839,10 @@
           </div>
           <div class="service-expand">
             <p>We design and build fast, modern websites that look exceptional on every device. From landing pages to full platforms — engineered for performance and conversion.</p>
-            <div class="service-tags">
-              <span class="service-tag">UI / UX Design</span>
-              <span class="service-tag">Custom Dev</span>
-              <span class="service-tag">E-Commerce</span>
-              <span class="service-tag">SEO</span>
-            </div>
+            <div class="service-tags"><span class="service-tag">UI / UX Design</span><span class="service-tag">Custom Dev</span><span class="service-tag">E-Commerce</span><span class="service-tag">SEO</span></div>
           </div>
         </div>
       </div>
-
       <div class="service-card">
         <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1533750349088-cd871a92f312?w=800&q=80');"></div>
         <div class="service-card-content">
@@ -909,16 +853,10 @@
           </div>
           <div class="service-expand">
             <p>Data-driven campaigns that generate leads and close deals. We align your brand story with proven sales funnels to grow revenue — consistently and measurably.</p>
-            <div class="service-tags">
-              <span class="service-tag">Digital Ads</span>
-              <span class="service-tag">Email Marketing</span>
-              <span class="service-tag">CRM Strategy</span>
-              <span class="service-tag">Analytics</span>
-            </div>
+            <div class="service-tags"><span class="service-tag">Digital Ads</span><span class="service-tag">Email Marketing</span><span class="service-tag">CRM Strategy</span><span class="service-tag">Analytics</span></div>
           </div>
         </div>
       </div>
-
       <div class="service-card">
         <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80');"></div>
         <div class="service-card-content">
@@ -929,16 +867,10 @@
           </div>
           <div class="service-expand">
             <p>Protect your business and optimize your infrastructure. We assess, implement, and monitor IT systems so you can operate with confidence in a complex digital landscape.</p>
-            <div class="service-tags">
-              <span class="service-tag">Cybersecurity</span>
-              <span class="service-tag">Cloud Setup</span>
-              <span class="service-tag">IT Support</span>
-              <span class="service-tag">Compliance</span>
-            </div>
+            <div class="service-tags"><span class="service-tag">Cybersecurity</span><span class="service-tag">Cloud Setup</span><span class="service-tag">IT Support</span><span class="service-tag">Compliance</span></div>
           </div>
         </div>
       </div>
-
       <div class="service-card">
         <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80');"></div>
         <div class="service-card-content">
@@ -949,16 +881,10 @@
           </div>
           <div class="service-expand">
             <p>Brand identity, visual systems, and creative assets that make your business unforgettable. We craft everything from logos to full design languages that resonate.</p>
-            <div class="service-tags">
-              <span class="service-tag">Brand Identity</span>
-              <span class="service-tag">Logo Design</span>
-              <span class="service-tag">Print & Digital</span>
-              <span class="service-tag">Motion</span>
-            </div>
+            <div class="service-tags"><span class="service-tag">Brand Identity</span><span class="service-tag">Logo Design</span><span class="service-tag">Print & Digital</span><span class="service-tag">Motion</span></div>
           </div>
         </div>
       </div>
-
       <div class="service-card">
         <div class="service-card-bg" style="background-image: url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80');"></div>
         <div class="service-card-content">
@@ -969,17 +895,10 @@
           </div>
           <div class="service-expand">
             <p>Expert guidance rooted in decades of real-world experience. We advise leadership teams, train staff, and deliver strategic counsel that drives lasting organizational change.</p>
-            <div class="service-tags">
-              <span class="service-tag">Executive Advising</span>
-              <span class="service-tag">Pro Bono Consulting</span>
-              <span class="service-tag">Staff Training</span>
-              <span class="service-tag">Strategy Consulting</span>
-              <span class="service-tag">Workshops</span>
-            </div>
+            <div class="service-tags"><span class="service-tag">Executive Advising</span><span class="service-tag">Pro Bono Consulting</span><span class="service-tag">Staff Training</span><span class="service-tag">Strategy Consulting</span><span class="service-tag">Workshops</span></div>
           </div>
         </div>
       </div>
-
     </div>
 
     <div class="services-cta">
@@ -994,26 +913,20 @@
 <div id="contactPage" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
   <div class="contact-glass">
     <button class="close-btn" id="closeBtn" aria-label="Close">✕</button>
-
     <div id="formContent">
       <div class="contact-header">
         <h2 id="contactTitle">Get in <span>Touch</span></h2>
         <p>We'd love to hear from you.</p>
       </div>
-
       <div class="security-badge" aria-label="Secure form">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         SECURE FORM — YOUR DATA IS NEVER STORED OR SHARED
       </div>
-
       <form id="contactForm" novalidate autocomplete="off">
-
-        <!-- Honeypot anti-bot trap (invisible to humans) -->
         <div class="hp-field" aria-hidden="true">
           <label for="website">Leave blank</label>
           <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label for="fname">First Name <span class="req">*</span></label>
@@ -1026,43 +939,35 @@
             <span class="field-error" id="lname-err">Enter your last name.</span>
           </div>
         </div>
-
         <div class="form-group">
           <label for="email">Email Address <span class="req">*</span></label>
           <input type="email" id="email" placeholder="jane@example.com" maxlength="100" autocomplete="email">
           <span class="field-error" id="email-err">Enter a valid email address.</span>
         </div>
-
         <div class="form-group">
           <label for="phone">Phone (optional)</label>
           <input type="tel" id="phone" placeholder="+1 (555) 000-0000" maxlength="20" autocomplete="tel">
           <span class="field-error" id="phone-err">Enter a valid phone number.</span>
         </div>
-
         <div class="form-group">
           <label for="company">Company (optional)</label>
           <input type="text" id="company" placeholder="Your company" maxlength="80">
         </div>
-
         <div class="form-group">
           <label for="subject">Subject <span class="req">*</span></label>
           <input type="text" id="subject" placeholder="What's this about?" maxlength="120">
           <span class="field-error" id="subject-err">Enter a subject.</span>
         </div>
-
         <div class="form-group">
           <label for="message">Message <span class="req">*</span></label>
           <textarea id="message" placeholder="Tell us about your project…" maxlength="1000"></textarea>
           <span class="field-error" id="message-err">Please enter a message (at least 10 characters).</span>
         </div>
-
-        <!-- Math CAPTCHA -->
         <div class="captcha-row">
           <span class="captcha-label" id="captchaQ"></span>
           <input class="captcha-input" type="number" id="captchaAns" placeholder="?" aria-label="CAPTCHA answer" min="0" max="99">
           <span class="captcha-err-inline" id="captcha-err">Wrong answer — try again.</span>
         </div>
-
         <button type="submit" class="submit-btn" id="submitBtn">Send Message</button>
         <p class="rate-notice" id="rateNotice"></p>
         <p class="privacy-note">
@@ -1071,7 +976,6 @@
         </p>
       </form>
     </div>
-
     <div class="success-msg" id="successMsg">
       <div class="success-icon">✦</div>
       <h3>Message Sent</h3>
@@ -1081,65 +985,47 @@
 </div>
 
 <script>
-/* ═══════════════════════════
-   ANIMATED WHITE BACKGROUND
-═══════════════════════════ */
+/* ═══════════════════════════ ANIMATED BACKGROUND ═══════════════════════════ */
 const canvas = document.getElementById('bg');
 const ctx = canvas.getContext('2d');
 let W, H, particles = [], lineOffset = 0;
-
 function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
-
 class Particle {
   constructor() { this.reset(true); }
   reset(init) {
     this.x = Math.random() * W;
     this.y = init ? Math.random() * H : (Math.random() < .5 ? -4 : H + 4);
     this.r = Math.random() * 1.8 + 0.4;
-    this.vx = (Math.random() - .5) * .38;
-    this.vy = (Math.random() - .5) * .38;
-    this.alpha = Math.random() * .3 + .07;
-    this.pulse = Math.random() * Math.PI * 2;
+    this.vx = (Math.random() - .5) * .38; this.vy = (Math.random() - .5) * .38;
+    this.alpha = Math.random() * .3 + .07; this.pulse = Math.random() * Math.PI * 2;
   }
   update() {
-    this.pulse += .011;
-    this.x += this.vx; this.y += this.vy;
-    if (this.x < -10) this.x = W + 10;
-    if (this.x > W + 10) this.x = -10;
-    if (this.y < -10) this.y = H + 10;
-    if (this.y > H + 10) this.y = -10;
+    this.pulse += .011; this.x += this.vx; this.y += this.vy;
+    if (this.x < -10) this.x = W + 10; if (this.x > W + 10) this.x = -10;
+    if (this.y < -10) this.y = H + 10; if (this.y > H + 10) this.y = -10;
   }
   draw() {
     const a = this.alpha * (.7 + .3 * Math.sin(this.pulse));
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(34,139,34,${a})`;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(34,139,34,${a})`; ctx.fill();
   }
 }
-
 function initParticles() {
   particles = [];
   const n = Math.min(Math.floor((W * H) / 7500), 130);
   for (let i = 0; i < n; i++) particles.push(new Particle());
 }
-
 function drawConnections() {
   for (let i = 0; i < particles.length; i++)
     for (let j = i+1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
+      const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
       const d = Math.sqrt(dx*dx + dy*dy);
       if (d < 125) {
-        ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `rgba(34,139,34,${.09*(1-d/125)})`;
-        ctx.lineWidth = .55; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(34,139,34,${.09*(1-d/125)})`; ctx.lineWidth = .55; ctx.stroke();
       }
     }
 }
-
 function drawFlowLines() {
   lineOffset += .0018;
   for (let i = 0; i < 5; i++) {
@@ -1148,11 +1034,9 @@ function drawFlowLines() {
       const y = H*(.14+i*.17) + Math.sin(x*.0025+lineOffset+i*1.1)*55 + Math.cos(x*.005+lineOffset*.6+i)*22;
       x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     }
-    ctx.strokeStyle = `rgba(34,139,34,${.035+i*.009})`;
-    ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = `rgba(34,139,34,${.035+i*.009})`; ctx.lineWidth = 1; ctx.stroke();
   }
 }
-
 function animate() {
   ctx.clearRect(0,0,W,H);
   const g = ctx.createRadialGradient(W*.5,H*.45,0,W*.5,H*.5,Math.max(W,H)*.8);
@@ -1162,54 +1046,55 @@ function animate() {
   particles.forEach(p => { p.update(); p.draw(); });
   requestAnimationFrame(animate);
 }
-
 window.addEventListener('resize', () => { resize(); initParticles(); });
 resize(); initParticles(); animate();
 
-/* ═══════════════════════════
-   UI INTERACTIONS
-═══════════════════════════ */
+/* ═══════════════════════════ UI INTERACTIONS ═══════════════════════════ */
 const landing = document.getElementById('landing');
 const contactPage = document.getElementById('contactPage');
 const servicesPage = document.getElementById('servicesPage');
+const authPage = document.getElementById('authPage');
 
-// CONTACT button
-document.getElementById('ctaBtn').addEventListener('click', () => {
-  contactPage.classList.add('show');
-  landing.classList.add('hide');
-  document.getElementById('fname').focus();
-});
-
-function closeContact() {
-  contactPage.classList.remove('show');
-  setTimeout(() => landing.classList.remove('hide'), 200);
+// Keep body.overlay-open in sync so the global landing topbar hides whenever
+// any full-screen overlay/page is showing (prevents the Login button from
+// overlapping the services Back button or the contact form).
+function syncOverlayState() {
+  const anyOpen = servicesPage.classList.contains('show')
+    || contactPage.classList.contains('show')
+    || authPage.classList.contains('show');
+  document.body.classList.toggle('overlay-open', anyOpen);
 }
 
+document.getElementById('ctaBtn').addEventListener('click', () => {
+  contactPage.classList.add('show'); landing.classList.add('hide');
+  syncOverlayState();
+  document.getElementById('fname').focus();
+});
+function closeContact() {
+  contactPage.classList.remove('show');
+  syncOverlayState();
+  setTimeout(() => landing.classList.remove('hide'), 200);
+}
 document.getElementById('closeBtn').addEventListener('click', closeContact);
 contactPage.addEventListener('click', e => { if (e.target === contactPage) closeContact(); });
 
-// WELCOME button → services page
 document.getElementById('welcomeBtn').addEventListener('click', () => {
-  servicesPage.classList.add('show');
-  landing.classList.add('hide');
-  servicesPage.scrollTop = 0;
+  servicesPage.classList.add('show'); landing.classList.add('hide'); servicesPage.scrollTop = 0;
+  syncOverlayState();
 });
-
 function closeServices() {
   servicesPage.classList.remove('show');
+  syncOverlayState();
   setTimeout(() => landing.classList.remove('hide'), 200);
 }
-
 document.getElementById('servicesBack').addEventListener('click', closeServices);
 
-// Click/tap to expand service cards on all screen sizes
 document.querySelectorAll('.service-card').forEach(card => {
   card.addEventListener('click', () => {
     const isActive = card.classList.contains('active');
     document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active'));
     if (!isActive) card.classList.add('active');
   });
-
   card.addEventListener('touchstart', (e) => {
     e.preventDefault();
     const isActive = card.classList.contains('active');
@@ -1217,33 +1102,25 @@ document.querySelectorAll('.service-card').forEach(card => {
     if (!isActive) card.classList.add('active');
   }, { passive: false });
 });
-
-// Tap outside to close
 document.addEventListener('touchstart', (e) => {
   if (!e.target.closest('.service-card')) {
     document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active'));
   }
 });
-
-// "Contact Us" CTA inside services → opens contact form
 document.getElementById('servicesCta').addEventListener('click', () => {
-  servicesPage.classList.remove('show');
-  contactPage.classList.add('show');
+  servicesPage.classList.remove('show'); contactPage.classList.add('show');
+  syncOverlayState();
   document.getElementById('fname').focus();
 });
-
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (contactPage.classList.contains('show')) closeContact();
     if (servicesPage.classList.contains('show')) closeServices();
+    if (authPage.classList.contains('show')) closeAuth();
   }
 });
 
-/* ═══════════════════════════
-   SECURITY & VALIDATION
-═══════════════════════════ */
-
-// Math CAPTCHA
+/* ═══════════════════════════ CONTACT FORM (unchanged) ═══════════════════════════ */
 let captchaAnswer = 0;
 function genCaptcha() {
   const a = Math.floor(Math.random()*9)+1, b = Math.floor(Math.random()*9)+1;
@@ -1252,108 +1129,51 @@ function genCaptcha() {
   document.getElementById('captchaAns').value = '';
 }
 genCaptcha();
-
-// Rate limiter
 let submitCount = 0, lastSubmitTime = 0;
 const RATE_LIMIT = 3, RATE_WINDOW = 60000;
-
-// Sanitize input — strip any HTML/script injection
 function sanitize(s) {
-  return s.replace(/</g,'&lt;').replace(/>/g,'&gt;')
-          .replace(/javascript:/gi,'').replace(/on\w+\s*=/gi,'')
-          .replace(/['"`;]/g,'').trim();
+  return s.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/javascript:/gi,'').replace(/on\w+\s*=/gi,'').replace(/['"`;]/g,'').trim();
 }
-
-// Validators
 const isEmail = e => /^[^\s@<>'"]{1,64}@[^\s@<>'"]{1,255}\.[a-zA-Z]{2,}$/.test(e);
 const isPhone = p => !p || /^[\d\s\+\-\(\)\.]{7,20}$/.test(p);
-
-// Field error helpers
-function showErr(fieldId, errId) {
-  document.getElementById(fieldId).classList.add('error');
-  document.getElementById(errId).classList.add('show');
-}
-function clearErr(fieldId, errId) {
-  document.getElementById(fieldId).classList.remove('error');
-  document.getElementById(errId).classList.remove('show');
-}
-
-// Live-clear errors on input
-[['fname','fname-err'],['lname','lname-err'],['email','email-err'],
- ['phone','phone-err'],['subject','subject-err'],['message','message-err']].forEach(([f,e]) => {
+function showErr(fieldId, errId) { document.getElementById(fieldId).classList.add('error'); document.getElementById(errId).classList.add('show'); }
+function clearErr(fieldId, errId) { document.getElementById(fieldId).classList.remove('error'); document.getElementById(errId).classList.remove('show'); }
+[['fname','fname-err'],['lname','lname-err'],['email','email-err'],['phone','phone-err'],['subject','subject-err'],['message','message-err']].forEach(([f,e]) => {
   document.getElementById(f).addEventListener('input', () => clearErr(f,e));
 });
 document.getElementById('captchaAns').addEventListener('input', () => {
   document.getElementById('captchaAns').classList.remove('error');
   document.getElementById('captcha-err').classList.remove('show');
 });
-
-// Submit
 document.getElementById('contactForm').addEventListener('submit', function(e) {
   e.preventDefault();
-
-  // Honeypot
   if (document.getElementById('website').value !== '') return;
-
-  // Rate limit
   const now = Date.now();
   if (now - lastSubmitTime < RATE_WINDOW) {
-    if (submitCount >= RATE_LIMIT) {
-      document.getElementById('rateNotice').textContent = 'Too many submissions. Please wait a minute.';
-      return;
-    }
+    if (submitCount >= RATE_LIMIT) { document.getElementById('rateNotice').textContent = 'Too many submissions. Please wait a minute.'; return; }
   } else { submitCount = 0; }
   document.getElementById('rateNotice').textContent = '';
-
-  // Gather & sanitize
-  const fname   = sanitize(document.getElementById('fname').value);
-  const lname   = sanitize(document.getElementById('lname').value);
-  const email   = sanitize(document.getElementById('email').value);
-  const phone   = sanitize(document.getElementById('phone').value);
-  const subject = sanitize(document.getElementById('subject').value);
-  const message = sanitize(document.getElementById('message').value);
-  const captcha = parseInt(document.getElementById('captchaAns').value, 10);
-
+  const fname=sanitize(document.getElementById('fname').value), lname=sanitize(document.getElementById('lname').value),
+        email=sanitize(document.getElementById('email').value), phone=sanitize(document.getElementById('phone').value),
+        subject=sanitize(document.getElementById('subject').value), message=sanitize(document.getElementById('message').value),
+        captcha=parseInt(document.getElementById('captchaAns').value, 10);
   let valid = true;
-
-  if (!fname) { showErr('fname','fname-err'); valid = false; } else clearErr('fname','fname-err');
-  if (!lname) { showErr('lname','lname-err'); valid = false; } else clearErr('lname','lname-err');
-  if (!isEmail(email)) { showErr('email','email-err'); valid = false; } else clearErr('email','email-err');
-  if (!isPhone(phone)) { showErr('phone','phone-err'); valid = false; } else clearErr('phone','phone-err');
-  if (!subject) { showErr('subject','subject-err'); valid = false; } else clearErr('subject','subject-err');
-  if (message.length < 10) { showErr('message','message-err'); valid = false; } else clearErr('message','message-err');
-
+  if (!fname) { showErr('fname','fname-err'); valid=false; } else clearErr('fname','fname-err');
+  if (!lname) { showErr('lname','lname-err'); valid=false; } else clearErr('lname','lname-err');
+  if (!isEmail(email)) { showErr('email','email-err'); valid=false; } else clearErr('email','email-err');
+  if (!isPhone(phone)) { showErr('phone','phone-err'); valid=false; } else clearErr('phone','phone-err');
+  if (!subject) { showErr('subject','subject-err'); valid=false; } else clearErr('subject','subject-err');
+  if (message.length < 10) { showErr('message','message-err'); valid=false; } else clearErr('message','message-err');
   if (isNaN(captcha) || captcha !== captchaAnswer) {
-    document.getElementById('captchaAns').classList.add('error');
-    document.getElementById('captcha-err').classList.add('show');
-    genCaptcha(); valid = false;
-  } else {
-    document.getElementById('captchaAns').classList.remove('error');
-    document.getElementById('captcha-err').classList.remove('show');
-  }
-
+    document.getElementById('captchaAns').classList.add('error'); document.getElementById('captcha-err').classList.add('show');
+    genCaptcha(); valid=false;
+  } else { document.getElementById('captchaAns').classList.remove('error'); document.getElementById('captcha-err').classList.remove('show'); }
   if (!valid) return;
-
-  // Passed all checks
   submitCount++; lastSubmitTime = Date.now();
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = 'Sending…';
-
-  // Send to Formspree
-  const formData = {
-    firstName: fname,
-    lastName: lname,
-    email: email,
-    phone: phone,
-    company: sanitize(document.getElementById('company').value),
-    subject: subject,
-    message: message
-  };
-
+  const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+  const formData = { firstName: fname, lastName: lname, email, phone, company: sanitize(document.getElementById('company').value), subject, message };
   fetch('https://formspree.io/f/xkoppjve', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify(formData)
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(formData)
   })
   .then(res => res.json())
   .then(data => {
@@ -1361,181 +1181,231 @@ document.getElementById('contactForm').addEventListener('submit', function(e) {
       const fc = document.getElementById('formContent');
       fc.style.cssText = 'opacity:0;transform:translateY(-10px);transition:opacity .4s,transform .4s';
       setTimeout(() => {
-        fc.style.display = 'none';
-        document.getElementById('successMsg').classList.add('show');
-        document.getElementById('contactForm').reset();
-        genCaptcha();
-        btn.disabled = false;
-        btn.textContent = 'Send Message';
+        fc.style.display = 'none'; document.getElementById('successMsg').classList.add('show');
+        document.getElementById('contactForm').reset(); genCaptcha(); btn.disabled = false; btn.textContent = 'Send Message';
       }, 420);
-    } else {
-      btn.disabled = false;
-      btn.textContent = 'Send Message';
-      document.getElementById('rateNotice').textContent = 'Something went wrong. Please try again.';
-    }
+    } else { btn.disabled = false; btn.textContent = 'Send Message'; document.getElementById('rateNotice').textContent = 'Something went wrong. Please try again.'; }
   })
-  .catch(() => {
-    btn.disabled = false;
-    btn.textContent = 'Send Message';
-    document.getElementById('rateNotice').textContent = 'Network error. Please check your connection and try again.';
-  });
+  .catch(() => { btn.disabled = false; btn.textContent = 'Send Message'; document.getElementById('rateNotice').textContent = 'Network error. Please check your connection and try again.'; });
 });
 
+/* ═══════════════════════════ SUPABASE AUTH ═══════════════════════════
+   Same project as CRM GO — one account works everywhere.
+   Site signups are plain accounts: no supervisor, auto-approved.
+======================================================================= */
+const SUPABASE_URL = 'https://rbhonizktedhvsblyjgq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_mmmjAja48AfKAuEzQGylVg_Dq4s-RWU';
+let sbClient = null;
+try {
+  if (window.supabase && window.supabase.createClient) {
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    });
+  }
+} catch (e) { console.warn('Supabase init failed', e); }
 
-/* ═══════════════════════════
-   SERVICES HERO CANVAS
-═══════════════════════════ */
+// Both login/account controls: [0] = landing topbar, [1] = services nav
+const menuLoginBtns = [document.getElementById('menuLoginBtn'), document.getElementById('menuLoginBtn2')].filter(Boolean);
+const menuAccounts = [document.getElementById('menuAccount'), document.getElementById('menuAccount2')].filter(Boolean);
+const acctNames = [document.getElementById('acctName'), document.getElementById('acctName2')].filter(Boolean);
+const acctAvatars = [document.getElementById('acctAvatar'), document.getElementById('acctAvatar2')].filter(Boolean);
+const menuSignouts = [document.getElementById('menuSignout'), document.getElementById('menuSignout2')].filter(Boolean);
+
+const authTitle = document.getElementById('authTitle');
+const authSubtitle = document.getElementById('authSubtitle');
+const authTabLogin = document.getElementById('authTabLogin');
+const authTabSignup = document.getElementById('authTabSignup');
+const authMsg = document.getElementById('authMsg');
+const authForm = document.getElementById('authForm');
+const authName = document.getElementById('authName');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+let authMode = 'login';
+
+function openAuth() {
+  authPage.classList.add('show');
+  landing.classList.add('hide');
+  setAuthMode('login');
+  authMsg.classList.remove('show');
+  syncOverlayState();
+  setTimeout(() => authEmail.focus(), 200);
+}
+function closeAuth() {
+  authPage.classList.remove('show');
+  syncOverlayState();
+  setTimeout(() => {
+    if (!servicesPage.classList.contains('show') && !contactPage.classList.contains('show')) {
+      landing.classList.remove('hide');
+    }
+  }, 200);
+}
+function setAuthMode(mode) {
+  authMode = mode;
+  authPage.setAttribute('data-mode', mode);
+  authTabLogin.classList.toggle('active', mode === 'login');
+  authTabSignup.classList.toggle('active', mode === 'signup');
+  authSubmitBtn.textContent = mode === 'login' ? 'Log In' : 'Create Account';
+  authTitle.innerHTML = mode === 'login' ? 'Welcome <span>Back</span>' : 'Create <span>Account</span>';
+  authSubtitle.textContent = mode === 'login' ? 'Sign in to your SW account.' : 'One account works across SW.';
+  authMsg.classList.remove('show');
+}
+function showAuthMsg(text, type) {
+  authMsg.textContent = text;
+  authMsg.className = 'auth-msg show ' + (type || 'error');
+}
+
+menuLoginBtns.forEach(b => b.addEventListener('click', openAuth));
+document.getElementById('authCloseBtn').addEventListener('click', closeAuth);
+authPage.addEventListener('click', e => { if (e.target === authPage) closeAuth(); });
+authTabLogin.addEventListener('click', () => setAuthMode('login'));
+authTabSignup.addEventListener('click', () => setAuthMode('signup'));
+document.getElementById('goSignup').addEventListener('click', () => setAuthMode('signup'));
+document.getElementById('goLogin').addEventListener('click', () => setAuthMode('login'));
+
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!sbClient) { showAuthMsg('Connection unavailable. Please reload and try again.'); return; }
+  const email = (authEmail.value || '').trim().toLowerCase();
+  const password = authPassword.value || '';
+  if (!email || !password) { showAuthMsg('Enter your email and password.'); return; }
+
+  authSubmitBtn.disabled = true;
+  const original = authSubmitBtn.textContent;
+  authSubmitBtn.innerHTML = '<span class="auth-mini-spinner"></span>' + (authMode === 'login' ? 'Signing in…' : 'Creating…');
+
+  try {
+    if (authMode === 'login') {
+      const { error } = await sbClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await reflectSession();
+      closeAuth();
+    } else {
+      const name = (authName.value || '').trim();
+      if (!name) throw new Error('Enter your full name.');
+      if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+      const { data, error } = await sbClient.auth.signUp({
+        email, password,
+        options: { data: { signup_source: 'website', display_name: name } }
+      });
+      if (error) throw error;
+      if (data.session) {
+        // Auto-confirmed — signed in immediately
+        await reflectSession();
+        showAuthMsg('Account created — you\'re signed in!', 'success');
+        setTimeout(closeAuth, 1200);
+      } else {
+        // Email confirmation required
+        showAuthMsg('Account created! Check your email to confirm, then log in.', 'success');
+        setAuthMode('login');
+      }
+    }
+  } catch (err) {
+    showAuthMsg(err.message || 'Something went wrong. Try again.');
+  } finally {
+    authSubmitBtn.disabled = false;
+    authSubmitBtn.textContent = original;
+    setAuthMode(authMode); // restore button label
+  }
+});
+
+menuSignouts.forEach(b => b.addEventListener('click', async () => {
+  try { if (sbClient) await sbClient.auth.signOut(); } catch {}
+  reflectSignedOut();
+}));
+
+function initials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+async function reflectSession() {
+  if (!sbClient) return;
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) { reflectSignedOut(); return; }
+  // Try to read their display name from the profile (falls back to email)
+  let name = session.user.email;
+  try {
+    const { data: profile } = await sbClient.from('profiles').select('display_name').eq('id', session.user.id).maybeSingle();
+    if (profile && profile.display_name) name = profile.display_name;
+  } catch {}
+  menuLoginBtns.forEach(b => b.style.display = 'none');
+  menuAccounts.forEach(a => a.classList.add('show'));
+  acctNames.forEach(n => n.textContent = name);
+  acctAvatars.forEach(a => a.textContent = initials(name));
+}
+function reflectSignedOut() {
+  menuLoginBtns.forEach(b => b.style.display = '');
+  menuAccounts.forEach(a => a.classList.remove('show'));
+}
+
+// On load, reflect any existing session
+if (sbClient) {
+  reflectSession();
+  sbClient.auth.onAuthStateChange(() => reflectSession());
+}
+
+/* ═══════════════════════════ SERVICES HERO CANVAS ═══════════════════════════ */
 function initHeroCanvas() {
   const hc = document.getElementById('heroCanvas');
   if (!hc) return;
   const hx = hc.getContext('2d');
   let HW, HH, hT = 0;
-
-  function hResize() {
-    HW = hc.width = hc.offsetWidth;
-    HH = hc.height = hc.offsetHeight;
-  }
-
-  // Orb centered
+  function hResize() { HW = hc.width = hc.offsetWidth; HH = hc.height = hc.offsetHeight; }
   const orb = { x: 0.5, y: 0.5, r: 0 };
-
-  // Ray particles emanating in all directions
   const rays = [];
-  const RAY_COUNT = 220;
-  for (let i = 0; i < RAY_COUNT; i++) {
-    rays.push({
-      angle: Math.random() * Math.PI * 2,
-      speed: Math.random() * 2.2 + 0.6,
-      len: Math.random() * 180 + 40,
-      life: Math.random(),
-      maxLife: Math.random() * 0.6 + 0.4,
-      r: Math.random() * 1.2 + 0.2,
-      alpha: Math.random() * 0.7 + 0.2,
-    });
+  for (let i = 0; i < 220; i++) {
+    rays.push({ angle: Math.random()*Math.PI*2, speed: Math.random()*2.2+0.6, len: Math.random()*180+40,
+      life: Math.random(), maxLife: Math.random()*0.6+0.4, r: Math.random()*1.2+0.2, alpha: Math.random()*0.7+0.2 });
   }
-
-  // Floating particles
   const hParticles = [];
   for (let i = 0; i < 80; i++) {
-    hParticles.push({
-      x: Math.random(),
-      y: Math.random(),
-      r: Math.random() * 1.4 + 0.3,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      alpha: Math.random() * 0.4 + 0.1,
-      pulse: Math.random() * Math.PI * 2,
-    });
+    hParticles.push({ x: Math.random(), y: Math.random(), r: Math.random()*1.4+0.3,
+      vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3, alpha: Math.random()*0.4+0.1, pulse: Math.random()*Math.PI*2 });
   }
-
   function drawHero() {
-    hT++;
-    hx.clearRect(0, 0, HW, HH);
-
-    // Deep dark bg
-    const bgG = hx.createLinearGradient(0, 0, HW, HH);
-    bgG.addColorStop(0, '#060d06');
-    bgG.addColorStop(1, '#0a160a');
-    hx.fillStyle = bgG;
-    hx.fillRect(0, 0, HW, HH);
-
-    const ox = HW * orb.x + Math.sin(hT * 0.008) * 18;
-    const oy = HH * orb.y + Math.cos(hT * 0.006) * 12;
-    orb.r = Math.min(HW, HH) * 0.28;
-
-    // Outer glow layers
-    const glows = [
-      { r: orb.r * 2.8, a: 0.06 },
-      { r: orb.r * 2.0, a: 0.1 },
-      { r: orb.r * 1.4, a: 0.18 },
-    ];
-    glows.forEach(g => {
-      const grd = hx.createRadialGradient(ox, oy, 0, ox, oy, g.r);
-      grd.addColorStop(0, `rgba(52,199,89,${g.a})`);
-      grd.addColorStop(1, 'rgba(52,199,89,0)');
-      hx.fillStyle = grd;
-      hx.beginPath();
-      hx.arc(ox, oy, g.r, 0, Math.PI * 2);
-      hx.fill();
+    hT++; hx.clearRect(0,0,HW,HH);
+    const bgG = hx.createLinearGradient(0,0,HW,HH); bgG.addColorStop(0,'#060d06'); bgG.addColorStop(1,'#0a160a');
+    hx.fillStyle = bgG; hx.fillRect(0,0,HW,HH);
+    const ox = HW*orb.x + Math.sin(hT*0.008)*18, oy = HH*orb.y + Math.cos(hT*0.006)*12;
+    orb.r = Math.min(HW,HH)*0.28;
+    [{r:orb.r*2.8,a:0.06},{r:orb.r*2.0,a:0.1},{r:orb.r*1.4,a:0.18}].forEach(g => {
+      const grd = hx.createRadialGradient(ox,oy,0,ox,oy,g.r);
+      grd.addColorStop(0,`rgba(52,199,89,${g.a})`); grd.addColorStop(1,'rgba(52,199,89,0)');
+      hx.fillStyle = grd; hx.beginPath(); hx.arc(ox,oy,g.r,0,Math.PI*2); hx.fill();
     });
-
-    // Ray particles
     rays.forEach(ray => {
-      ray.life += 0.012 * ray.speed;
-      if (ray.life > ray.maxLife) {
-        ray.life = 0;
-        ray.angle = Math.random() * Math.PI * 2;
-        ray.speed = Math.random() * 2.2 + 0.6;
-        ray.len = Math.random() * 180 + 40;
-        ray.maxLife = Math.random() * 0.6 + 0.4;
-      }
-      const prog = ray.life / ray.maxLife;
-      const dist = prog * ray.len * (orb.r / 100);
-      const px = ox + Math.cos(ray.angle) * dist;
-      const py = oy + Math.sin(ray.angle) * dist;
-      const fade = Math.sin(prog * Math.PI);
-      hx.beginPath();
-      hx.arc(px, py, ray.r, 0, Math.PI * 2);
-      hx.fillStyle = `rgba(52,199,89,${ray.alpha * fade})`;
-      hx.fill();
+      ray.life += 0.012*ray.speed;
+      if (ray.life > ray.maxLife) { ray.life=0; ray.angle=Math.random()*Math.PI*2; ray.speed=Math.random()*2.2+0.6; ray.len=Math.random()*180+40; ray.maxLife=Math.random()*0.6+0.4; }
+      const prog = ray.life/ray.maxLife, dist = prog*ray.len*(orb.r/100);
+      const px = ox+Math.cos(ray.angle)*dist, py = oy+Math.sin(ray.angle)*dist, fade = Math.sin(prog*Math.PI);
+      hx.beginPath(); hx.arc(px,py,ray.r,0,Math.PI*2); hx.fillStyle=`rgba(52,199,89,${ray.alpha*fade})`; hx.fill();
     });
-
-    // The glowing orb itself
-    const orbGrd = hx.createRadialGradient(ox - orb.r * 0.2, oy - orb.r * 0.2, 0, ox, oy, orb.r);
-    orbGrd.addColorStop(0, 'rgba(120,230,120,0.95)');
-    orbGrd.addColorStop(0.35, 'rgba(52,199,89,0.85)');
-    orbGrd.addColorStop(0.75, 'rgba(34,139,34,0.7)');
-    orbGrd.addColorStop(1, 'rgba(10,60,10,0.4)');
-    hx.fillStyle = orbGrd;
-    hx.beginPath();
-    hx.arc(ox, oy, orb.r, 0, Math.PI * 2);
-    hx.fill();
-
-    // Orb surface shimmer
-    const shimmer = hx.createRadialGradient(ox - orb.r * 0.3, oy - orb.r * 0.35, 0, ox, oy, orb.r);
-    shimmer.addColorStop(0, `rgba(200,255,200,${0.15 + 0.08 * Math.sin(hT * 0.04)})`);
-    shimmer.addColorStop(0.5, 'rgba(200,255,200,0.04)');
-    shimmer.addColorStop(1, 'rgba(0,0,0,0)');
-    hx.fillStyle = shimmer;
-    hx.beginPath();
-    hx.arc(ox, oy, orb.r, 0, Math.PI * 2);
-    hx.fill();
-
-    // Floating background particles (left side / everywhere)
+    const orbGrd = hx.createRadialGradient(ox-orb.r*0.2,oy-orb.r*0.2,0,ox,oy,orb.r);
+    orbGrd.addColorStop(0,'rgba(120,230,120,0.95)'); orbGrd.addColorStop(0.35,'rgba(52,199,89,0.85)');
+    orbGrd.addColorStop(0.75,'rgba(34,139,34,0.7)'); orbGrd.addColorStop(1,'rgba(10,60,10,0.4)');
+    hx.fillStyle = orbGrd; hx.beginPath(); hx.arc(ox,oy,orb.r,0,Math.PI*2); hx.fill();
+    const shimmer = hx.createRadialGradient(ox-orb.r*0.3,oy-orb.r*0.35,0,ox,oy,orb.r);
+    shimmer.addColorStop(0,`rgba(200,255,200,${0.15+0.08*Math.sin(hT*0.04)})`); shimmer.addColorStop(0.5,'rgba(200,255,200,0.04)'); shimmer.addColorStop(1,'rgba(0,0,0,0)');
+    hx.fillStyle = shimmer; hx.beginPath(); hx.arc(ox,oy,orb.r,0,Math.PI*2); hx.fill();
     hParticles.forEach(p => {
-      p.x += p.vx / HW;
-      p.y += p.vy / HH;
-      p.pulse += 0.02;
-      if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
-      if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
-      const a = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
-      hx.beginPath();
-      hx.arc(p.x * HW, p.y * HH, p.r, 0, Math.PI * 2);
-      hx.fillStyle = `rgba(52,199,89,${a})`;
-      hx.fill();
+      p.x += p.vx/HW; p.y += p.vy/HH; p.pulse += 0.02;
+      if (p.x<0) p.x=1; if (p.x>1) p.x=0; if (p.y<0) p.y=1; if (p.y>1) p.y=0;
+      const a = p.alpha*(0.6+0.4*Math.sin(p.pulse));
+      hx.beginPath(); hx.arc(p.x*HW,p.y*HH,p.r,0,Math.PI*2); hx.fillStyle=`rgba(52,199,89,${a})`; hx.fill();
     });
-
-    // Subtle horizontal scan line
-    const scanY = ((hT * 0.5) % HH);
-    const scanG = hx.createLinearGradient(0, scanY - 40, 0, scanY + 40);
-    scanG.addColorStop(0, 'rgba(52,199,89,0)');
-    scanG.addColorStop(0.5, 'rgba(52,199,89,0.04)');
-    scanG.addColorStop(1, 'rgba(52,199,89,0)');
-    hx.fillStyle = scanG;
-    hx.fillRect(0, scanY - 40, HW, 80);
-
+    const scanY = ((hT*0.5)%HH);
+    const scanG = hx.createLinearGradient(0,scanY-40,0,scanY+40);
+    scanG.addColorStop(0,'rgba(52,199,89,0)'); scanG.addColorStop(0.5,'rgba(52,199,89,0.04)'); scanG.addColorStop(1,'rgba(52,199,89,0)');
+    hx.fillStyle = scanG; hx.fillRect(0,scanY-40,HW,80);
     requestAnimationFrame(drawHero);
   }
-
-  hResize();
-  window.addEventListener('resize', hResize);
-  drawHero();
+  hResize(); window.addEventListener('resize', hResize); drawHero();
 }
-
-// Init hero canvas when services page opens
-document.getElementById('welcomeBtn').addEventListener('click', () => {
-  setTimeout(initHeroCanvas, 50);
-}, { once: true });
+document.getElementById('welcomeBtn').addEventListener('click', () => { setTimeout(initHeroCanvas, 50); }, { once: true });
 </script>
 </body>
 </html>
