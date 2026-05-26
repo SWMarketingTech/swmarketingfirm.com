@@ -227,12 +227,82 @@
   .success-screen p { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--gray); line-height: 1.55; }
 
   @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+  /* ── SIDE MENU ── */
+  .topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+  .hamburger {
+    width: 38px; height: 38px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    background: transparent; border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 6px; cursor: pointer; flex-shrink: 0;
+    transition: border-color 0.3s ease;
+  }
+  .hamburger:hover { border-color: var(--green); }
+  .hamburger span { display: block; width: 18px; height: 2px; background: var(--dark); border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease; }
+  body.menu-open .hamburger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  body.menu-open .hamburger span:nth-child(2) { opacity: 0; }
+  body.menu-open .hamburger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .side-menu-overlay { position: fixed; inset: 0; z-index: 65; background: rgba(0,0,0,0.35);
+    opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+  body.menu-open .side-menu-overlay { opacity: 1; pointer-events: all; }
+  .side-menu { position: fixed; top: 0; left: 0; bottom: 0; z-index: 66; width: min(300px, 82vw);
+    background: #fff; box-shadow: 4px 0 30px rgba(0,0,0,0.12); transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.7,0,0.3,1); display: flex; flex-direction: column; padding: 5rem 0 2rem; }
+  body.menu-open .side-menu { transform: translateX(0); }
+  .side-menu-brand { font-family: Impact, sans-serif; font-style: italic; font-size: 2.2rem;
+    color: hsl(130,60%,32%); padding: 0 2rem 1.4rem; user-select: none; }
+  .side-menu-links { display: flex; flex-direction: column; }
+  .side-menu-link { display: flex; align-items: center; gap: 0.9rem; padding: 1rem 2rem;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.92rem; letter-spacing: 0.06em;
+    color: var(--dark); background: none; border: none; text-align: left; width: 100%; cursor: pointer;
+    text-decoration: none; transition: background 0.2s ease, color 0.2s ease, padding-left 0.2s ease; }
+  .side-menu-link:hover { background: rgba(34,139,34,0.07); color: var(--green); padding-left: 2.4rem; }
+  .side-menu-link svg { width: 18px; height: 18px; stroke: currentColor; flex-shrink: 0; }
+  .side-menu-link .ext { margin-left: auto; font-size: 0.6rem; color: #aaa; letter-spacing: 0.1em; text-transform: uppercase; }
+  .side-menu-link.current { color: var(--green); background: rgba(34,139,34,0.06); }
+  .side-menu-foot { margin-top: auto; padding: 1.2rem 2rem 0; font-family: 'Cormorant Garamond', serif;
+    font-size: 0.82rem; color: var(--gray); border-top: 1px solid rgba(0,0,0,0.06); }
+
 </style>
 </head>
 <body>
 
+<!-- SIDE MENU -->
+<div class="side-menu-overlay" id="sideMenuOverlay"></div>
+<nav class="side-menu" id="sideMenu" aria-label="Main menu">
+  <div class="side-menu-brand">SW</div>
+  <div class="side-menu-links">
+    <a class="side-menu-link" href="index.html#services">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Services
+    </a>
+    <a class="side-menu-link" href="index.html#contact">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 6l-10 7L2 6"/></svg>
+      Contact
+    </a>
+    <a class="side-menu-link current" href="apply.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      Apply
+    </a>
+    <a class="side-menu-link" href="crm-go.html" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      CRM GO <span class="ext">↗ App</span>
+    </a>
+    <button class="side-menu-link" id="sideMenuLogin">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      <span id="sideMenuLoginLabel">Log In</span>
+    </button>
+  </div>
+  <div class="side-menu-foot">SW Marketing Firm</div>
+</nav>
+
 <div class="topbar">
-  <span class="topbar-logo" id="logoHome">SW</span>
+  <div class="topbar-left">
+    <span class="topbar-logo" id="logoHome">SW</span>
+    <button class="hamburger" id="hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
   <div class="topbar-actions">
     <button class="menu-login-btn" id="menuLoginBtn">
       <svg viewBox="0 0 24 24"><path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/></svg>
@@ -542,6 +612,25 @@ document.getElementById('logoHome').addEventListener('click', () => {
   window.location.href = 'index.html';
 });
 
+/* ---- side menu ---- */
+const hamburger = document.getElementById('hamburger');
+const sideMenuOverlay = document.getElementById('sideMenuOverlay');
+hamburger.addEventListener('click', () => document.body.classList.toggle('menu-open'));
+sideMenuOverlay.addEventListener('click', () => document.body.classList.remove('menu-open'));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('menu-open')) {
+    document.body.classList.remove('menu-open');
+  }
+});
+// Drawer Login item: opens auth if signed out, signs out if signed in
+const sideMenuLogin = document.getElementById('sideMenuLogin');
+const sideMenuLoginLabel = document.getElementById('sideMenuLoginLabel');
+sideMenuLogin.addEventListener('click', () => {
+  document.body.classList.remove('menu-open');
+  if (currentUser) { menuSignout.click(); }
+  else { openAuth(); }
+});
+
 /* ---- helpers ---- */
 function initials(name) {
   if (!name) return '?';
@@ -622,12 +711,13 @@ menuSignout.addEventListener('click', async () => {
   currentUser = null; currentProfile = null;
   menuLoginBtn.style.display = ''; menuAccount.classList.remove('show');
   applyHint.textContent = "You'll sign in or create a free SW account to apply.";
+  if (sideMenuLoginLabel) sideMenuLoginLabel.textContent = 'Log In';
 });
 
 async function loadSession() {
   if (!sb) return;
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { currentUser = null; currentProfile = null; return; }
+  if (!session) { currentUser = null; currentProfile = null; if (sideMenuLoginLabel) sideMenuLoginLabel.textContent = 'Log In'; return; }
   currentUser = session.user;
   let name = session.user.email;
   try {
@@ -639,6 +729,7 @@ async function loadSession() {
   acctName.textContent = name;
   acctAvatar.textContent = initials(name);
   applyHint.textContent = 'Signed in as ' + name + ' — your details will pre-fill.';
+  if (sideMenuLoginLabel) sideMenuLoginLabel.textContent = 'Sign Out';
 }
 
 /* ---- apply flow ---- */
