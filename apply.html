@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https://images.unsplash.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src https://rbhonizktedhvsblyjgq.supabase.co wss://rbhonizktedhvsblyjgq.supabase.co;">
+<meta name="referrer" content="no-referrer">
+<title>SW — Careers</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --green: hsl(130, 60%, 30%);
+    --green-light: hsl(130, 55%, 38%);
+    --bg: #f5f7f4;
+    --dark: #111;
+    --gray: #777;
+  }
+  html, body { min-height: 100%; font-family: 'Syne', sans-serif; background: var(--bg); color: var(--dark); }
+  body { overflow-x: hidden; }
+
+  /* Top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.1rem 2rem;
+    background: rgba(245,247,244,0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .topbar-logo {
+    font-family: Impact, sans-serif; font-style: italic; font-size: 1.9rem;
+    color: hsl(130,60%,32%); letter-spacing: -0.01em; user-select: none; cursor: pointer;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 0.7rem; }
+
+  .menu-login-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,255,255,0.8);
+    border: 1.5px solid rgba(0,0,0,0.14); border-radius: 3px;
+    padding: 0.55rem 1.3rem;
+    font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--dark);
+    cursor: pointer; transition: all 0.3s ease;
+  }
+  .menu-login-btn:hover { background: var(--green); border-color: var(--green); color: #fff; }
+  .menu-login-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  .menu-account { display: none; align-items: center; gap: 0.6rem;
+    background: rgba(255,255,255,0.85); border: 1.5px solid rgba(34,139,34,0.3);
+    border-radius: 999px; padding: 0.4rem 0.5rem 0.4rem 0.9rem; }
+  .menu-account.show { display: inline-flex; }
+  .menu-account .acct-name { font-size: 0.72rem; font-weight: 700; color: var(--dark);
+    max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .menu-account .acct-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--green);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; }
+  .menu-signout { background: none; border: none; color: var(--gray); cursor: pointer;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.2rem 0.5rem; }
+  .menu-signout:hover { color: #e53935; }
+
+  /* Hero */
+  .careers-hero { padding: 3.5rem clamp(1.5rem, 6vw, 6rem) 1.5rem; max-width: 1000px; margin: 0 auto; }
+  .careers-label { font-size: 0.68rem; letter-spacing: 0.35em; text-transform: uppercase;
+    color: var(--green); font-weight: 700; margin-bottom: 0.8rem; display: block; }
+  .careers-hero h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(2rem, 5vw, 3.4rem);
+    letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 1rem; }
+  .careers-hero h1 em { font-style: normal; color: var(--green); }
+  .careers-hero p { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--gray);
+    max-width: 600px; line-height: 1.6; }
+
+  /* Job listing card */
+  .job-wrap { max-width: 1000px; margin: 0 auto; padding: 0 clamp(1.5rem, 6vw, 6rem) 4rem; }
+  .job-card {
+    background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.05); overflow: hidden;
+  }
+  .job-card-head { padding: 1.8rem 2rem 1.4rem; border-bottom: 1px solid rgba(0,0,0,0.06); }
+  .job-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.9rem; }
+  .job-badge { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.3rem 0.7rem; border-radius: 999px; }
+  .badge-1099 { background: rgba(34,139,34,0.12); color: var(--green); border: 1px solid rgba(34,139,34,0.3); }
+  .badge-remote { background: rgba(0,0,0,0.05); color: #555; border: 1px solid rgba(0,0,0,0.12); }
+  .job-card-head h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+    letter-spacing: -0.02em; margin-bottom: 0.4rem; }
+  .job-card-head .commission-note { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; color: var(--gray); }
+
+  .job-card-body { padding: 1.6rem 2rem; }
+  .job-section { margin-bottom: 1.5rem; }
+  .job-section h3 { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--green); margin-bottom: 0.7rem; }
+  .job-section p, .job-section li { font-family: 'Cormorant Garamond', serif; font-size: 1.08rem;
+    line-height: 1.65; color: #333; }
+  .job-section ul { list-style: none; }
+  .job-section li { position: relative; padding-left: 1.4rem; margin-bottom: 0.4rem; }
+  .job-section li::before { content: '→'; position: absolute; left: 0; color: var(--green); font-family: 'Syne', sans-serif; }
+
+  .contract-callout {
+    background: rgba(34,139,34,0.05); border: 1px solid rgba(34,139,34,0.2);
+    border-left: 3px solid var(--green); border-radius: 6px; padding: 1.1rem 1.3rem; margin-bottom: 1.5rem;
+  }
+  .contract-callout strong { color: var(--green); }
+  .contract-callout p { font-family: 'Cormorant Garamond', serif; font-size: 1rem; line-height: 1.6; color: #333; }
+
+  .apply-bar { padding: 1.4rem 2rem 1.8rem; border-top: 1px solid rgba(0,0,0,0.06); text-align: center; }
+  .apply-btn {
+    display: inline-block; padding: 0.95rem 3rem; background: var(--green); color: #fff;
+    border: none; border-radius: 3px; font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 0.82rem; letter-spacing: 0.22em; text-transform: uppercase; cursor: pointer;
+    transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+  }
+  .apply-btn:hover { background: hsl(130,55%,34%); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34,139,34,0.25); }
+  .apply-hint { font-family: 'Cormorant Garamond', serif; font-size: 0.92rem; color: var(--gray); margin-top: 0.7rem; }
+
+  /* ── OVERLAY SHELL (auth + apply) ── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+    background: rgba(235,240,235,0.7); backdrop-filter: blur(8px); padding: 1.2rem;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+  .glass {
+    background: rgba(255,255,255,0.98); border: 1px solid rgba(0,0,0,0.07); border-radius: 8px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.12); padding: clamp(1.6rem, 4vw, 2.6rem) clamp(1.6rem, 5vw, 3rem);
+    width: min(560px, 96vw); max-height: 92vh; overflow-y: auto;
+    transform: translateY(20px); transition: transform 0.4s ease; position: relative;
+  }
+  .overlay.show .glass { transform: translateY(0); }
+  .glass.auth-glass { width: min(430px, 96vw); }
+  .glass::-webkit-scrollbar { width: 5px; }
+  .glass::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+  .close-btn { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none;
+    color: #aaa; cursor: pointer; font-size: 1.3rem; line-height: 1; font-family: 'Syne', sans-serif; transition: color 0.3s; }
+  .close-btn:hover { color: var(--dark); }
+
+  .ov-header { margin-bottom: 1.3rem; }
+  .ov-header h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.5rem, 4vw, 2.1rem);
+    letter-spacing: -0.03em; line-height: 1; }
+  .ov-header h2 span { color: var(--green); }
+  .ov-header p { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--gray); margin-top: 0.4rem; }
+
+  label { font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase; color: #555; font-weight: 700; }
+  label .req { color: var(--green); margin-left: 2px; }
+  label .opt { color: #aaa; margin-left: 4px; font-weight: 700; letter-spacing: 0.05em; text-transform: none; font-size: 0.6rem; }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.9rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  input, textarea, select {
+    background: #fafafa; border: 1.5px solid #e2e2e2; border-radius: 3px; color: var(--dark);
+    font-family: 'Cormorant Garamond', serif; font-size: 1rem; padding: 0.65rem 0.85rem; outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s, background 0.3s; width: 100%;
+  }
+  input::placeholder, textarea::placeholder { color: #bbb; }
+  input:focus, textarea:focus, select:focus { border-color: var(--green); background: #fff; box-shadow: 0 0 0 3px rgba(34,139,34,0.09); }
+  input.error, textarea.error, select.error, .file-drop.error { border-color: #e53935; box-shadow: 0 0 0 3px rgba(229,57,53,0.07); }
+  textarea { resize: none; height: 84px; line-height: 1.5; }
+  .field-error { font-size: 0.68rem; color: #e53935; display: none; }
+  .field-error.show { display: block; }
+  .prefill-tag { font-size: 0.6rem; color: var(--green); font-weight: 700; letter-spacing: 0.05em; text-transform: none; }
+
+  .file-drop {
+    background: #fafafa; border: 1.5px dashed #ccc; border-radius: 6px; padding: 1.1rem;
+    text-align: center; cursor: pointer; transition: all 0.25s; font-family: 'Cormorant Garamond', serif;
+  }
+  .file-drop:hover { border-color: var(--green); background: #fff; }
+  .file-drop .fd-icon { color: var(--green); margin-bottom: 0.3rem; }
+  .file-drop .fd-text { font-size: 0.95rem; color: #555; }
+  .file-drop .fd-sub { font-size: 0.78rem; color: #aaa; margin-top: 0.2rem; }
+  .file-drop.has-file { border-style: solid; border-color: var(--green); background: rgba(34,139,34,0.04); }
+  .file-drop.has-file .fd-text { color: var(--green); font-weight: 600; font-family: 'Syne', sans-serif; font-size: 0.85rem; }
+
+  /* Agreement box */
+  .agreement-box {
+    border: 1.5px solid #e2e2e2; border-radius: 6px; background: #fafafa;
+    height: 190px; overflow-y: auto; padding: 1rem 1.1rem; margin-bottom: 0.6rem;
+    font-family: 'Cormorant Garamond', serif; font-size: 0.88rem; line-height: 1.55; color: #444;
+  }
+  .agreement-box::-webkit-scrollbar { width: 5px; }
+  .agreement-box::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+  .agreement-box h4 { font-family: 'Syne', sans-serif; font-size: 0.82rem; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--dark); margin: 0.9rem 0 0.4rem; }
+  .agreement-box h4:first-child { margin-top: 0; }
+  .agreement-box p { margin-bottom: 0.6rem; }
+  .agree-check-row { display: flex; align-items: flex-start; gap: 0.6rem; margin: 0.6rem 0 0.4rem; cursor: pointer; }
+  .agree-check-row input { width: auto; margin-top: 0.15rem; flex-shrink: 0; }
+  .agree-check-row span { font-family: 'Cormorant Garamond', serif; font-size: 0.92rem; color: #333; line-height: 1.45; }
+  .agree-scroll-hint { font-size: 0.75rem; color: #c47d00; margin-bottom: 0.5rem; font-family: 'Cormorant Garamond', serif; }
+
+  .submit-btn {
+    width: 100%; padding: 0.9rem; background: var(--green); border: none; border-radius: 3px; color: #fff;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.25em;
+    text-transform: uppercase; cursor: pointer; transition: background 0.3s, transform 0.2s, box-shadow 0.3s; margin-top: 0.4rem;
+  }
+  .submit-btn:hover:not(:disabled) { background: hsl(130,55%,34%); box-shadow: 0 4px 16px rgba(34,139,34,0.25); transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .ov-msg { border-radius: 3px; padding: 0.7rem 0.85rem; font-size: 0.85rem; font-family: 'Cormorant Garamond', serif;
+    line-height: 1.45; margin-bottom: 1rem; display: none; }
+  .ov-msg.show { display: block; }
+  .ov-msg.error { background: rgba(229,57,53,0.08); border: 1px solid rgba(229,57,53,0.25); color: #c62828; }
+  .ov-msg.success { background: rgba(34,139,34,0.08); border: 1px solid rgba(34,139,34,0.25); color: var(--green); }
+
+  /* Auth tabs */
+  .auth-tabs { display: flex; gap: 0.4rem; background: #eef2ee; border-radius: 4px; padding: 0.3rem; margin-bottom: 1.3rem; }
+  .auth-tab { flex: 1; padding: 0.6rem; border: none; background: transparent; font-family: 'Syne', sans-serif;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray);
+    border-radius: 3px; cursor: pointer; transition: all 0.25s; }
+  .auth-tab.active { background: var(--green); color: #fff; }
+  .signup-only { display: none; }
+  #authOverlay[data-mode="signup"] .signup-only { display: flex; }
+  #authOverlay[data-mode="signup"] .login-only { display: none; }
+  .auth-gate-note {
+    background: rgba(34,139,34,0.06); border: 1px solid rgba(34,139,34,0.2); border-radius: 4px;
+    padding: 0.7rem 0.9rem; margin-bottom: 1.2rem; font-family: 'Cormorant Garamond', serif;
+    font-size: 0.92rem; color: #2e5e2e; line-height: 1.45;
+  }
+
+  .mini-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: -2px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .success-screen { display: none; text-align: center; padding: 2rem 0 1rem; }
+  .success-screen.show { display: block; }
+  .success-screen .ico { font-size: 2.5rem; margin-bottom: 0.8rem; }
+  .success-screen h3 { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.8rem; color: var(--green); margin-bottom: 0.5rem; }
+  .success-screen p { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--gray); line-height: 1.55; }
+
+  @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo" id="logoHome">SW</span>
+  <div class="topbar-actions">
+    <button class="menu-login-btn" id="menuLoginBtn">
+      <svg viewBox="0 0 24 24"><path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/></svg>
+      Login
+    </button>
+    <div class="menu-account" id="menuAccount">
+      <div class="acct-avatar" id="acctAvatar">?</div>
+      <span class="acct-name" id="acctName">—</span>
+      <button class="menu-signout" id="menuSignout">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<div class="careers-hero">
+  <span class="careers-label">Careers at SW</span>
+  <h1>Join Our <em>Field Sales</em> Team</h1>
+  <p>We're hiring driven, self-motivated sales professionals to grow our footprint. Below is our current opening — read the details and apply directly through your SW account.</p>
+</div>
+
+<div class="job-wrap">
+  <div class="job-card">
+    <div class="job-card-head">
+      <div class="job-badges">
+        <span class="job-badge badge-1099">1099 Independent Contractor</span>
+        <span class="job-badge badge-remote">Field / Territory-Based</span>
+      </div>
+      <h2>Territory Sales Specialist</h2>
+      <div class="commission-note">Performance-based contract role — you control your earnings.</div>
+    </div>
+
+    <div class="job-card-body">
+      <div class="contract-callout">
+        <p><strong>This is a 1099 independent-contractor position, not W-2 employment.</strong> You operate as your own business: you set your own hours, cover your own expenses, and are responsible for your own taxes. No benefits, withholding, or guaranteed wage are provided. Compensation is performance-based.</p>
+      </div>
+
+      <div class="job-section">
+        <h3>About the Role</h3>
+        <p>As a Territory Sales Specialist, you'll connect with local businesses in your area — both over the phone and in person — to introduce SW's services. You'll work through CRM GO, our purpose-built sales tool, which organizes your leads, routes your in-person visits, and tracks your activity and earnings.</p>
+      </div>
+
+      <div class="job-section">
+        <h3>What You'll Do</h3>
+        <ul>
+          <li>Reach out to local businesses by phone and in person</li>
+          <li>Present SW's services and generate qualified leads</li>
+          <li>Set appointments and help move prospects toward a close</li>
+          <li>Use CRM GO to manage your territory and log your work</li>
+        </ul>
+      </div>
+
+      <div class="job-section">
+        <h3>What We're Looking For</h3>
+        <ul>
+          <li>Self-starters comfortable with cold outreach</li>
+          <li>Strong communication and people skills</li>
+          <li>Reliable transportation for in-person visits</li>
+          <li>A smartphone and willingness to learn CRM GO</li>
+          <li>Prior sales experience is a plus, not required</li>
+        </ul>
+      </div>
+
+      <div class="job-section">
+        <h3>How You're Paid</h3>
+        <p>Compensation is entirely performance-based per the independent-contractor agreement — you earn based on the activity and results you produce. Because you're a 1099 contractor, you're responsible for your own taxes and expenses.</p>
+      </div>
+    </div>
+
+    <div class="apply-bar">
+      <button class="apply-btn" id="applyBtn">Apply Now</button>
+      <div class="apply-hint" id="applyHint">You'll sign in or create a free SW account to apply.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUTH OVERLAY ── -->
+<div class="overlay" id="authOverlay" data-mode="login" role="dialog" aria-modal="true">
+  <div class="glass auth-glass">
+    <button class="close-btn" id="authClose">✕</button>
+    <div class="ov-header">
+      <h2 id="authTitle">Sign In to <span>Apply</span></h2>
+      <p id="authSubtitle">One SW account works across our site, applications, and CRM GO.</p>
+    </div>
+    <div class="auth-gate-note">
+      You need an SW account to apply. The same login gives you access to CRM GO once you're approved.
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" type="button">Log In</button>
+      <button class="auth-tab" id="authTabSignup" type="button">Sign Up</button>
+    </div>
+    <div class="ov-msg" id="authMsg"></div>
+    <form id="authForm" novalidate autocomplete="off">
+      <div class="form-group signup-only">
+        <label for="authName">Full Name <span class="req">*</span></label>
+        <input type="text" id="authName" placeholder="Jane Doe" maxlength="80" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label for="authEmail">Email <span class="req">*</span></label>
+        <input type="email" id="authEmail" placeholder="jane@example.com" maxlength="120" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="authPassword">Password <span class="req">*</span></label>
+        <input type="password" id="authPassword" placeholder="••••••••" maxlength="100" autocomplete="current-password">
+      </div>
+      <button type="submit" class="submit-btn" id="authSubmitBtn">Log In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── APPLICATION OVERLAY ── -->
+<div class="overlay" id="applyOverlay" role="dialog" aria-modal="true">
+  <div class="glass">
+    <button class="close-btn" id="applyClose">✕</button>
+
+    <div id="applyFormWrap">
+      <div class="ov-header">
+        <h2>Apply: <span>Territory Sales Specialist</span></h2>
+        <p>1099 Independent Contractor · Field / Territory-Based</p>
+      </div>
+
+      <div class="ov-msg" id="applyMsg"></div>
+
+      <form id="applyForm" novalidate autocomplete="off">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="apName">Full Name <span class="req">*</span> <span class="prefill-tag" id="namePrefill"></span></label>
+            <input type="text" id="apName" maxlength="80" autocomplete="name">
+            <span class="field-error" id="apName-err">Enter your full name.</span>
+          </div>
+          <div class="form-group">
+            <label for="apEmail">Email <span class="req">*</span> <span class="prefill-tag" id="emailPrefill"></span></label>
+            <input type="email" id="apEmail" maxlength="120" autocomplete="email">
+            <span class="field-error" id="apEmail-err">Enter a valid email.</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="apPhone">Phone <span class="req">*</span></label>
+            <input type="tel" id="apPhone" placeholder="+1 (555) 000-0000" maxlength="20" autocomplete="tel">
+            <span class="field-error" id="apPhone-err">Enter a valid phone number.</span>
+          </div>
+          <div class="form-group">
+            <label for="apLocation">Location / Territory <span class="req">*</span></label>
+            <input type="text" id="apLocation" placeholder="City, State" maxlength="80">
+            <span class="field-error" id="apLocation-err">Enter your location.</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="apExperience">Years of Sales Experience <span class="req">*</span></label>
+            <select id="apExperience">
+              <option value="">Select…</option>
+              <option>None / New to sales</option>
+              <option>Less than 1 year</option>
+              <option>1–3 years</option>
+              <option>3–5 years</option>
+              <option>5+ years</option>
+            </select>
+            <span class="field-error" id="apExperience-err">Please select.</span>
+          </div>
+          <div class="form-group">
+            <label for="apAvailable">Available From <span class="req">*</span></label>
+            <input type="date" id="apAvailable">
+            <span class="field-error" id="apAvailable-err">Select an availability date.</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="apLink">LinkedIn / Portfolio / Website <span class="opt">(optional)</span></label>
+          <input type="url" id="apLink" placeholder="https://linkedin.com/in/you" maxlength="200">
+        </div>
+
+        <div class="form-group">
+          <label for="apWhy">Why do you want this role? <span class="opt">(optional)</span></label>
+          <textarea id="apWhy" placeholder="Tell us a bit about yourself…" maxlength="1000"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Résumé <span class="req">*</span></label>
+          <div class="file-drop" id="fileDrop">
+            <div class="fd-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="fd-text" id="fdText">Tap to upload your résumé</div>
+            <div class="fd-sub">PDF, DOC, or DOCX · max 5 MB</div>
+          </div>
+          <input type="file" id="apResume" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none;">
+          <span class="field-error" id="apResume-err">Please upload your résumé.</span>
+        </div>
+
+        <div class="form-group">
+          <label>Independent Contractor Agreement <span class="req">*</span></label>
+          <div class="agreement-box" id="agreementBox">
+            <h4>1. Independent Contractor (1099) Relationship</h4>
+            <p>This Agreement is entered into between SW Marketing Firm ("Company") and the applicant ("Contractor"). Contractor is engaged strictly as an independent contractor under IRS Form 1099, and nothing in this Agreement creates an employer–employee relationship, partnership, joint venture, or agency. Contractor is not an employee of Company for any purpose, including federal, state, or local tax law, and is not eligible for any employee benefits, including but not limited to health insurance, paid leave, retirement contributions, workers' compensation, or unemployment insurance.</p>
+
+            <h4>2. Taxes and Expenses</h4>
+            <p>Contractor is solely responsible for the payment of all federal, state, and local taxes arising from compensation received, including self-employment tax, and for filing all required tax returns. Company will not withhold any taxes from payments. Contractor is responsible for all of their own business expenses, including transportation, phone, data, and equipment, and will not be reimbursed unless agreed in writing.</p>
+
+            <h4>3. No Guarantee of Work or Income</h4>
+            <p>Compensation is entirely performance-based. Company makes no guarantee of any minimum amount of work, leads, appointments, or income. Contractor's earnings depend solely on the results they produce. Nothing herein constitutes a promise of continued engagement, and either party may end this relationship at any time, with or without cause or notice.</p>
+
+            <h4>4. Control and Manner of Work</h4>
+            <p>Contractor controls the manner, method, hours, and means by which services are performed and is free to accept other work. Company may specify the desired result and provide access to its tools (including the CRM GO application) but does not control the day-to-day details of how Contractor performs the work.</p>
+
+            <h4>5. Confidentiality</h4>
+            <p>Contractor agrees to keep confidential all non-public information, leads, customer data, business methods, and materials provided by Company, during and after the engagement, and to use such information solely to perform the agreed services. Customer and lead data remain the exclusive property of Company.</p>
+
+            <h4>6. Compliance and Conduct</h4>
+            <p>Contractor agrees to perform all services lawfully and in compliance with applicable laws and regulations, including those governing telephone solicitation and marketing. Contractor is solely responsible for their own conduct and representations made to third parties, and agrees not to make any false, misleading, or unauthorized statements on behalf of Company.</p>
+
+            <h4>7. Release and Limitation of Liability</h4>
+            <p>To the fullest extent permitted by law, Contractor releases and holds harmless Company, its owners, officers, and affiliates from any and all claims, damages, losses, liabilities, or expenses arising out of or related to Contractor's performance of services, use of Company tools, travel, or independent business activities. Company shall not be liable for any indirect, incidental, consequential, or punitive damages. Company's total aggregate liability, if any, shall not exceed the amount of compensation actually paid to Contractor.</p>
+
+            <h4>8. Indemnification</h4>
+            <p>Contractor agrees to indemnify and defend Company against any claims, losses, or expenses (including reasonable attorneys' fees) arising from Contractor's acts, omissions, misrepresentations, or breach of this Agreement, or from Contractor's misclassification claims to the extent based on Contractor's own representations herein.</p>
+
+            <h4>9. Data Authorization</h4>
+            <p>Contractor consents to Company collecting and storing the information and résumé submitted in this application for the purposes of evaluating the application and, if engaged, administering the contractor relationship.</p>
+
+            <h4>10. Entire Understanding</h4>
+            <p>This Agreement reflects the parties' understanding regarding the independent-contractor nature of the relationship. It may be supplemented by a further written agreement upon engagement. If any provision is found unenforceable, the remaining provisions remain in effect.</p>
+          </div>
+          <div class="agree-scroll-hint" id="agreeScrollHint">Please scroll to the end of the agreement to continue.</div>
+          <label class="agree-check-row" id="agreeRow">
+            <input type="checkbox" id="apAgree" disabled>
+            <span>I have read and agree to the Independent Contractor Agreement above, and I understand this is a 1099 independent-contractor role, not W-2 employment.</span>
+          </label>
+          <span class="field-error" id="apAgree-err">You must read and accept the agreement to apply.</span>
+        </div>
+
+        <button type="submit" class="submit-btn" id="applySubmitBtn">Submit Application</button>
+      </form>
+    </div>
+
+    <div class="success-screen" id="applySuccess">
+      <div class="ico">✦</div>
+      <h3>Application Submitted</h3>
+      <p>Thank you for applying to be a Territory Sales Specialist. Your application and résumé have been received. SW will review it and reach out about next steps — your SW account will be used for CRM GO access once approved.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://rbhonizktedhvsblyjgq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_mmmjAja48AfKAuEzQGylVg_Dq4s-RWU';
+const RESUME_BUCKET = 'resumes';
+
+let sb = null;
+try {
+  if (window.supabase && window.supabase.createClient) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    });
+  }
+} catch (e) { console.warn('Supabase init failed', e); }
+
+let currentUser = null;
+let currentProfile = null;
+
+/* ---- element refs ---- */
+const menuLoginBtn = document.getElementById('menuLoginBtn');
+const menuAccount = document.getElementById('menuAccount');
+const acctName = document.getElementById('acctName');
+const acctAvatar = document.getElementById('acctAvatar');
+const menuSignout = document.getElementById('menuSignout');
+
+const authOverlay = document.getElementById('authOverlay');
+const authClose = document.getElementById('authClose');
+const authTabLogin = document.getElementById('authTabLogin');
+const authTabSignup = document.getElementById('authTabSignup');
+const authTitle = document.getElementById('authTitle');
+const authSubtitle = document.getElementById('authSubtitle');
+const authMsg = document.getElementById('authMsg');
+const authForm = document.getElementById('authForm');
+const authName = document.getElementById('authName');
+const authEmail = document.getElementById('authEmail');
+const authPassword = document.getElementById('authPassword');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+const applyBtn = document.getElementById('applyBtn');
+const applyHint = document.getElementById('applyHint');
+const applyOverlay = document.getElementById('applyOverlay');
+const applyClose = document.getElementById('applyClose');
+const applyForm = document.getElementById('applyForm');
+const applyMsg = document.getElementById('applyMsg');
+const applySubmitBtn = document.getElementById('applySubmitBtn');
+const applyFormWrap = document.getElementById('applyFormWrap');
+const applySuccess = document.getElementById('applySuccess');
+
+const apName = document.getElementById('apName');
+const apEmail = document.getElementById('apEmail');
+const namePrefill = document.getElementById('namePrefill');
+const emailPrefill = document.getElementById('emailPrefill');
+
+const fileDrop = document.getElementById('fileDrop');
+const fdText = document.getElementById('fdText');
+const apResume = document.getElementById('apResume');
+
+const agreementBox = document.getElementById('agreementBox');
+const agreeScrollHint = document.getElementById('agreeScrollHint');
+const apAgree = document.getElementById('apAgree');
+
+document.getElementById('logoHome').addEventListener('click', () => {
+  // Link back to the main site if present, otherwise no-op
+  window.location.href = 'index.html';
+});
+
+/* ---- helpers ---- */
+function initials(name) {
+  if (!name) return '?';
+  const p = name.trim().split(/\s+/);
+  return (p.length === 1 ? p[0].slice(0,2) : p[0][0]+p[1][0]).toUpperCase();
+}
+function showAuthMsg(t, type) { authMsg.textContent = t; authMsg.className = 'ov-msg show ' + (type||'error'); }
+function showApplyMsg(t, type) { applyMsg.textContent = t; applyMsg.className = 'ov-msg show ' + (type||'error'); }
+const isEmail = e => /^[^\s@<>'"]{1,64}@[^\s@<>'"]{1,255}\.[a-zA-Z]{2,}$/.test(e);
+const isPhone = p => /^[\d\s\+\-\(\)\.]{7,20}$/.test(p);
+
+/* ---- auth overlay ---- */
+function openAuth() {
+  authOverlay.classList.add('show');
+  setAuthMode('login');
+  authMsg.classList.remove('show');
+  setTimeout(() => authEmail.focus(), 150);
+}
+function closeAuth() { authOverlay.classList.remove('show'); }
+function setAuthMode(mode) {
+  authOverlay.setAttribute('data-mode', mode);
+  authTabLogin.classList.toggle('active', mode === 'login');
+  authTabSignup.classList.toggle('active', mode === 'signup');
+  authSubmitBtn.textContent = mode === 'login' ? 'Log In' : 'Create Account';
+  authTitle.innerHTML = mode === 'login' ? 'Sign In to <span>Apply</span>' : 'Create <span>Account</span>';
+  authMsg.classList.remove('show');
+}
+menuLoginBtn.addEventListener('click', openAuth);
+authClose.addEventListener('click', closeAuth);
+authOverlay.addEventListener('click', e => { if (e.target === authOverlay) closeAuth(); });
+authTabLogin.addEventListener('click', () => setAuthMode('login'));
+authTabSignup.addEventListener('click', () => setAuthMode('signup'));
+
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!sb) { showAuthMsg('Connection unavailable. Reload and try again.'); return; }
+  const email = (authEmail.value||'').trim().toLowerCase();
+  const password = authPassword.value || '';
+  const mode = authOverlay.getAttribute('data-mode');
+  if (!email || !password) { showAuthMsg('Enter your email and password.'); return; }
+  authSubmitBtn.disabled = true;
+  const orig = authSubmitBtn.textContent;
+  authSubmitBtn.innerHTML = '<span class="mini-spinner"></span>' + (mode==='login'?'Signing in…':'Creating…');
+  try {
+    if (mode === 'login') {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await loadSession();
+      closeAuth();
+      openApply();
+    } else {
+      const name = (authName.value||'').trim();
+      if (!name) throw new Error('Enter your full name.');
+      if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+      const { data, error } = await sb.auth.signUp({
+        email, password,
+        options: { data: { signup_source: 'website', display_name: name } }
+      });
+      if (error) throw error;
+      if (data.session) {
+        await loadSession();
+        closeAuth();
+        openApply();
+      } else {
+        showAuthMsg('Account created! Check your email to confirm, then log in.', 'success');
+        setAuthMode('login');
+      }
+    }
+  } catch (err) {
+    showAuthMsg(err.message || 'Something went wrong.');
+  } finally {
+    authSubmitBtn.disabled = false; authSubmitBtn.textContent = orig;
+  }
+});
+
+menuSignout.addEventListener('click', async () => {
+  try { if (sb) await sb.auth.signOut(); } catch {}
+  currentUser = null; currentProfile = null;
+  menuLoginBtn.style.display = ''; menuAccount.classList.remove('show');
+  applyHint.textContent = "You'll sign in or create a free SW account to apply.";
+});
+
+async function loadSession() {
+  if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { currentUser = null; currentProfile = null; return; }
+  currentUser = session.user;
+  let name = session.user.email;
+  try {
+    const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    if (profile) { currentProfile = profile; if (profile.display_name) name = profile.display_name; }
+  } catch {}
+  menuLoginBtn.style.display = 'none';
+  menuAccount.classList.add('show');
+  acctName.textContent = name;
+  acctAvatar.textContent = initials(name);
+  applyHint.textContent = 'Signed in as ' + name + ' — your details will pre-fill.';
+}
+
+/* ---- apply flow ---- */
+applyBtn.addEventListener('click', () => {
+  if (!currentUser) { openAuth(); return; }
+  openApply();
+});
+
+function openApply() {
+  applyFormWrap.style.display = '';
+  applySuccess.classList.remove('show');
+  applyMsg.classList.remove('show');
+  // Pre-fill from account
+  const nm = (currentProfile && currentProfile.display_name) || '';
+  const em = (currentUser && currentUser.email) || (currentProfile && currentProfile.email) || '';
+  apName.value = nm;
+  apEmail.value = em;
+  namePrefill.textContent = nm ? 'from your account' : '';
+  emailPrefill.textContent = em ? 'from your account' : '';
+  // reset agreement
+  apAgree.checked = false; apAgree.disabled = true;
+  agreeScrollHint.style.display = '';
+  applyOverlay.classList.add('show');
+}
+function closeApply() { applyOverlay.classList.remove('show'); }
+applyClose.addEventListener('click', closeApply);
+applyOverlay.addEventListener('click', e => { if (e.target === applyOverlay) closeApply(); });
+
+/* résumé file picker */
+fileDrop.addEventListener('click', () => apResume.click());
+let resumeFile = null;
+apResume.addEventListener('change', () => {
+  const f = apResume.files && apResume.files[0];
+  if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { showApplyMsg('Résumé must be under 5 MB.'); apResume.value=''; return; }
+  resumeFile = f;
+  fileDrop.classList.add('has-file');
+  fdText.textContent = f.name;
+  document.getElementById('apResume-err').classList.remove('show');
+  fileDrop.classList.remove('error');
+});
+
+/* agreement: enable checkbox only after scrolling to the bottom */
+agreementBox.addEventListener('scroll', () => {
+  if (agreementBox.scrollTop + agreementBox.clientHeight >= agreementBox.scrollHeight - 8) {
+    apAgree.disabled = false;
+    agreeScrollHint.style.display = 'none';
+  }
+});
+
+/* submit application */
+applyForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!sb || !currentUser) { showApplyMsg('Please sign in again.'); return; }
+
+  const fields = [
+    ['apName', apName.value.trim(), v => !!v],
+    ['apEmail', apEmail.value.trim(), v => isEmail(v)],
+    ['apPhone', document.getElementById('apPhone').value.trim(), v => isPhone(v)],
+    ['apLocation', document.getElementById('apLocation').value.trim(), v => !!v],
+    ['apExperience', document.getElementById('apExperience').value, v => !!v],
+    ['apAvailable', document.getElementById('apAvailable').value, v => !!v],
+  ];
+  let valid = true;
+  fields.forEach(([id, val, test]) => {
+    const ok = test(val);
+    document.getElementById(id).classList.toggle('error', !ok);
+    const err = document.getElementById(id + '-err');
+    if (err) err.classList.toggle('show', !ok);
+    if (!ok) valid = false;
+  });
+  if (!resumeFile) {
+    valid = false;
+    document.getElementById('apResume-err').classList.add('show');
+    fileDrop.classList.add('error');
+  }
+  if (!apAgree.checked) {
+    valid = false;
+    document.getElementById('apAgree-err').classList.add('show');
+  } else {
+    document.getElementById('apAgree-err').classList.remove('show');
+  }
+  if (!valid) { showApplyMsg('Please complete the required fields.'); return; }
+  applyMsg.classList.remove('show');
+
+  applySubmitBtn.disabled = true;
+  const orig = applySubmitBtn.textContent;
+  applySubmitBtn.innerHTML = '<span class="mini-spinner"></span>Submitting…';
+
+  try {
+    // 1. Upload résumé to Storage
+    const safeName = resumeFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${currentUser.id}/${Date.now()}_${safeName}`;
+    const { error: upErr } = await sb.storage.from(RESUME_BUCKET)
+      .upload(path, resumeFile, { contentType: resumeFile.type || 'application/octet-stream', upsert: true });
+    if (upErr) throw upErr;
+
+    // 2. Insert the application row (trigger flips profile to pending)
+    const { error: insErr } = await sb.from('applications').insert({
+      user_id: currentUser.id,
+      role_title: 'Territory Sales Specialist',
+      employment_type: '1099 Independent Contractor',
+      full_name: apName.value.trim(),
+      email: apEmail.value.trim(),
+      phone: document.getElementById('apPhone').value.trim(),
+      location: document.getElementById('apLocation').value.trim(),
+      years_experience: document.getElementById('apExperience').value,
+      why: document.getElementById('apWhy').value.trim() || null,
+      link_url: document.getElementById('apLink').value.trim() || null,
+      available_from: document.getElementById('apAvailable').value,
+      resume_path: path,
+      resume_filename: resumeFile.name,
+      agreement_accepted: true,
+      agreement_accepted_at: new Date().toISOString(),
+      agreement_version: 'v1'
+    });
+    if (insErr) throw insErr;
+
+    applyFormWrap.style.display = 'none';
+    applySuccess.classList.add('show');
+  } catch (err) {
+    showApplyMsg(err.message || 'Submission failed. Please try again.');
+    applySubmitBtn.disabled = false;
+    applySubmitBtn.textContent = orig;
+  }
+});
+
+/* boot */
+if (sb) {
+  loadSession();
+  sb.auth.onAuthStateChange(() => loadSession());
+}
+</script>
+</body>
+</html>
