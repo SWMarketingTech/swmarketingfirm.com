@@ -50,6 +50,70 @@
      Services page the Back button is shifted down (see .services-back below)
      so it sits clear of this bar instead of being overlapped by it. */
 
+  /* ── SIDE MENU (hamburger top-left + slide-out drawer) ── */
+  .services-nav-left { display: flex; align-items: center; gap: 0.9rem; }
+  .hamburger {
+    width: 40px; height: 40px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 5px;
+    background: transparent;
+    border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease, border-color 0.3s ease;
+    flex-shrink: 0;
+  }
+  .hamburger:hover { border-color: var(--green); }
+  .hamburger span {
+    display: block; width: 18px; height: 2px; background: var(--dark);
+    border-radius: 2px; transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  body.menu-open .hamburger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  body.menu-open .hamburger span:nth-child(2) { opacity: 0; }
+  body.menu-open .hamburger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .side-menu-overlay {
+    position: fixed; inset: 0; z-index: 65;
+    background: rgba(0,0,0,0.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  body.menu-open .side-menu-overlay { opacity: 1; pointer-events: all; }
+
+  .side-menu {
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 66;
+    width: min(300px, 82vw);
+    background: #ffffff;
+    box-shadow: 4px 0 30px rgba(0,0,0,0.12);
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.7,0,0.3,1);
+    display: flex; flex-direction: column;
+    padding: 5rem 0 2rem;
+  }
+  body.menu-open .side-menu { transform: translateX(0); }
+  .side-menu-brand {
+    font-family: Impact, sans-serif; font-style: italic; font-size: 2.2rem;
+    color: hsl(130,60%,32%); padding: 0 2rem 1.4rem; user-select: none;
+  }
+  .side-menu-links { display: flex; flex-direction: column; }
+  .side-menu-link {
+    display: flex; align-items: center; gap: 0.9rem;
+    padding: 1rem 2rem;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.92rem;
+    letter-spacing: 0.06em; color: var(--dark);
+    background: none; border: none; text-align: left; width: 100%;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+  }
+  .side-menu-link:hover { background: rgba(34,139,34,0.07); color: var(--green); padding-left: 2.4rem; }
+  .side-menu-link svg { width: 18px; height: 18px; stroke: currentColor; flex-shrink: 0; }
+  .side-menu-link .ext { margin-left: auto; font-size: 0.6rem; color: #aaa; letter-spacing: 0.1em; text-transform: uppercase; }
+  .side-menu-foot {
+    margin-top: auto; padding: 1.2rem 2rem 0;
+    font-family: 'Cormorant Garamond', serif; font-size: 0.82rem; color: var(--gray);
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+
   .menu-login-btn {
     display: inline-flex;
     align-items: center;
@@ -714,6 +778,35 @@
 
 <canvas id="bg"></canvas>
 
+<!-- SIDE MENU -->
+<div class="side-menu-overlay" id="sideMenuOverlay"></div>
+<nav class="side-menu" id="sideMenu" aria-label="Main menu">
+  <div class="side-menu-brand">SW</div>
+  <div class="side-menu-links">
+    <button class="side-menu-link" data-action="services">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Services
+    </button>
+    <button class="side-menu-link" data-action="contact">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 6l-10 7L2 6"/></svg>
+      Contact
+    </button>
+    <a class="side-menu-link" href="apply.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      Apply
+    </a>
+    <a class="side-menu-link" href="crm-go.html" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      CRM GO <span class="ext">↗ App</span>
+    </a>
+    <button class="side-menu-link" data-action="login" id="sideMenuLogin">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      <span id="sideMenuLoginLabel">Log In</span>
+    </button>
+  </div>
+  <div class="side-menu-foot">SW Marketing Firm</div>
+</nav>
+
 <!-- TOP MENU BAR -->
 <div class="topbar">
   <div class="menu-actions">
@@ -817,7 +910,12 @@
 <div id="servicesPage">
   <div class="services-wrap">
     <nav class="services-nav">
-      <span class="services-nav-logo">SW</span>
+      <div class="services-nav-left">
+        <span class="services-nav-logo">SW</span>
+        <button class="hamburger" id="hamburger" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
       <button class="services-back" id="servicesBack">← Back</button>
     </nav>
 
@@ -1065,11 +1163,42 @@ function syncOverlayState() {
   document.body.classList.toggle('overlay-open', anyOpen);
 }
 
-document.getElementById('ctaBtn').addEventListener('click', () => {
+// ── Side menu ──
+const sideMenu = document.getElementById('sideMenu');
+const sideMenuOverlay = document.getElementById('sideMenuOverlay');
+const hamburger = document.getElementById('hamburger');
+function openSideMenu() { document.body.classList.add('menu-open'); }
+function closeSideMenu() { document.body.classList.remove('menu-open'); }
+function toggleSideMenu() { document.body.classList.toggle('menu-open'); }
+if (hamburger) hamburger.addEventListener('click', toggleSideMenu);
+sideMenuOverlay.addEventListener('click', closeSideMenu);
+
+function openServices() {
+  servicesPage.classList.add('show'); landing.classList.add('hide'); servicesPage.scrollTop = 0;
+  syncOverlayState();
+}
+function openContact() {
   contactPage.classList.add('show'); landing.classList.add('hide');
   syncOverlayState();
   document.getElementById('fname').focus();
+}
+
+// Side-menu link actions (Services / Contact open overlays; Apply & CRM GO are real links)
+sideMenu.querySelectorAll('[data-action]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const action = btn.dataset.action;
+    closeSideMenu();
+    if (action === 'services') openServices();
+    else if (action === 'contact') openContact();
+    else if (action === 'login') {
+      // If signed in, this acts as Sign Out; otherwise opens the auth panel
+      if (currentSessionUser) { doSiteSignOut(); }
+      else { openAuth(); }
+    }
+  });
 });
+
+document.getElementById('ctaBtn').addEventListener('click', openContact);
 function closeContact() {
   contactPage.classList.remove('show');
   syncOverlayState();
@@ -1078,10 +1207,7 @@ function closeContact() {
 document.getElementById('closeBtn').addEventListener('click', closeContact);
 contactPage.addEventListener('click', e => { if (e.target === contactPage) closeContact(); });
 
-document.getElementById('welcomeBtn').addEventListener('click', () => {
-  servicesPage.classList.add('show'); landing.classList.add('hide'); servicesPage.scrollTop = 0;
-  syncOverlayState();
-});
+document.getElementById('welcomeBtn').addEventListener('click', openServices);
 function closeServices() {
   servicesPage.classList.remove('show');
   syncOverlayState();
@@ -1114,6 +1240,7 @@ document.getElementById('servicesCta').addEventListener('click', () => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    if (document.body.classList.contains('menu-open')) closeSideMenu();
     if (contactPage.classList.contains('show')) closeContact();
     if (servicesPage.classList.contains('show')) closeServices();
     if (authPage.classList.contains('show')) closeAuth();
@@ -1310,10 +1437,13 @@ authForm.addEventListener('submit', async (e) => {
   }
 });
 
-menuSignouts.forEach(b => b.addEventListener('click', async () => {
+menuSignouts.forEach(b => b.addEventListener('click', () => doSiteSignOut()));
+
+let currentSessionUser = null;
+async function doSiteSignOut() {
   try { if (sbClient) await sbClient.auth.signOut(); } catch {}
   reflectSignedOut();
-}));
+}
 
 function initials(name) {
   if (!name) return '?';
@@ -1322,10 +1452,13 @@ function initials(name) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+const sideMenuLoginLabel = document.getElementById('sideMenuLoginLabel');
+
 async function reflectSession() {
   if (!sbClient) return;
   const { data: { session } } = await sbClient.auth.getSession();
   if (!session) { reflectSignedOut(); return; }
+  currentSessionUser = session.user;
   // Try to read their display name from the profile (falls back to email)
   let name = session.user.email;
   try {
@@ -1336,10 +1469,14 @@ async function reflectSession() {
   menuAccounts.forEach(a => a.classList.add('show'));
   acctNames.forEach(n => n.textContent = name);
   acctAvatars.forEach(a => a.textContent = initials(name));
+  // Drawer login item becomes "Sign Out (name)"
+  if (sideMenuLoginLabel) sideMenuLoginLabel.textContent = 'Sign Out';
 }
 function reflectSignedOut() {
+  currentSessionUser = null;
   menuLoginBtns.forEach(b => b.style.display = '');
   menuAccounts.forEach(a => a.classList.remove('show'));
+  if (sideMenuLoginLabel) sideMenuLoginLabel.textContent = 'Log In';
 }
 
 // On load, reflect any existing session
@@ -1347,6 +1484,13 @@ if (sbClient) {
   reflectSession();
   sbClient.auth.onAuthStateChange(() => reflectSession());
 }
+
+// If arriving from another page with #services or #contact, open that overlay
+(function handleEntryHash() {
+  const h = (location.hash || '').toLowerCase();
+  if (h === '#services') { openServices(); if (typeof initHeroCanvas === 'function') setTimeout(initHeroCanvas, 60); }
+  else if (h === '#contact') openContact();
+})();
 
 /* ═══════════════════════════ SERVICES HERO CANVAS ═══════════════════════════ */
 function initHeroCanvas() {
