@@ -7675,7 +7675,48 @@ csManualSave.addEventListener('click', () => {
 function calledKeyForActive() {
   return isAdmin() ? 'crmgo_called_admin' : ('crmgo_called_' + adminState.activeUserId);
 }
+function sessionDateKeyForActive() {
+  return isAdmin() ? 'crmgo_session_date_admin' : ('crmgo_session_date_' + adminState.activeUserId);
+}
+/* ---------- Daily rollover at 5 AM LOCAL time ----------
+   The user's device clock is the source of truth. Anything before 5 AM local
+   is still "yesterday's session"; at 5 AM the date flips. When the session
+   date rolls over, the called-businesses filter for the active user is
+   cleared so the rep starts the new day with a fresh lead pool. Wallet,
+   call history, and earnings are cumulative — they intentionally do NOT
+   reset. Each user has their own session-date stamp so reps on different
+   devices roll over independently based on their own local clock. */
+function getSessionDate() {
+  const now = new Date();
+  if (now.getHours() < 5) {
+    // Pre-5 AM counts as the previous calendar day
+    now.setDate(now.getDate() - 1);
+  }
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+function checkDailyRollover(silent) {
+  if (!adminState || !adminState.activeUserId) return false;
+  const key = sessionDateKeyForActive();
+  const today = getSessionDate();
+  let stored = null;
+  try { stored = localStorage.getItem(key); } catch {}
+  if (stored === today) return false;
+  // First-ever load for this user: just stamp the date, don't clear anything
+  if (!stored) {
+    try { localStorage.setItem(key, today); } catch {}
+    return false;
+  }
+  // Day has flipped — clear the called-set and stamp the new date
+  try { localStorage.removeItem(calledKeyForActive()); } catch {}
+  try { localStorage.setItem(key, today); } catch {}
+  if (!silent && typeof showToast === 'function') showToast('New day — leads refreshed');
+  return true;
+}
 function loadCalledSet() {
+  checkDailyRollover(); // freshness check on every read — cheap & idempotent
   try { return new Set(JSON.parse(localStorage.getItem(calledKeyForActive()) || '[]')); }
   catch { return new Set(); }
 }
@@ -8907,6 +8948,12 @@ async function boot() {
 
   await refreshSessionState();
 }
+
+/* Daily-rollover safety net — fire a check once at boot (silent, just stamps
+   the date on first run) and then every 60 seconds so the rollover happens
+   even if the app sits open through 5 AM with no user interaction. */
+checkDailyRollover(true);
+setInterval(() => checkDailyRollover(), 60 * 1000);
 
 boot();
 
