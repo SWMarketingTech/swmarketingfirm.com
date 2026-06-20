@@ -3239,31 +3239,34 @@
   .dash-sales-view:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--yellow-shadow); }
   .dash-sales-view svg { width: 14px; height: 14px; }
 
-  /* "Back to Admin" pill — visible only while admin is in Sales View */
+  /* "Back to Admin" pill — top-left, visible only while admin is in Sales View.
+     Sits ABOVE the regular .back button (which is at top:64px), so they never
+     collide. Higher z-index than the wallet/user-switcher so it's always tappable. */
   .return-to-admin {
     position: fixed;
     top: 18px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 55;
+    left: 18px;
+    z-index: 60;
     display: none;
     align-items: center;
     gap: 8px;
     background: linear-gradient(180deg, var(--admin-red) 0%, var(--admin-red-deep) 100%);
     color: white;
-    border: 1px solid rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.22);
     border-radius: 999px;
-    padding: 8px 16px 8px 12px;
+    padding: 7px 14px 7px 10px;
     font-family: 'Russo One', sans-serif;
-    font-size: 11px;
-    letter-spacing: 1.5px;
+    font-size: 10.5px;
+    letter-spacing: 1.4px;
     text-transform: uppercase;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(184,0,44,0.35), 0 2px 0 rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(184,0,44,0.45), 0 2px 0 rgba(0,0,0,0.35);
     transition: transform 150ms ease, filter 150ms ease;
+    white-space: nowrap;
   }
-  .return-to-admin:hover { filter: brightness(1.08); transform: translateX(-50%) translateY(-1px); }
-  .return-to-admin svg { width: 14px; height: 14px; }
+  .return-to-admin:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .return-to-admin:active { transform: translateY(1px); }
+  .return-to-admin svg { width: 13px; height: 13px; }
   body.admin-sales-view .return-to-admin { display: inline-flex; }
 
   /* When admin is in Sales View, suppress the locked banners
@@ -3271,7 +3274,7 @@
   body.admin-sales-view .locked-banner { display: none !important; }
 
   @media (max-width: 600px) {
-    .return-to-admin { top: 12px; padding: 7px 14px 7px 10px; font-size: 10px; }
+    .return-to-admin { top: 12px; left: 12px; padding: 6px 12px 6px 8px; font-size: 9.5px; }
   }
   .dash-stats {
     display: grid;
