@@ -3211,6 +3211,68 @@
   .dash-refresh:hover { border-color: var(--yellow); color: var(--yellow); }
   .dash-refresh svg { width: 15px; height: 15px; }
 
+  /* Dashboard header right-side action cluster */
+  .dash-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .dash-sales-view {
+    background: var(--yellow);
+    color: var(--black);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease;
+    box-shadow: 0 4px 0 var(--yellow-shadow);
+  }
+  .dash-sales-view:hover { filter: brightness(1.05); transform: translateY(-1px); }
+  .dash-sales-view:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--yellow-shadow); }
+  .dash-sales-view svg { width: 14px; height: 14px; }
+
+  /* "Back to Admin" pill — visible only while admin is in Sales View */
+  .return-to-admin {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 55;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(180deg, var(--admin-red) 0%, var(--admin-red-deep) 100%);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px;
+    padding: 8px 16px 8px 12px;
+    font-family: 'Russo One', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(184,0,44,0.35), 0 2px 0 rgba(0,0,0,0.3);
+    transition: transform 150ms ease, filter 150ms ease;
+  }
+  .return-to-admin:hover { filter: brightness(1.08); transform: translateX(-50%) translateY(-1px); }
+  .return-to-admin svg { width: 14px; height: 14px; }
+  body.admin-sales-view .return-to-admin { display: inline-flex; }
+
+  /* When admin is in Sales View, suppress the locked banners
+     (they only exist for assignment-restricted reps). Admin has no constraints. */
+  body.admin-sales-view .locked-banner { display: none !important; }
+
+  @media (max-width: 600px) {
+    .return-to-admin { top: 12px; padding: 7px 14px 7px 10px; font-size: 10px; }
+  }
   .dash-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -3514,10 +3576,16 @@
     <div class="dash-shell">
       <div class="dash-header">
         <div class="dash-title">CRM <span class="accent">ADMIN</span></div>
-        <button class="dash-refresh" id="dashRefresh" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          Refresh
-        </button>
+        <div class="dash-header-actions">
+          <button class="dash-refresh" id="dashRefresh" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+          <button class="dash-sales-view" id="dashSalesView" type="button" title="Use the app as a sales rep (no constraints)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+            Sales View
+          </button>
+        </div>
       </div>
 
       <div class="dash-stats" id="dashStats">
@@ -3538,6 +3606,15 @@
   </div>
 
   <button class="back" id="backBtn">&larr; Back</button>
+
+  <!-- Visible only when admin is in Sales View — lets them flip back to the dashboard -->
+  <button class="return-to-admin" id="returnToAdminBtn" type="button" title="Back to Admin Dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/>
+      <path d="M9 12l2 2 4-4"/>
+    </svg>
+    <span>Admin Dashboard</span>
+  </button>
 
   <!-- ============= USER SWITCHER (top-left, narrow) ============= -->
   <div class="user-switcher" id="userSwitcher">
@@ -8482,11 +8559,15 @@ async function cloudUploadSnapshot(entry) {
 /* ====================== ADMIN DASHBOARD ====================== */
 const adminDash = document.getElementById('adminDash');
 const dashRefresh = document.getElementById('dashRefresh');
+const dashSalesView = document.getElementById('dashSalesView');
+const returnToAdminBtn = document.getElementById('returnToAdminBtn');
 dashRefresh.addEventListener('click', () => loadAdminDashboard());
 
 function enterAdminDashboard() {
   cloudIsAdmin = true;
   cloudUserId = currentProfile.id;
+  // Leaving Sales View (if we were in it)
+  document.body.classList.remove('admin-sales-view');
   // Hide the calling-app chrome
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('userSwitcher').style.display = 'none';
@@ -8495,6 +8576,49 @@ function enterAdminDashboard() {
   adminDash.classList.add('active');
   loadAdminDashboard();
 }
+
+/* ----- Admin "Sales View" — use the calling app as a rep, with NO constraints -----
+   The admin keeps their cloud identity (cloudUserId = admin profile id), so any
+   calls they make from Sales View get logged under their own admin account.
+   We set the LOCAL adminState.activeUserId to '__admin__' so all the existing
+   `if (!isAdmin())` guards (caps, locked banners, search/metro/biz-type locks)
+   automatically treat them as unrestricted — no other code needs to change. */
+function enterAdminSalesView() {
+  if (!currentProfile || currentProfile.role !== 'admin') return;
+  // Sync the local "active user" model so isAdmin() returns true everywhere
+  adminState.activeUserId = ADMIN_ID;
+  saveAdminState();
+
+  // Hide the dashboard, show the calling-app chrome
+  adminDash.classList.remove('active');
+  document.body.classList.add('admin-sales-view');
+  document.querySelector('.wallet').style.display = '';
+  // We hide the multi-user switcher in Sales View — the admin is the only
+  // identity here, no need to flip between team members from the pill.
+  document.getElementById('userSwitcher').style.display = 'none';
+
+  // Land on the home screen so the admin can choose OTP or In-Person freely
+  showView('home');
+
+  // Refresh wallet/contacts/locks against the admin's local cache
+  loadWallet();
+  updateSyncUI();
+  renderUserSwitcher();
+  applyAdminLocks();
+}
+
+function returnToAdminDashboard() {
+  if (!currentProfile || currentProfile.role !== 'admin') return;
+  // If a call is in progress, don't yank them out mid-call
+  if (dialedCallContext && !dialedCallContext.ended) {
+    showToast('Finish or end the active call first');
+    return;
+  }
+  enterAdminDashboard();
+}
+
+dashSalesView.addEventListener('click', enterAdminSalesView);
+returnToAdminBtn.addEventListener('click', returnToAdminDashboard);
 
 async function loadAdminDashboard() {
   if (!sb || !currentProfile) return;
