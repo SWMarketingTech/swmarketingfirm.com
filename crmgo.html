@@ -3276,6 +3276,45 @@
   @media (max-width: 600px) {
     .return-to-admin { top: 12px; left: 12px; padding: 6px 12px 6px 8px; font-size: 9.5px; }
   }
+
+  /* Persistent "Sign out" pill — bottom-right on every authed screen.
+     Transparent / low-contrast by default so it doesn't compete with primary
+     actions; brightens on hover. Hidden while the auth-gate is showing. */
+  .quick-logout {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.55);
+    border-radius: 999px;
+    padding: 6px 13px 6px 11px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+  }
+  .quick-logout:hover {
+    color: rgba(255,255,255,0.95);
+    border-color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.08);
+  }
+  .quick-logout:active { transform: translateY(1px); }
+  .quick-logout svg { width: 12px; height: 12px; }
+  body.app-ready .quick-logout { display: inline-flex; }
+
+  @media (max-width: 600px) {
+    .quick-logout { bottom: 12px; right: 12px; font-size: 9.5px; padding: 5px 11px 5px 9px; }
+    .quick-logout svg { width: 11px; height: 11px; }
+  }
   .dash-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -4468,6 +4507,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Persistent logout — visible on every screen once the user is logged in.
+       Intentionally low-key so it doesn't compete with primary actions, but
+       always reachable for escaping a stuck/buggy state. -->
+  <button class="quick-logout" id="quickLogoutBtn" type="button" title="Sign out">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+    <span>Sign out</span>
+  </button>
 
 <script>
 /* ====================== ROUTING / VIEWS ====================== */
@@ -8272,13 +8323,18 @@ function showAuthGate() {
   authFormWrap.style.display = '';
   pendingScreen.classList.remove('visible');
   deniedScreen.classList.remove('visible');
+  document.body.classList.remove('app-ready'); // hides the persistent logout pill
 }
-function hideAuthGate() { authGate.classList.remove('visible'); }
+function hideAuthGate() {
+  authGate.classList.remove('visible');
+  document.body.classList.add('app-ready');   // reveals the persistent logout pill
+}
 function showPendingScreen(profile) {
   authGate.classList.add('visible');
   authFormWrap.style.display = 'none';
   pendingScreen.classList.add('visible');
   deniedScreen.classList.remove('visible');
+  document.body.classList.remove('app-ready');
   const supLine = profile && profile.supervisor_name
     ? `Supervisor: <strong>${escapeHtml(profile.supervisor_name)}</strong> (${escapeHtml(profile.supervisor_email||'')})`
     : (profile && profile.supervisor_email
@@ -8291,12 +8347,15 @@ function showDeniedScreen() {
   authFormWrap.style.display = 'none';
   pendingScreen.classList.remove('visible');
   deniedScreen.classList.add('visible');
+  document.body.classList.remove('app-ready');
 }
 
 document.getElementById('pendingRefresh').addEventListener('click', () => refreshSessionState());
 document.getElementById('pendingSignout').addEventListener('click', () => doSignOut());
 document.getElementById('deniedSignout').addEventListener('click', () => doSignOut());
 document.getElementById('dashSignout').addEventListener('click', () => doSignOut());
+// Persistent bottom-right logout — always available once the user is logged in
+document.getElementById('quickLogoutBtn').addEventListener('click', () => doSignOut());
 
 /* ---------- Auth actions ---------- */
 authSubmit.addEventListener('click', async () => {
