@@ -3239,43 +3239,30 @@
   .dash-sales-view:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--yellow-shadow); }
   .dash-sales-view svg { width: 14px; height: 14px; }
 
-  /* "Back to Admin" pill — top-left, visible only while admin is in Sales View.
-     Sits ABOVE the regular .back button (which is at top:64px), so they never
-     collide. Higher z-index than the wallet/user-switcher so it's always tappable. */
-  .return-to-admin {
-    position: fixed;
-    top: 18px;
-    left: 18px;
-    z-index: 60;
-    display: none;
-    align-items: center;
-    gap: 8px;
-    background: linear-gradient(180deg, var(--admin-red) 0%, var(--admin-red-deep) 100%);
+  /* Admin Dashboard nav row inside the user-switcher dropdown — looks like a
+     user row but with a red shield avatar (mirroring the Administrator row)
+     and a right-arrow instead of a checkmark, since it's an action, not a
+     selectable identity. Visible only when the signed-in profile is admin. */
+  .user-row.dash-row .row-avatar {
+    background: linear-gradient(135deg, var(--admin-red) 0%, var(--admin-red-deep) 100%);
     color: white;
-    border: 1px solid rgba(255,255,255,0.22);
-    border-radius: 999px;
-    padding: 7px 14px 7px 10px;
-    font-family: 'Russo One', sans-serif;
-    font-size: 10.5px;
-    letter-spacing: 1.4px;
-    text-transform: uppercase;
-    cursor: pointer;
-    box-shadow: 0 6px 20px rgba(184,0,44,0.45), 0 2px 0 rgba(0,0,0,0.35);
-    transition: transform 150ms ease, filter 150ms ease;
-    white-space: nowrap;
   }
-  .return-to-admin:hover { filter: brightness(1.1); transform: translateY(-1px); }
-  .return-to-admin:active { transform: translateY(1px); }
-  .return-to-admin svg { width: 13px; height: 13px; }
-  body.admin-sales-view .return-to-admin { display: inline-flex; }
+  .user-row.dash-row .row-avatar svg { width: 14px; height: 14px; }
+  .user-row.dash-row .row-arrow {
+    font-family: 'Russo One', sans-serif;
+    font-size: 16px;
+    color: rgba(255,255,255,0.4);
+    padding: 0 4px;
+    transition: color 150ms ease, transform 150ms ease;
+  }
+  .user-row.dash-row:hover .row-arrow {
+    color: var(--admin-red);
+    transform: translateX(3px);
+  }
 
   /* When admin is in Sales View, suppress the locked banners
      (they only exist for assignment-restricted reps). Admin has no constraints. */
   body.admin-sales-view .locked-banner { display: none !important; }
-
-  @media (max-width: 600px) {
-    .return-to-admin { top: 12px; left: 12px; padding: 6px 12px 6px 8px; font-size: 9.5px; }
-  }
 
   /* Persistent "Sign out" pill — bottom-right on every authed screen.
      Transparent / low-contrast by default so it doesn't compete with primary
@@ -3649,15 +3636,6 @@
 
   <button class="back" id="backBtn">&larr; Back</button>
 
-  <!-- Visible only when admin is in Sales View — lets them flip back to the dashboard -->
-  <button class="return-to-admin" id="returnToAdminBtn" type="button" title="Back to Admin Dashboard">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/>
-      <path d="M9 12l2 2 4-4"/>
-    </svg>
-    <span>Admin Dashboard</span>
-  </button>
-
   <!-- ============= USER SWITCHER (top-left, narrow) ============= -->
   <div class="user-switcher" id="userSwitcher">
     <div class="user-pill" id="userPill">
@@ -3681,6 +3659,21 @@
         <div class="check-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
+      </div>
+      <!-- Admin-only nav row — flips out of Sales View back to the stats dashboard.
+           Rendered hidden by default; renderUserSwitcher() shows it only when the
+           signed-in cloud profile has role === 'admin'. -->
+      <div class="user-row dash-row" id="dashboardRow" style="display:none;" data-action="admin-dashboard" title="Back to the Admin Dashboard">
+        <div class="row-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/>
+          </svg>
+        </div>
+        <div class="row-meta">
+          <div class="row-name">Admin Dashboard</div>
+          <div class="row-stat">Stats · users · audit snapshots</div>
+        </div>
+        <div class="row-arrow">→</div>
       </div>
       <div class="dropdown-divider"></div>
       <div class="dropdown-section-h">Team Members</div>
@@ -7305,6 +7298,13 @@ function renderUserSwitcher() {
   // Mark admin row active
   userDropdown.querySelector('.admin-row').classList.toggle('active', isAdmin());
 
+  // Admin-only Dashboard nav row: visible only when the signed-in cloud
+  // profile is admin. For team-member users it stays hidden.
+  const dashboardRow = document.getElementById('dashboardRow');
+  if (dashboardRow) {
+    dashboardRow.style.display = (currentProfile && currentProfile.role === 'admin') ? '' : 'none';
+  }
+
   // Render team member rows
   userRowsContainer.innerHTML = adminState.users.map(u => {
     const active = u.id === adminState.activeUserId;
@@ -7331,6 +7331,14 @@ userDropdown.addEventListener('click', (e) => {
   if (editBtn) {
     e.stopPropagation();
     openUserEditModal(editBtn.dataset.editUid);
+    return;
+  }
+  // Admin Dashboard nav row — flip back from Sales View to the stats dashboard
+  const dashAction = e.target.closest('[data-action="admin-dashboard"]');
+  if (dashAction) {
+    e.stopPropagation();
+    userSwitcher.classList.remove('open');
+    returnToAdminDashboard();
     return;
   }
   const row = e.target.closest('[data-uid]');
@@ -8663,7 +8671,6 @@ async function cloudUploadSnapshot(entry) {
 const adminDash = document.getElementById('adminDash');
 const dashRefresh = document.getElementById('dashRefresh');
 const dashSalesView = document.getElementById('dashSalesView');
-const returnToAdminBtn = document.getElementById('returnToAdminBtn');
 dashRefresh.addEventListener('click', () => loadAdminDashboard());
 
 function enterAdminDashboard() {
@@ -8696,9 +8703,10 @@ function enterAdminSalesView() {
   adminDash.classList.remove('active');
   document.body.classList.add('admin-sales-view');
   document.querySelector('.wallet').style.display = '';
-  // We hide the multi-user switcher in Sales View — the admin is the only
-  // identity here, no need to flip between team members from the pill.
-  document.getElementById('userSwitcher').style.display = 'none';
+  // Show the user-switcher — the Admin Dashboard option lives inside its
+  // dropdown now, so this is how the admin flips back. Also lets them
+  // jump into any team member's view from the same pill.
+  document.getElementById('userSwitcher').style.display = '';
 
   // Land on the home screen so the admin can choose OTP or In-Person freely
   showView('home');
@@ -8721,7 +8729,6 @@ function returnToAdminDashboard() {
 }
 
 dashSalesView.addEventListener('click', enterAdminSalesView);
-returnToAdminBtn.addEventListener('click', returnToAdminDashboard);
 
 async function loadAdminDashboard() {
   if (!sb || !currentProfile) return;
