@@ -3515,6 +3515,27 @@
     cursor: pointer;
   }
 
+/* ============= MANUAL CUSTOMER ENTRY (in-person) ============= */
+.ip-add-customer-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+.ip-add-customer-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.06); color: white;
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 10px 16px; border-radius: 10px;
+  font-family: 'Russo One', sans-serif; font-size: 12px;
+  letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all 150ms ease;
+}
+.ip-add-customer-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+.ip-add-customer-btn svg { width: 14px; height: 14px; }
+.cust-field textarea {
+  width: 100%; background: var(--black); color: white;
+  border: 2px solid rgba(255,255,255,0.12); border-radius: 10px;
+  padding: 11px 14px; font-size: 14px; font-family: 'Inter', sans-serif;
+  resize: vertical; min-height: 70px;
+}
+.cust-field textarea:focus { outline: none; border-color: var(--yellow); }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -3858,7 +3879,14 @@
 
           <button class="btn btn-search" id="ipUseLocation" type="button" data-locked="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px;"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
-            Use My Location
+           Use My Location
+          </button>
+        </div>
+
+        <div class="ip-add-customer-row">
+          <button class="ip-add-customer-btn" id="ipAddCustomerBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Add Customer Manually
           </button>
         </div>
       </div>
@@ -4389,6 +4417,56 @@
       <input type="file" id="csVcardInput" class="cs-hidden" accept=".vcf,text/vcard,text/x-vcard,text/directory" />
 
       <button class="modal-close" id="csClose">Close</button>
+    </div>
+  </div>
+
+<!-- ============= MANUAL CUSTOMER ENTRY MODAL (door-to-door / storefront) ============= -->
+  <div class="modal-backdrop" id="customerModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width: 480px;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:2px;">Add Customer</h2>
+      <div class="biz-sub">Door-to-Door / Storefront Sign-Up</div>
+
+      <div class="ue-field">
+        <label for="custName">Customer Name</label>
+        <input type="text" id="custName" placeholder="e.g. Maria Sanchez" />
+      </div>
+
+      <div class="ue-grid-2">
+        <div class="ue-field">
+          <label for="custPhone">Phone Number</label>
+          <input type="tel" id="custPhone" placeholder="(555) 123-4567" />
+        </div>
+        <div class="ue-field">
+          <label for="custEmail">Email (optional)</label>
+          <input type="email" id="custEmail" placeholder="name@email.com" />
+        </div>
+      </div>
+
+      <div class="ue-field">
+        <label for="custAddress">Address / Location</label>
+        <input type="text" id="custAddress" placeholder="Street, city, or storefront name" />
+      </div>
+
+      <div class="ue-field">
+        <label for="custBizType">Interested In</label>
+        <select id="custBizType">
+          <option value="restaurant">Restaurant</option>
+          <option value="plumbing">Plumbing</option>
+          <option value="carpentry">Carpentry</option>
+          <option value="lawncare">Lawn Care</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="ue-field cust-field">
+        <label for="custNotes">Notes</label>
+        <textarea id="custNotes" placeholder="Anything worth remembering about this customer…"></textarea>
+      </div>
+
+      <div class="ue-actions">
+        <button class="ue-cancel" id="custCancel">Cancel</button>
+        <button class="ue-save" id="custSave">Save Customer</button>
+      </div>
     </div>
   </div>
 
@@ -7727,6 +7805,91 @@ csManualSave.addEventListener('click', () => {
   updateSyncUI();
   showToast(`Added ${name}`);
 });
+
+/* ====================== MANUAL CUSTOMER ENTRY (in-person) ====================== */
+function customersKeyForActive() {
+  return isAdmin() ? 'crmgo_customers_admin' : ('crmgo_customers_' + adminState.activeUserId);
+}
+function loadCustomersLocal() {
+  try { return JSON.parse(localStorage.getItem(customersKeyForActive()) || '[]'); }
+  catch { return []; }
+}
+function saveCustomerLocal(record) {
+  const list = loadCustomersLocal();
+  list.unshift(record);
+  try { localStorage.setItem(customersKeyForActive(), JSON.stringify(list)); } catch {}
+}
+
+const customerModal = document.getElementById('customerModal');
+const ipAddCustomerBtn = document.getElementById('ipAddCustomerBtn');
+const custCancel = document.getElementById('custCancel');
+const custSave = document.getElementById('custSave');
+
+function openCustomerModal() {
+  document.getElementById('custName').value = '';
+  document.getElementById('custPhone').value = '';
+  document.getElementById('custEmail').value = '';
+  document.getElementById('custAddress').value = '';
+  document.getElementById('custBizType').value = 'restaurant';
+  document.getElementById('custNotes').value = '';
+  customerModal.classList.add('visible');
+}
+function closeCustomerModal() { customerModal.classList.remove('visible'); }
+
+if (ipAddCustomerBtn) ipAddCustomerBtn.addEventListener('click', openCustomerModal);
+if (custCancel) custCancel.addEventListener('click', closeCustomerModal);
+if (customerModal) {
+  customerModal.addEventListener('click', (e) => { if (e.target === customerModal) closeCustomerModal(); });
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && customerModal && customerModal.classList.contains('visible')) closeCustomerModal();
+});
+
+if (custSave) custSave.addEventListener('click', async () => {
+  const name = (document.getElementById('custName').value || '').trim();
+  const phone = (document.getElementById('custPhone').value || '').trim();
+  const email = (document.getElementById('custEmail').value || '').trim();
+  const address = (document.getElementById('custAddress').value || '').trim();
+  const bizType = document.getElementById('custBizType').value;
+  const notes = (document.getElementById('custNotes').value || '').trim();
+
+  if (!name) { showToast('Customer name is required'); document.getElementById('custName').focus(); return; }
+  if (!phone && !email) { showToast('Add a phone number or email'); document.getElementById('custPhone').focus(); return; }
+
+  const record = {
+    id: 'cust_' + Date.now(),
+    name, phone, email, address, bizType, notes,
+    source: 'in_person_manual',
+    capturedAt: new Date().toISOString(),
+    capturedNear: userPosition ? { lat: userPosition.lat, lng: userPosition.lng } : null
+  };
+
+  saveCustomerLocal(record);
+  await cloudUpsertCustomer(record);
+
+  closeCustomerModal();
+  showToast(`Saved customer · ${name}`);
+});
+
+async function cloudUpsertCustomer(record) {
+  if (!sb || !cloudUserId) return;
+  try {
+    await sb.from('customers').upsert({
+      id: record.id,
+      user_id: cloudUserId,
+      name: record.name,
+      phone: record.phone || null,
+      email: record.email || null,
+      address: record.address || null,
+      business_type: record.bizType || null,
+      notes: record.notes || null,
+      source: record.source,
+      captured_at: record.capturedAt,
+      captured_lat: record.capturedNear ? record.capturedNear.lat : null,
+      captured_lng: record.capturedNear ? record.capturedNear.lng : null
+    }, { onConflict: 'id' });
+  } catch (e) { console.warn('cloudUpsertCustomer', e); }
+}
 
 /* ====================== CALLED-SET (per active account) ======================
    Tracks which business IDs have already been dialed/called from the search
