@@ -3536,6 +3536,18 @@
 }
 .cust-field textarea:focus { outline: none; border-color: var(--yellow); }
 
+/* ============= SCHEDULE PICKER CALENDAR (Add Customer) ============= */
+.cal-day {
+  aspect-ratio: 1; display:flex; align-items:center; justify-content:center;
+  border-radius: 8px; cursor: pointer; font-size: 13px; color: white;
+  border: 1px solid transparent; transition: all 120ms ease;
+}
+.cal-day:hover { border-color: var(--yellow); }
+.cal-day.today { border-color: rgba(255,214,10,0.4); }
+.cal-day.past { opacity: 0.3; pointer-events: none; }
+.cal-day.selected { background: var(--yellow); color: var(--black); font-weight: 700; }
+#custScheduleBtn:hover { border-color: var(--yellow); color: var(--yellow); }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -4427,8 +4439,8 @@
       <div class="biz-sub">Door-to-Door / Storefront Sign-Up</div>
 
       <div class="ue-field">
-        <label for="custName">Customer Name</label>
-        <input type="text" id="custName" placeholder="e.g. Maria Sanchez" />
+        <label for="custName">Customer/Business Name</label>
+        <input type="text" id="custName" placeholder="e.g. Maria Sanchez or Sanchez Plumbing" />
       </div>
 
       <div class="ue-grid-2">
@@ -4463,10 +4475,47 @@
         <textarea id="custNotes" placeholder="Anything worth remembering about this customer…"></textarea>
       </div>
 
+      <div class="ue-field">
+        <button type="button" id="custScheduleBtn" class="ip-add-customer-btn" style="width:100%; justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Schedule
+        </button>
+        <div id="custScheduleStatus" style="display:none; margin-top:8px; font-size:12px; color:#86EFAC; text-align:center;"></div>
+      </div>
+
       <div class="ue-actions">
         <button class="ue-cancel" id="custCancel">Cancel</button>
-        <button class="ue-save" id="custSave">Save Customer</button>
+        <button class="ue-save" id="custSave" disabled style="opacity:0.4; cursor:not-allowed; filter:grayscale(0.5);">Save Customer</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ============= SCHEDULE PICKER (mini calendar + time, for Add Customer) ============= -->
+  <div class="modal-backdrop" id="schedulePickerModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width: 380px;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:17px;color:white;margin-bottom:2px;">Pick a Day</h2>
+      <div class="biz-sub">Tap a date to set the appointment</div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px;">
+        <button type="button" id="calPrevMonth" style="background:transparent;border:1px solid rgba(255,255,255,0.18);color:white;border-radius:8px;width:32px;height:32px;cursor:pointer;">‹</button>
+        <div id="calMonthLabel" style="font-family:'Russo One',sans-serif;color:var(--yellow);font-size:14px;letter-spacing:1px;text-transform:uppercase;"></div>
+        <button type="button" id="calNextMonth" style="background:transparent;border:1px solid rgba(255,255,255,0.18);color:white;border-radius:8px;width:32px;height:32px;cursor:pointer;">›</button>
+      </div>
+
+      <div id="calWeekdays" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;"></div>
+      <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+
+      <div id="calTimeStep" style="display:none;margin-top:16px;">
+        <div id="calSelectedDateLabel" style="font-size:12px;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;"></div>
+        <label style="display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.7);font-weight:600;margin-bottom:6px;">Time</label>
+        <input type="time" id="calTimeInput" style="width:100%;background:var(--black);color:white;border:2px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px;font-size:15px;font-family:'Inter',sans-serif;margin-bottom:12px;" value="10:00" />
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:8px;">
+          <button type="button" id="calBackToDays" style="padding:13px;border-radius:10px;background:transparent;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.18);font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Back</button>
+          <button type="button" id="calConfirmTime" style="padding:13px;border-radius:10px;background:var(--yellow);color:var(--black);border:none;font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 0 var(--yellow-shadow);">Confirm</button>
+        </div>
+      </div>
+
+      <button class="modal-close" id="calClose" style="margin-top:14px;">Cancel</button>
     </div>
   </div>
 
@@ -7832,6 +7881,14 @@ function openCustomerModal() {
   document.getElementById('custAddress').value = '';
   document.getElementById('custBizType').value = 'restaurant';
   document.getElementById('custNotes').value = '';
+
+  // Reset scheduling state — Save Customer stays disabled until re-scheduled
+  custScheduled = null;
+  custScheduleStatus.style.display = 'none';
+  custScheduleStatus.textContent = '';
+  custScheduleBtn.textContent = 'Schedule';
+  updateCustSaveButtonState();
+
   customerModal.classList.add('visible');
 }
 function closeCustomerModal() { customerModal.classList.remove('visible'); }
@@ -7846,6 +7903,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 if (custSave) custSave.addEventListener('click', async () => {
+  if (!custScheduled) { showToast('Set an appointment time first'); return; }
+
   const name = (document.getElementById('custName').value || '').trim();
   const phone = (document.getElementById('custPhone').value || '').trim();
   const email = (document.getElementById('custEmail').value || '').trim();
@@ -7853,7 +7912,7 @@ if (custSave) custSave.addEventListener('click', async () => {
   const bizType = document.getElementById('custBizType').value;
   const notes = (document.getElementById('custNotes').value || '').trim();
 
-  if (!name) { showToast('Customer name is required'); document.getElementById('custName').focus(); return; }
+  if (!name) { showToast('Customer/business name is required'); document.getElementById('custName').focus(); return; }
   if (!phone && !email) { showToast('Add a phone number or email'); document.getElementById('custPhone').focus(); return; }
 
   const record = {
@@ -7861,7 +7920,8 @@ if (custSave) custSave.addEventListener('click', async () => {
     name, phone, email, address, bizType, notes,
     source: 'in_person_manual',
     capturedAt: new Date().toISOString(),
-    capturedNear: userPosition ? { lat: userPosition.lat, lng: userPosition.lng } : null
+    capturedNear: userPosition ? { lat: userPosition.lat, lng: userPosition.lng } : null,
+    scheduledAt: custScheduled.iso
   };
 
   saveCustomerLocal(record);
@@ -7886,10 +7946,147 @@ async function cloudUpsertCustomer(record) {
       source: record.source,
       captured_at: record.capturedAt,
       captured_lat: record.capturedNear ? record.capturedNear.lat : null,
-      captured_lng: record.capturedNear ? record.capturedNear.lng : null
+      captured_lng: record.capturedNear ? record.capturedNear.lng : null,
+      scheduled_at: record.scheduledAt || null
     }, { onConflict: 'id' });
   } catch (e) { console.warn('cloudUpsertCustomer', e); }
 }
+
+/* ====================== SCHEDULE PICKER (mini calendar + time) ====================== */
+let custScheduled = null; // { dateStr: 'YYYY-MM-DD', time: 'HH:MM', iso: '...' } or null
+let calViewYear, calViewMonth;
+let calSelectedDateStr = null;
+
+const schedulePickerModal = document.getElementById('schedulePickerModal');
+const custScheduleBtn = document.getElementById('custScheduleBtn');
+const custScheduleStatus = document.getElementById('custScheduleStatus');
+const calMonthLabel = document.getElementById('calMonthLabel');
+const calWeekdaysEl = document.getElementById('calWeekdays');
+const calGridEl = document.getElementById('calGrid');
+const calTimeStep = document.getElementById('calTimeStep');
+const calSelectedDateLabel = document.getElementById('calSelectedDateLabel');
+const calTimeInput = document.getElementById('calTimeInput');
+const calPrevMonth = document.getElementById('calPrevMonth');
+const calNextMonth = document.getElementById('calNextMonth');
+const calBackToDays = document.getElementById('calBackToDays');
+const calConfirmTime = document.getElementById('calConfirmTime');
+const calClose = document.getElementById('calClose');
+
+const WEEKDAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+function updateCustSaveButtonState() {
+  if (!custSave) return;
+  if (custScheduled) {
+    custSave.disabled = false;
+    custSave.style.opacity = '';
+    custSave.style.cursor = '';
+    custSave.style.filter = '';
+  } else {
+    custSave.disabled = true;
+    custSave.style.opacity = '0.4';
+    custSave.style.cursor = 'not-allowed';
+    custSave.style.filter = 'grayscale(0.5)';
+  }
+}
+
+function ymd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function openSchedulePicker() {
+  const now = new Date();
+  calViewYear = now.getFullYear();
+  calViewMonth = now.getMonth();
+  calSelectedDateStr = null;
+  calTimeStep.style.display = 'none';
+  renderCalGrid();
+  schedulePickerModal.classList.add('visible');
+}
+function closeSchedulePicker() { schedulePickerModal.classList.remove('visible'); }
+
+function renderCalGrid() {
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  calMonthLabel.textContent = `${monthNames[calViewMonth]} ${calViewYear}`;
+
+  calWeekdaysEl.innerHTML = WEEKDAY_LABELS.map(w =>
+    `<div style="text-align:center;font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;">${w}</div>`
+  ).join('');
+
+  const firstOfMonth = new Date(calViewYear, calViewMonth, 1);
+  const startDow = firstOfMonth.getDay();
+  const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  const todayStr = ymd(new Date());
+
+  let html = '';
+  for (let i = 0; i < startDow; i++) html += `<div></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(calViewYear, calViewMonth, d);
+    const dStr = ymd(dateObj);
+    const isPast = dStr < todayStr;
+    const isToday = dStr === todayStr;
+    const isSelected = dStr === calSelectedDateStr;
+    const cls = ['cal-day', isPast ? 'past' : '', isToday ? 'today' : '', isSelected ? 'selected' : ''].filter(Boolean).join(' ');
+    html += `<div class="${cls}" data-date="${dStr}">${d}</div>`;
+  }
+  calGridEl.innerHTML = html;
+
+  calGridEl.querySelectorAll('.cal-day:not(.past)').forEach(cell => {
+    cell.addEventListener('click', () => {
+      calSelectedDateStr = cell.dataset.date;
+      renderCalGrid();
+      showTimeStepFor(calSelectedDateStr);
+    });
+  });
+}
+
+function showTimeStepFor(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  calSelectedDateLabel.textContent = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  calTimeStep.style.display = '';
+  calTimeInput.value = '10:00';
+}
+
+calPrevMonth.addEventListener('click', () => {
+  calViewMonth--;
+  if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+  renderCalGrid();
+});
+calNextMonth.addEventListener('click', () => {
+  calViewMonth++;
+  if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+  renderCalGrid();
+});
+calBackToDays.addEventListener('click', () => {
+  calTimeStep.style.display = 'none';
+  calSelectedDateStr = null;
+  renderCalGrid();
+});
+calClose.addEventListener('click', closeSchedulePicker);
+schedulePickerModal.addEventListener('click', (e) => {
+  if (e.target === schedulePickerModal) closeSchedulePicker();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && schedulePickerModal.classList.contains('visible')) closeSchedulePicker();
+});
+
+calConfirmTime.addEventListener('click', () => {
+  if (!calSelectedDateStr || !calTimeInput.value) { showToast('Pick a day and time'); return; }
+  const iso = new Date(`${calSelectedDateStr}T${calTimeInput.value}:00`).toISOString();
+  custScheduled = { dateStr: calSelectedDateStr, time: calTimeInput.value, iso };
+
+  const niceDate = new Date(iso).toLocaleString([], {
+    weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+  });
+  custScheduleStatus.style.display = '';
+  custScheduleStatus.textContent = `✓ Scheduled for ${niceDate}`;
+  custScheduleBtn.textContent = 'Reschedule';
+
+  updateCustSaveButtonState();
+  closeSchedulePicker();
+  showToast('Appointment time set');
+});
+
+if (custScheduleBtn) custScheduleBtn.addEventListener('click', openSchedulePicker);
 
 /* ====================== CALLED-SET (per active account) ======================
    Tracks which business IDs have already been dialed/called from the search
