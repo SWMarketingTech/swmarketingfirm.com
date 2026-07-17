@@ -3548,6 +3548,51 @@
 .cal-day.selected { background: var(--yellow); color: var(--black); font-weight: 700; }
 #custScheduleBtn:hover { border-color: var(--yellow); color: var(--yellow); }
 
+/* ============= ADMIN MASTER CALENDAR ============= */
+.mc-day {
+  position: relative;
+  aspect-ratio: 1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border-radius: 8px; cursor: pointer; font-size: 12px; color: white;
+  border: 1px solid transparent; transition: all 120ms ease;
+  background: rgba(255,255,255,0.02);
+}
+.mc-day:hover { border-color: var(--yellow); }
+.mc-day.today { border-color: rgba(255,214,10,0.4); }
+.mc-day.empty-cell { pointer-events: none; background: transparent; }
+.mc-day.selected { background: rgba(255,214,10,0.18); border-color: var(--yellow); }
+.mc-day .mc-dot {
+  margin-top: 2px;
+  min-width: 15px; height: 15px; padding: 0 3px;
+  border-radius: 999px; background: var(--yellow); color: var(--black);
+  font-size: 9px; font-weight: 700; display:flex; align-items:center; justify-content:center;
+  font-family: 'Russo One', sans-serif;
+}
+.mc-agenda-row {
+  background: rgba(0,0,0,0.3);
+  border-left: 3px solid var(--yellow);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.mc-agenda-row .mc-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+}
+.mc-agenda-row .mc-biz {
+  font-family: 'Russo One', sans-serif; font-size: 13px; color: white;
+}
+.mc-agenda-row .mc-time {
+  color: var(--yellow); font-family: 'Russo One', sans-serif; font-size: 12px; white-space: nowrap;
+}
+.mc-agenda-row .mc-meta {
+  font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px;
+}
+.mc-agenda-row .mc-rep {
+  display: inline-block; margin-top: 6px;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  background: rgba(255,214,10,0.12); color: var(--yellow);
+  border: 1px solid rgba(255,214,10,0.3); padding: 2px 8px; border-radius: 999px;
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -3646,6 +3691,10 @@
           <button class="dash-sales-view" id="dashSalesView" type="button" title="Use the app as a sales rep (no constraints)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
             Sales View
+          </button>
+          <button class="dash-refresh" id="dashMasterCalendarBtn" type="button" title="See every scheduled appointment across the whole team">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Master Calendar
           </button>
         </div>
       </div>
@@ -4342,6 +4391,28 @@
       </div>
 
       <button class="end-btn" id="overlayEndBtn" type="button">Hang up — End call now</button>
+    </div>
+  </div>
+
+  <!-- ============= ADMIN: MASTER CALENDAR (all reps, all scheduled appointments) ============= -->
+  <div class="modal-backdrop" id="masterCalendarModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width: 640px; max-height: 88vh; overflow-y: auto;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:2px;">Master Calendar</h2>
+      <div class="biz-sub">Every Scheduled Appointment · Whole Team</div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px;">
+        <button type="button" id="mcPrevMonth" style="background:transparent;border:1px solid rgba(255,255,255,0.18);color:white;border-radius:8px;width:32px;height:32px;cursor:pointer;">‹</button>
+        <div id="mcMonthLabel" style="font-family:'Russo One',sans-serif;color:var(--yellow);font-size:14px;letter-spacing:1px;text-transform:uppercase;"></div>
+        <button type="button" id="mcNextMonth" style="background:transparent;border:1px solid rgba(255,255,255,0.18);color:white;border-radius:8px;width:32px;height:32px;cursor:pointer;">›</button>
+      </div>
+
+      <div id="mcWeekdays" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;"></div>
+      <div id="mcGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+
+      <div class="dash-section-title" style="font-size:12px;margin:20px 0 10px;" id="mcAgendaTitle">Upcoming</div>
+      <div id="mcAgendaList"></div>
+
+      <button class="modal-close" id="mcClose">Close</button>
     </div>
   </div>
 
@@ -9219,6 +9290,195 @@ async function setUserStatus(uid, status) {
     showToast('Update failed: ' + (e.message || 'error'));
   }
 }
+
+/* ---------- Admin: Master Calendar (all reps' scheduled appointments) ---------- */
+const masterCalendarModal = document.getElementById('masterCalendarModal');
+const dashMasterCalendarBtn = document.getElementById('dashMasterCalendarBtn');
+const mcMonthLabel = document.getElementById('mcMonthLabel');
+const mcWeekdaysEl = document.getElementById('mcWeekdays');
+const mcGridEl = document.getElementById('mcGrid');
+const mcAgendaTitle = document.getElementById('mcAgendaTitle');
+const mcAgendaList = document.getElementById('mcAgendaList');
+const mcPrevMonth = document.getElementById('mcPrevMonth');
+const mcNextMonth = document.getElementById('mcNextMonth');
+const mcClose = document.getElementById('mcClose');
+
+let mcViewYear, mcViewMonth;
+let mcSelectedDateStr = null;
+let mcAppointments = []; // flat list across the whole team for the loaded range
+let mcRepNamesById = {};
+
+function mcYmd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function openMasterCalendar() {
+  const now = new Date();
+  mcViewYear = now.getFullYear();
+  mcViewMonth = now.getMonth();
+  mcSelectedDateStr = null;
+  masterCalendarModal.classList.add('visible');
+  await loadMasterCalendarMonth();
+}
+function closeMasterCalendar() { masterCalendarModal.classList.remove('visible'); }
+
+async function loadMasterCalendarMonth() {
+  mcGridEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.5);padding:16px;">Loading…</div>';
+  mcAgendaList.innerHTML = '';
+
+  if (!sb || !currentProfile) return;
+
+  // Everyone reporting to this admin
+  const { data: team, error: teamErr } = await sb.from('profiles')
+    .select('id, display_name, email')
+    .eq('supervisor_id', currentProfile.id);
+  if (teamErr) {
+    mcGridEl.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#FCA5A5;padding:16px;">${escapeHtml(teamErr.message)}</div>`;
+    return;
+  }
+  const members = team || [];
+  mcRepNamesById = {};
+  members.forEach(m => { mcRepNamesById[m.id] = m.display_name || m.email; });
+  const teamIds = members.map(m => m.id);
+
+  if (teamIds.length === 0) {
+    mcAppointments = [];
+    renderMcGrid();
+    renderMcAgendaFor(null);
+    return;
+  }
+
+  // Month bounds (a little padding on each side so the visible grid is always covered)
+  const rangeStart = new Date(mcViewYear, mcViewMonth, 1);
+  rangeStart.setDate(rangeStart.getDate() - 7);
+  const rangeEnd = new Date(mcViewYear, mcViewMonth + 1, 0);
+  rangeEnd.setDate(rangeEnd.getDate() + 7);
+
+  const { data: customers, error: custErr } = await sb.from('customers')
+    .select('id, user_id, name, phone, address, business_type, notes, scheduled_at')
+    .in('user_id', teamIds)
+    .gte('scheduled_at', rangeStart.toISOString())
+    .lte('scheduled_at', rangeEnd.toISOString())
+    .not('scheduled_at', 'is', null)
+    .order('scheduled_at', { ascending: true });
+
+  if (custErr) {
+    mcGridEl.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#FCA5A5;padding:16px;">${escapeHtml(custErr.message)}</div>`;
+    return;
+  }
+
+  mcAppointments = customers || [];
+  renderMcGrid();
+
+  // Default agenda: today if it has appointments, otherwise the soonest upcoming day
+  const todayStr = mcYmd(new Date());
+  const hasToday = mcAppointments.some(a => a.scheduled_at.slice(0, 10) === todayStr);
+  if (hasToday) {
+    mcSelectedDateStr = todayStr;
+  } else {
+    const future = mcAppointments.find(a => a.scheduled_at.slice(0, 10) >= todayStr);
+    mcSelectedDateStr = future ? future.scheduled_at.slice(0, 10) : null;
+  }
+  renderMcGrid();
+  renderMcAgendaFor(mcSelectedDateStr);
+}
+
+function renderMcGrid() {
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  mcMonthLabel.textContent = `${monthNames[mcViewMonth]} ${mcViewYear}`;
+
+  const WEEKDAY_LABELS_MC = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  mcWeekdaysEl.innerHTML = WEEKDAY_LABELS_MC.map(w =>
+    `<div style="text-align:center;font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;">${w}</div>`
+  ).join('');
+
+  const countsByDay = {};
+  mcAppointments.forEach(a => {
+    const dStr = a.scheduled_at.slice(0, 10);
+    countsByDay[dStr] = (countsByDay[dStr] || 0) + 1;
+  });
+
+  const firstOfMonth = new Date(mcViewYear, mcViewMonth, 1);
+  const startDow = firstOfMonth.getDay();
+  const daysInMonth = new Date(mcViewYear, mcViewMonth + 1, 0).getDate();
+  const todayStr = mcYmd(new Date());
+
+  let html = '';
+  for (let i = 0; i < startDow; i++) html += `<div class="mc-day empty-cell"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(mcViewYear, mcViewMonth, d);
+    const dStr = mcYmd(dateObj);
+    const isToday = dStr === todayStr;
+    const isSelected = dStr === mcSelectedDateStr;
+    const count = countsByDay[dStr] || 0;
+    const cls = ['mc-day', isToday ? 'today' : '', isSelected ? 'selected' : ''].filter(Boolean).join(' ');
+    html += `<div class="${cls}" data-date="${dStr}">${d}${count > 0 ? `<span class="mc-dot">${count}</span>` : ''}</div>`;
+  }
+  mcGridEl.innerHTML = html;
+
+  mcGridEl.querySelectorAll('.mc-day:not(.empty-cell)').forEach(cell => {
+    cell.addEventListener('click', () => {
+      mcSelectedDateStr = cell.dataset.date;
+      renderMcGrid();
+      renderMcAgendaFor(mcSelectedDateStr);
+    });
+  });
+}
+
+function renderMcAgendaFor(dateStr) {
+  if (!dateStr) {
+    mcAgendaTitle.textContent = 'No Appointments This Month';
+    mcAgendaList.innerHTML = '<div class="dash-empty">Nothing scheduled for the team in this month.</div>';
+    return;
+  }
+  const d = new Date(dateStr + 'T00:00:00');
+  mcAgendaTitle.textContent = d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const dayAppts = mcAppointments
+    .filter(a => a.scheduled_at.slice(0, 10) === dateStr)
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
+
+  if (dayAppts.length === 0) {
+    mcAgendaList.innerHTML = '<div class="dash-empty">No appointments scheduled this day.</div>';
+    return;
+  }
+
+  mcAgendaList.innerHTML = dayAppts.map(a => {
+    const time = new Date(a.scheduled_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const repName = mcRepNamesById[a.user_id] || 'Unknown Rep';
+    const metaBits = [a.phone, a.address, a.business_type].filter(Boolean).join(' · ');
+    return `
+      <div class="mc-agenda-row">
+        <div class="mc-head">
+          <span class="mc-biz">${escapeHtml(a.name || 'Unnamed')}</span>
+          <span class="mc-time">${escapeHtml(time)}</span>
+        </div>
+        ${metaBits ? `<div class="mc-meta">${escapeHtml(metaBits)}</div>` : ''}
+        ${a.notes ? `<div class="mc-meta">${escapeHtml(a.notes)}</div>` : ''}
+        <span class="mc-rep">${escapeHtml(repName)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+mcPrevMonth.addEventListener('click', () => {
+  mcViewMonth--;
+  if (mcViewMonth < 0) { mcViewMonth = 11; mcViewYear--; }
+  loadMasterCalendarMonth();
+});
+mcNextMonth.addEventListener('click', () => {
+  mcViewMonth++;
+  if (mcViewMonth > 11) { mcViewMonth = 0; mcViewYear++; }
+  loadMasterCalendarMonth();
+});
+mcClose.addEventListener('click', closeMasterCalendar);
+masterCalendarModal.addEventListener('click', (e) => {
+  if (e.target === masterCalendarModal) closeMasterCalendar();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && masterCalendarModal.classList.contains('visible')) closeMasterCalendar();
+});
+if (dashMasterCalendarBtn) dashMasterCalendarBtn.addEventListener('click', openMasterCalendar);
 
 /* ---------- Admin: user detail drill-down ---------- */
 const userDetailModal = document.getElementById('userDetailModal');
