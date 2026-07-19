@@ -3349,14 +3349,42 @@
   }
   .dash-section-title .count-badge.urgent { background: #ef4444; color: white; }
 
-  .pending-card, .user-card {
+  .pending-card, .user-card, .quote-card {
     background: linear-gradient(180deg, rgba(13,40,50,0.9) 0%, rgba(8,28,36,0.9) 100%);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 14px;
     padding: 16px;
     margin-bottom: 10px;
   }
-  .pending-card { border-color: rgba(255,214,10,0.3); }
+  .quote-card { border-color: rgba(255,214,10,0.3); }
+  .quote-card .qc-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px;
+  }
+  .quote-card .qc-biz { font-family: 'Russo One', sans-serif; font-size: 14px; color: white; }
+  .quote-card .qc-time { font-size: 11px; color: rgba(255,255,255,0.5); white-space: nowrap; }
+  .quote-card .qc-meta { font-size: 12px; color: rgba(255,255,255,0.65); margin-bottom: 8px; line-height: 1.5; }
+  .quote-card .qc-rep {
+    display: inline-block; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    background: rgba(255,214,10,0.12); color: var(--yellow);
+    border: 1px solid rgba(255,214,10,0.3); padding: 2px 8px; border-radius: 999px; margin-bottom: 10px;
+  }
+  .quote-card textarea {
+    width: 100%; background: var(--black); color: white;
+    border: 2px solid rgba(255,255,255,0.12); border-radius: 10px;
+    padding: 10px 12px; font-size: 13px; font-family: 'Inter', sans-serif;
+    resize: vertical; min-height: 56px; margin-bottom: 8px;
+  }
+  .quote-card textarea:focus { outline: none; border-color: var(--yellow); }
+  .quote-card .qc-reply-sent {
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
+    color: #86EFAC; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5;
+  }
+  .quote-card .qc-send-btn {
+    background: var(--yellow); color: var(--black); border: none;
+    padding: 10px 16px; border-radius: 8px; font-family: 'Russo One', sans-serif;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 3px 0 var(--yellow-shadow);
+  }
   .pending-card .pc-head, .user-card .uc-head {
     display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
   }
@@ -3711,6 +3739,11 @@
       </div>
       <div id="pendingList"></div>
 
+      <div class="dash-section-title">
+        Quote Requests <span class="count-badge urgent" id="quoteRequestsBadge">0</span>
+      </div>
+      <div id="quoteRequestsList"></div>
+
       <div class="dash-section-title">Team Members</div>
       <div id="teamList"></div>
     </div>
@@ -3779,7 +3812,21 @@
     <button class="wallet-history" id="walletHistory" title="Call history & transcripts" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     </button>
+    <button class="wallet-history" id="walletMessages" title="Quote reply notifications" type="button" style="position:relative;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span id="walletMessagesBadge" style="display:none; position:absolute; top:-4px; right:-4px; width:16px; height:16px; border-radius:50%; background:#ef4444; color:white; font-size:9px; font-family:'Russo One',sans-serif; align-items:center; justify-content:center;"></span>
+    </button>
     <button class="wallet-withdraw" id="walletWithdraw">Request Withdraw</button>
+  </div>
+
+  <!-- ============= QUOTE REPLIES MODAL (rep-facing) ============= -->
+  <div class="modal-backdrop" id="quoteRepliesModal" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width: 480px;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1.5px;color:white;text-align:center;margin-bottom:4px;">Quote Requests</h2>
+      <div class="biz-sub" style="text-align:center;">Replies From Management</div>
+      <div id="quoteRepliesList" style="max-height:55vh;overflow-y:auto;margin:14px 0;"></div>
+      <button class="modal-close" id="quoteRepliesClose">Close</button>
+    </div>
   </div>
 
   <!-- ============= HOME VIEW ============= -->
@@ -4544,6 +4591,14 @@
       <div class="ue-field cust-field">
         <label for="custNotes">Notes</label>
         <textarea id="custNotes" placeholder="Anything worth remembering about this customer…"></textarea>
+      </div>
+
+      <div class="ue-field">
+        <button type="button" id="custRequestQuoteBtn" class="ip-add-customer-btn" style="width:100%; justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H7l-3 3V4z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>
+          Request Quote
+        </button>
+        <div id="custQuoteStatus" style="display:none; margin-top:8px; font-size:12px; color:#86EFAC; text-align:center;"></div>
       </div>
 
       <div class="ue-field">
@@ -8159,6 +8214,53 @@ calConfirmTime.addEventListener('click', () => {
 
 if (custScheduleBtn) custScheduleBtn.addEventListener('click', openSchedulePicker);
 
+/* ====================== REQUEST QUOTE (Add Customer modal) ====================== */
+const custRequestQuoteBtn = document.getElementById('custRequestQuoteBtn');
+const custQuoteStatus = document.getElementById('custQuoteStatus');
+
+if (custRequestQuoteBtn) custRequestQuoteBtn.addEventListener('click', async () => {
+  const customerName = (document.getElementById('custName').value || '').trim();
+  const address = (document.getElementById('custAddress').value || '').trim();
+
+  if (!customerName) { showToast('Enter a customer/business name first'); document.getElementById('custName').focus(); return; }
+
+  const repName = (currentProfile && currentProfile.display_name) || (activeUser() && activeUser().name) || 'A rep';
+  const repEmail = (currentProfile && currentProfile.email) || '';
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  const addressPart = address || 'address not provided';
+  const message = `${repName} or ${repEmail} is requesting a quote for ${customerName} and ${addressPart} at ${dateStr} and ${timeStr}.`;
+
+  const subject = encodeURIComponent(`Quote Request — ${customerName}`);
+  const body = encodeURIComponent(message);
+  const mailto = `mailto:info@swmarketingfirm.com?cc=swmarketingfirm@gmail.com&subject=${subject}&body=${body}`;
+
+  // Open the rep's email app with everything pre-filled
+  window.location.href = mailto;
+
+  // Log the request to Supabase so management can see & reply to it in-app too
+  try {
+    if (sb && cloudUserId) {
+      await sb.from('quote_requests').insert({
+        id: 'quote_' + Date.now(),
+        user_id: cloudUserId,
+        customer_name: customerName,
+        address: address || null,
+        phone: (document.getElementById('custPhone').value || '').trim() || null,
+        requested_at: now.toISOString(),
+        status: 'pending'
+      });
+    }
+  } catch (e) { console.warn('quote_requests insert failed', e); }
+
+  custQuoteStatus.style.display = '';
+  custQuoteStatus.textContent = `✓ Quote request opened in your email app · ${dateStr} ${timeStr}`;
+  showToast('Opening your email app to send the quote request…');
+});
+
 /* ====================== CALLED-SET (per active account) ======================
    Tracks which business IDs have already been dialed/called from the search
    list so the row text can render red the next time the list shows. */
@@ -8993,7 +9095,80 @@ async function hydrateFromCloud() {
     updateSyncUI();
     if (currentView === 'search') runSearch();
   } catch (e) { console.warn('hydrateFromCloud error', e); }
+  checkQuoteReplies();
 }
+
+/* ====================== QUOTE REPLIES (rep-facing notification) ====================== */
+const quoteRepliesModal = document.getElementById('quoteRepliesModal');
+const quoteRepliesList = document.getElementById('quoteRepliesList');
+const quoteRepliesClose = document.getElementById('quoteRepliesClose');
+const walletMessagesBtn = document.getElementById('walletMessages');
+const walletMessagesBadge = document.getElementById('walletMessagesBadge');
+
+async function checkQuoteReplies() {
+  if (!sb || !cloudUserId) return;
+  try {
+    const { data, error } = await sb.from('quote_requests')
+      .select('*').eq('user_id', cloudUserId)
+      .eq('status', 'replied').eq('seen', false);
+    if (error) { console.warn('checkQuoteReplies', error); return; }
+    const count = (data || []).length;
+    if (count > 0) {
+      walletMessagesBadge.style.display = 'flex';
+      walletMessagesBadge.textContent = count > 9 ? '9+' : String(count);
+    } else {
+      walletMessagesBadge.style.display = 'none';
+    }
+  } catch (e) { console.warn('checkQuoteReplies', e); }
+}
+
+async function openQuoteRepliesModal() {
+  quoteRepliesList.innerHTML = '<div class="dash-empty">Loading…</div>';
+  quoteRepliesModal.classList.add('visible');
+  if (!sb || !cloudUserId) { quoteRepliesList.innerHTML = '<div class="dash-empty">Not signed in.</div>'; return; }
+
+  const { data, error } = await sb.from('quote_requests')
+    .select('*').eq('user_id', cloudUserId)
+    .order('requested_at', { ascending: false }).limit(50);
+
+  if (error) { quoteRepliesList.innerHTML = `<div class="dash-empty">${escapeHtml(error.message)}</div>`; return; }
+
+  const list = data || [];
+  if (list.length === 0) {
+    quoteRepliesList.innerHTML = '<div class="dash-empty">No quote requests yet. Use "Request Quote" in Add Customer to send one.</div>';
+  } else {
+    quoteRepliesList.innerHTML = list.map(q => {
+      const when = new Date(q.requested_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const statusColor = q.status === 'replied' ? '#86EFAC' : 'rgba(255,255,255,0.5)';
+      const replyBlock = q.admin_reply
+        ? `<div class="qc-reply-sent" style="margin-top:8px;">${escapeHtml(q.admin_reply)}</div>`
+        : `<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);font-style:italic;">Waiting on a reply from management…</div>`;
+      return `
+        <div class="quote-card">
+          <div class="qc-head">
+            <span class="qc-biz">${escapeHtml(q.customer_name)}</span>
+            <span class="qc-time" style="color:${statusColor};text-transform:uppercase;">${escapeHtml(q.status)}</span>
+          </div>
+          <div class="qc-meta">${escapeHtml(when)}${q.address ? ' · ' + escapeHtml(q.address) : ''}</div>
+          ${replyBlock}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Mark any replied-but-unseen requests as seen now that the rep has opened this
+  try {
+    await sb.from('quote_requests').update({ seen: true })
+      .eq('user_id', cloudUserId).eq('status', 'replied').eq('seen', false);
+  } catch (e) { console.warn('mark quote replies seen', e); }
+  checkQuoteReplies();
+}
+
+if (walletMessagesBtn) walletMessagesBtn.addEventListener('click', openQuoteRepliesModal);
+if (quoteRepliesClose) quoteRepliesClose.addEventListener('click', () => quoteRepliesModal.classList.remove('visible'));
+if (quoteRepliesModal) quoteRepliesModal.addEventListener('click', (e) => {
+  if (e.target === quoteRepliesModal) quoteRepliesModal.classList.remove('visible');
+});
 
 function cloudCallToLocal(c) {
   return {
@@ -9262,6 +9437,78 @@ async function loadAdminDashboard() {
       </div>`;
     }).join('');
   }
+
+  // Quote requests from the whole team
+  const quoteRequestsList = document.getElementById('quoteRequestsList');
+  const quoteRequestsBadge = document.getElementById('quoteRequestsBadge');
+  const teamIds = members.map(m => m.id);
+  const repNamesById = {};
+  members.forEach(m => { repNamesById[m.id] = m.display_name || m.email; });
+
+  if (teamIds.length === 0) {
+    quoteRequestsList.innerHTML = '<div class="dash-empty">No team members yet.</div>';
+    quoteRequestsBadge.textContent = '0';
+  } else {
+    const { data: quotes, error: quoteErr } = await sb.from('quote_requests')
+      .select('*').in('user_id', teamIds)
+      .order('requested_at', { ascending: false }).limit(100);
+
+    if (quoteErr) {
+      quoteRequestsList.innerHTML = `<div class="dash-empty">${escapeHtml(quoteErr.message)}</div>`;
+    } else {
+      const quoteList = quotes || [];
+      const pendingQuotes = quoteList.filter(q => q.status !== 'replied');
+      quoteRequestsBadge.textContent = pendingQuotes.length;
+      quoteRequestsBadge.classList.toggle('urgent', pendingQuotes.length > 0);
+
+      if (quoteList.length === 0) {
+        quoteRequestsList.innerHTML = '<div class="dash-empty">No quote requests yet.</div>';
+      } else {
+        quoteRequestsList.innerHTML = quoteList.map(q => {
+          const when = new Date(q.requested_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          const repName = repNamesById[q.user_id] || 'Unknown Rep';
+          const metaBits = [q.phone, q.address].filter(Boolean).join(' · ');
+          const body = q.status === 'replied'
+            ? `<div class="qc-reply-sent">Replied: ${escapeHtml(q.admin_reply || '')}</div>`
+            : `
+              <textarea id="quoteReplyInput-${escapeHtml(q.id)}" placeholder="Type your reply to send back to ${escapeHtml(repName)}…"></textarea>
+              <button class="qc-send-btn" data-send-quote-reply="${escapeHtml(q.id)}">Send Reply</button>
+            `;
+          return `
+            <div class="quote-card" data-quote-id="${escapeHtml(q.id)}">
+              <div class="qc-head">
+                <span class="qc-biz">${escapeHtml(q.customer_name)}</span>
+                <span class="qc-time">${escapeHtml(when)}</span>
+              </div>
+              <div class="qc-meta">${escapeHtml(metaBits)}</div>
+              <span class="qc-rep">${escapeHtml(repName)}</span>
+              ${body}
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  }
+}
+
+async function sendQuoteReply(quoteId) {
+  const textarea = document.getElementById(`quoteReplyInput-${quoteId}`);
+  if (!textarea) return;
+  const replyText = (textarea.value || '').trim();
+  if (!replyText) { showToast('Type a reply first'); return; }
+  try {
+    const { error } = await sb.from('quote_requests').update({
+      admin_reply: replyText,
+      status: 'replied',
+      replied_at: new Date().toISOString(),
+      seen: false
+    }).eq('id', quoteId);
+    if (error) throw error;
+    showToast('Reply sent — the rep will see it in their app');
+    loadAdminDashboard();
+  } catch (e) {
+    showToast('Failed to send reply: ' + (e.message || 'error'));
+  }
 }
 
 // Dashboard click delegation
@@ -9271,12 +9518,14 @@ document.getElementById('adminDash').addEventListener('click', async (e) => {
   const suspend = e.target.closest('[data-suspend]');
   const reapprove = e.target.closest('[data-reapprove]');
   const view = e.target.closest('[data-view]');
+  const sendQuote = e.target.closest('[data-send-quote-reply]');
 
   if (approve) { await setUserStatus(approve.dataset.approve, 'approved'); }
   else if (deny) { await setUserStatus(deny.dataset.deny, 'denied'); }
   else if (suspend) { await setUserStatus(suspend.dataset.suspend, 'denied'); }
   else if (reapprove) { await setUserStatus(reapprove.dataset.reapprove, 'approved'); }
   else if (view) { openUserDetail(view.dataset.view); }
+  else if (sendQuote) { await sendQuoteReply(sendQuote.dataset.sendQuoteReply); }
 });
 
 async function setUserStatus(uid, status) {
@@ -9640,6 +9889,7 @@ async function boot() {
    even if the app sits open through 5 AM with no user interaction. */
 checkDailyRollover(true);
 setInterval(() => checkDailyRollover(), 60 * 1000);
+setInterval(() => checkQuoteReplies(), 60 * 1000);
 
 boot();
 
