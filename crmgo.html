@@ -3881,7 +3881,7 @@
       <div class="locked-banner" id="searchLockedBanner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <div>
-          <strong>Assigned by your administrator.</strong>
+          <strong>Currently allocated to you.</strong>
           The business type, area, and number of calls are set by your admin — switch to the Admin account to change them.
         </div>
       </div>
@@ -3952,7 +3952,7 @@
       <div class="locked-banner" id="ipLockedBanner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         <div>
-          <strong>Assigned by your administrator.</strong>
+          <strong>Currently allocated to you.</strong>
           Your visit list, business type, travel mode, and number of locations are set by your admin — switch to the Admin account to change them.
         </div>
       </div>
@@ -4047,12 +4047,18 @@
           <line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
         <div>
-          <strong>Comply or the call won't count.</strong>
+          <strong>How this call gets verified.</strong>
           <ul>
-            <li>Switch to the Phone app within <strong>3 seconds</strong> of tapping Dial</li>
-            <li>Tap the green confirmation button each time it appears (every ~45s)</li>
-            <li>Return to this page within <strong>3 seconds</strong> after you hang up</li>
+            <li>Start the call within <strong>45 seconds</strong> of tapping Dial</li>
+            <li>Confirm the call is still connected when prompted (about every 2 minutes)</li>
+            <li>Come back to this page after you hang up</li>
           </ul>
+          <div style="margin-top:10px;padding-top:9px;border-top:1px solid rgba(252,165,165,0.25);">
+            <strong>Say this first, on every call:</strong>
+            <div style="margin-top:4px;color:var(--yellow);font-style:italic;">
+              "This call may be recorded and transcribed for quality and training purposes."
+            </div>
+          </div>
         </div>
       </div>
 
@@ -4430,10 +4436,10 @@
 
       <!-- Proof-of-life prompt — pops up every ~45s; user must tap to confirm -->
       <div class="pol-prompt" id="polPrompt">
-        <div class="pol-q">Are you still on the call?</div>
-        <div class="pol-d">Tap to confirm. Missing a check-in may invalidate this call.</div>
+        <div class="pol-q">Is the call still connected?</div>
+        <div class="pol-d">Confirming helps us verify this call for payment.</div>
         <button class="pol-btn" id="polBtn" type="button">
-          ✓ Yes, still on the call
+          ✓ Still connected
         </button>
       </div>
 
@@ -5182,7 +5188,7 @@ function render() {
       </div>
       <div class="cell-number">${b.phone}</div>
       <div class="cell-rating">
-        <span class="stars" title="${b.rating} stars">${renderStars(b.rating)}</span><span class="meta">${b.rating.toFixed(1)} · ${b.reviews}</span>
+        <span class="stars">${renderStars(b.rating)}</span><span class="meta">${b.rating ? b.rating.toFixed(1) + ' · ' + b.reviews : 'Not rated'}</span>
       </div>
       <div class="cell-actions">
         <button class="row-action primary" data-call="${escapeHtml(b.id)}" title="Call ${b.phone}">
@@ -5246,7 +5252,7 @@ function escapeHtml(s) {
 }
 
 searchBtn.addEventListener('click', () => {
-  if (!isAdmin()) { showToast('Only the admin can change search settings'); return; }
+  if (!isAdmin()) { showToast('This lead pool is currently allocated to you'); return; }
   runSearch();
 });
 bizType.addEventListener('change', () => { if (isAdmin()) runSearch(); });
@@ -5477,6 +5483,10 @@ function resetCallAnalysis() {
   callAnalysis.segmentStartMs = 0;
   callAnalysis.detectedKeywords = new Set();
   callAnalysis.transcript = [];
+  callAnalysis.allPartyConsentConfirmed = false;
+  callAnalysis.consentConfirmedAt = 0;
+  const _ccRow = document.getElementById('consentConfirmRow');
+  if (_ccRow) _ccRow.remove();
   setDetectState('idle', 'Waiting for call to start…');
   detectEventsEl.innerHTML = '';
   earnListEl.innerHTML = '<div class="earn-empty" id="earnEmpty">Earnings will appear as events are detected…</div>';
@@ -5617,10 +5627,92 @@ function processCallAudioFrame(timeBuf, freqBuf, sampleRate, fftSize, rms) {
   }
 }
 
+/* ====================== RECORDING CONSENT LAW ======================
+   States requiring consent of EVERY party to record a call. The governing
+   rule is generally the stricter of where the caller sits and where the
+   called party sits.
+
+   With the Arizona service-area lock in place these are mostly unreachable,
+   but a business displaying a 480 number may have ported it from out of
+   state — and this is already in place the day you expand.
+
+   MAINTENANCE: area codes change. Re-verify annually. */
+const ALL_PARTY_CONSENT_AREA_CODES = new Set([
+  '209','213','279','310','323','341','350','408','415','424','442','510',
+  '530','559','562','619','626','628','650','657','661','669','707','714',
+  '747','760','764','805','818','820','831','840','858','909','916','925','949','951',
+  '203','475','860','959',
+  '302',
+  '239','305','321','324','352','386','407','448','561','656','689','727',
+  '754','772','786','813','850','863','904','941','954',
+  '217','224','309','312','331','447','464','618','630','708','730','773',
+  '779','815','847','872',
+  '227','240','301','410','443','667',
+  '339','351','413','508','617','774','781','857','978',
+  '231','248','269','313','517','586','616','679','734','810','906','947','989',
+  '406',
+  '702','725','775',
+  '603',
+  '215','223','267','272','412','445','484','570','582','610','717','724',
+  '814','835','878',
+  '206','253','360','425','509','564'
+]);
+
+function requiresAllPartyConsent(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  const ten = digits.slice(-10);
+  if (ten.length < 10) return true;   // Unknown -> assume the stricter rule
+  return ALL_PARTY_CONSENT_AREA_CODES.has(ten.slice(0, 3));
+}
+
+function showConsentConfirmPrompt() {
+  if (document.getElementById('consentConfirmRow')) return;
+  const panel = document.getElementById('transcriptPanel');
+  if (!panel) return;
+  const row = document.createElement('div');
+  row.id = 'consentConfirmRow';
+  row.style.cssText = `margin-top:10px;padding:10px 12px;background:rgba(255,214,10,0.08);
+    border:1px dashed rgba(255,214,10,0.4);border-radius:10px;font-size:11.5px;line-height:1.45;`;
+  row.innerHTML = `
+    <div style="margin-bottom:8px;color:rgba(255,255,255,0.85);">
+      Say: <strong style="color:var(--yellow);">"This call may be recorded and transcribed
+      for quality and training purposes."</strong> Only enable transcription if the other
+      party agrees.
+    </div>
+    <button id="consentConfirmBtn" type="button" style="background:var(--yellow);
+      color:var(--black);border:none;padding:8px 14px;border-radius:8px;
+      font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:1px;
+      text-transform:uppercase;cursor:pointer;">
+      They agreed — enable transcription
+    </button>`;
+  panel.appendChild(row);
+  document.getElementById('consentConfirmBtn').addEventListener('click', () => {
+    callAnalysis.allPartyConsentConfirmed = true;
+    callAnalysis.consentConfirmedAt = Date.now();
+    row.remove();
+    transcriptListEl.innerHTML =
+      '<div class="transcript-empty">Consent confirmed. Transcript will appear here…</div>';
+    if (transcriptBadgeEl) transcriptBadgeEl.style.display = '';
+    startCallSpeechRecognition();
+  });
+}
+
 const transcriptListEl = document.getElementById('transcriptList');
 const transcriptBadgeEl = document.getElementById('transcriptBadge');
 
 function startCallSpeechRecognition() {
+  // Consent gate — must clear before any audio is transcribed or stored.
+  const _num = currentBizForCall ? currentBizForCall.phone : (callNumber ? callNumber.textContent : '');
+  if (requiresAllPartyConsent(_num) && !callAnalysis.allPartyConsentConfirmed) {
+    transcriptListEl.innerHTML =
+      '<div class="transcript-no-support">Transcription is off for this number. ' +
+      'This area code is in an all-party-consent state — every party must agree ' +
+      'before a call may be recorded. Give the verbal disclosure and confirm the ' +
+      'other party agreed to enable it.</div>';
+    if (transcriptBadgeEl) transcriptBadgeEl.style.display = 'none';
+    showConsentConfirmPrompt();
+    return;
+  }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     transcriptListEl.innerHTML = '<div class="transcript-no-support">Live transcription requires Chrome or Edge browser. (Audio is still being analyzed for tones and beeps.)</div>';
@@ -5772,7 +5864,9 @@ function saveCallRecord() {
     finalState: callAnalysis.state,
     detectionEvents: (callAnalysis.events || []).map(e => ({ text: e.text, elapsed: e.elapsed })),
     transcript: finalLines.map(t => ({ ts: t.ts, text: t.text })),
-    source: 'speaker'
+    source: 'speaker',
+    allPartyState: requiresAllPartyConsent(numberText),
+    consentConfirmedAt: callAnalysis.consentConfirmedAt || null
   };
 
   // Mark the business as called (turns its row red on the search list)
@@ -6327,7 +6421,7 @@ async function ocrLoop() {
         processOcrText(data.text || '');
       } catch (e) {}
     }
-    await sleep(1500);
+    await sleep(3000);
   }
 }
 
@@ -6758,7 +6852,7 @@ function renderIpResults() {
           <h4>${escapeHtml(b.name)}</h4>
           <div class="meta">
             ${escapeHtml(b.address)}<br>
-            ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel} · ★ ${b.rating.toFixed(1)}
+            ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel}${b.rating ? ' · ★ ' + b.rating.toFixed(1) : ''}
           </div>
           <a href="#" data-popup-nav="${escapeHtml(b.id)}">NAVIGATE →</a>
         </div>
@@ -6803,7 +6897,7 @@ function renderIpResults() {
           <h4>${escapeHtml(b.name)}</h4>
           <div class="sub">
             <span class="stars">${renderStars(b.rating)}</span>
-            <span>${b.rating.toFixed(1)}</span>
+            <span>${b.rating ? b.rating.toFixed(1) : 'Not rated'}</span>
             <span class="sep">·</span>
             <span>${escapeHtml(b.address)}</span>
             <span class="sep">·</span>
@@ -7228,14 +7322,14 @@ function formatDist(meters) {
 }
 
 ipBizType.addEventListener('change', () => {
-  if (!isAdmin()) { showToast('Only the admin can change this'); return; }
+  if (!isAdmin()) { showToast('This lead pool is currently allocated to you'); return; }
   ipState.typeKey = ipBizType.value;
   runIpSearch();
 });
 
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    if (!isAdmin()) { showToast('Only the admin can change travel mode'); return; }
+    if (!isAdmin()) { showToast('This route set is currently allocated to you'); return; }
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     ipState.mode = btn.dataset.mode;
@@ -7251,7 +7345,7 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 
 ipUseLocationBtn.addEventListener('click', () => {
   if (!isAdmin() && activeUser().assignment.ipMetro !== 'user-location') {
-    showToast('Your visit area was assigned by the admin');
+    showToast('This visit area is currently allocated to you');
     return;
   }
   startInPerson();
@@ -8236,7 +8330,8 @@ if (custRequestQuoteBtn) custRequestQuoteBtn.addEventListener('click', async () 
 
   const subject = encodeURIComponent(`Quote Request — ${customerName}`);
   const body = encodeURIComponent(message);
-  const mailto = `mailto:info@swmarketingfirm.com?cc=swmarketingfirm@gmail.com&subject=${subject}&body=${body}`;
+  const QUOTE_INBOX = 'swmarketingfirm@gmail.com';   // <- set your real inbox
+  const mailto = `mailto:${QUOTE_INBOX}?subject=${subject}&body=${body}`;
 
   // Open the rep's email app with everything pre-filled
   window.location.href = mailto;
@@ -8346,13 +8441,27 @@ function cssEscape(s) {
    are credited as earnings.
    ==================================================================== */
 
+/* Verification, not supervision.
+
+   CAPTURE is unchanged. Snapshots still fire every 30s and the webcam OCR
+   still runs. Recording what happened is not control, and it is your fraud
+   evidence — keep all of it.
+
+   RESPONSE DEMANDS are relaxed. Requiring a contractor to react within 3 or
+   15 seconds, on pain of losing pay, is real-time direction of how they work,
+   which is the central test in a misclassification analysis. These windows
+   cost nothing in fraud detection: a fabricated call still fails the ringback
+   analysis, the OCR number match, and the snapshot trail. */
 const COMPLIANCE = {
-  SWITCH_AWAY_SECONDS: 3,    // Must leave tab within 3s of tapping Dial
-  POL_INTERVAL_MS: 45000,    // Proof-of-life prompt every 45s
-  POL_RESPONSE_WINDOW_MS: 15000,  // 15s to respond before missing it
+  // --- CAPTURE (unchanged) ---
   SNAPSHOT_INTERVAL_MS: 30000,    // Audit snapshot every 30s
-  MAX_MISSED_POL: 1,         // 1 missed check-in invalidates the call
-  RETURN_WINDOW_SECONDS: 3   // Must return to tab within 3s of hangup
+
+  // --- RESPONSE DEMANDS (relaxed) ---
+  SWITCH_AWAY_SECONDS: 45,        // was 3   — rep may pause before dialing
+  POL_INTERVAL_MS: 120000,        // was 45s — confirm every 2 minutes
+  POL_RESPONSE_WINDOW_MS: 45000,  // was 15s — 15s is hard mid-call
+  MAX_MISSED_POL: 2,              // was 1   — one miss shouldn't void paid work
+  RETURN_WINDOW_SECONDS: 120      // was 3
 };
 
 const SNAPSHOT_QUEUE_KEY = 'crmgo_snapshot_queue_v1';
@@ -8410,7 +8519,7 @@ function startDialedCall(biz) {
   setTimeout(() => {
     if (!dialedCallContext) return;
     if (dialedCallContext.awaitingFirstSwitch && !dialedCallContext.leftTabAt) {
-      invalidateCall(`Didn't switch to Phone app within ${COMPLIANCE.SWITCH_AWAY_SECONDS}s — call not counted`);
+      invalidateCall('No call was started — nothing to verify for this entry');
     }
   }, COMPLIANCE.SWITCH_AWAY_SECONDS * 1000);
 
@@ -8535,7 +8644,7 @@ function askProofOfLife() {
       updateOverlayMeters();
       const missed = dialedCallContext.polChecks.filter(c => !c.responded).length;
       if (missed > COMPLIANCE.MAX_MISSED_POL) {
-        invalidateCall(`Missed ${missed} check-in${missed === 1 ? '' : 's'} — call not counted`);
+        invalidateCall('Call could not be verified — no confirmations received');
         return;
       }
       // Even if not invalidated yet, schedule the next one
@@ -8674,7 +8783,7 @@ function invalidateCall(reason) {
   dialedCallContext.invalidReason = reason;
   callOverlay.classList.add('failed');
   overlayStatusText.textContent = 'Compliance failed';
-  overlayInstructions.innerHTML = `<strong style="color:#FCA5A5">${escapeHtml(reason)}</strong><br><br>The call still appears in your history, but it does not count toward earnings. Tap below to dismiss.`;
+  overlayInstructions.innerHTML = `<strong style="color:#FCA5A5">${escapeHtml(reason)}</strong><br><br>This entry stays in your history but isn't eligible for a per-deliverable fee, since we couldn't verify a call took place. If this looks wrong, tell your admin — they can review and adjust it.`;
   document.getElementById('polPrompt').classList.remove('visible');
   overlayEndBtn.textContent = 'Dismiss';
   // Stop scheduling new checks/snapshots
@@ -9892,6 +10001,1774 @@ setInterval(() => checkDailyRollover(), 60 * 1000);
 setInterval(() => checkQuoteReplies(), 60 * 1000);
 
 boot();
+
+/* ####################################################################
+   MODULE: crm-go-arizona-lock.js
+   #################################################################### */
+
+/* ============================================================================
+   CRM GO — ARIZONA SERVICE-AREA LOCK
+   ============================================================================
+
+   Drop-in module. Paste BEFORE the closing </script> tag in crm-go.html,
+   and BEFORE the engagement module if you're using both.
+
+   WHAT IT DOES
+   ------------
+   Restricts the app to Arizona. Non-Arizona metros are dimmed and
+   unselectable in every dropdown (rep search, admin OTP assignment, admin
+   in-person assignment). Attempting to select one produces a clear error.
+   In-Person mode refuses to generate leads if the rep's GPS places them
+   outside the state.
+
+   WHY ARIZONA-ONLY IS THE RIGHT DEFAULT
+   -------------------------------------
+   Arizona is a ONE-PARTY consent state for call recording (A.R.S. § 13-3005).
+   A rep in Arizona calling a business in Arizona may record with only their
+   own consent. That removes the all-party-consent problem that California,
+   Illinois, and Florida created.
+
+   WHAT THIS DOES *NOT* FIX — AND THE NUANCE
+   -----------------------------------------
+   To be precise, because the distinction matters:
+
+   Calling published BUSINESS numbers is a light regulatory environment. The
+   National Do-Not-Call Registry covers residential subscribers, not
+   businesses (47 C.F.R. § 64.1200(c)(2)), so B2B calls are largely exempt.
+   Once real business data is connected, that exemption applies and this
+   concern mostly goes away.
+
+   The problem right now is different: generateBusinesses() does not call
+   business numbers. It runs a seeded PRNG and FABRICATES digits inside real
+   area codes. The name, the address, and the number are three unrelated
+   fictions. Whoever actually holds (602) 447-2913 is not the restaurant the
+   UI is displaying — in a 602/480 block they are overwhelmingly likely to be
+   a cell phone or a residence.
+
+   That is what falls outside the B2B exemption. The exemption protects calls
+   TO BUSINESSES; random digits are calls to the general population with a
+   business label painted over them.
+
+   Also note Facebook v. Duguid (2021): equipment is an autodialer if it uses
+   "a random or sequential number generator to store or produce telephone
+   numbers to be called." A PRNG producing phone numbers is close to a
+   verbatim match. Human-initiated tel: dialing is a real defense, but it is
+   an argument worth not having.
+
+   And the practical point outranks all of the above: these numbers do not
+   work. Every dial reaches a wrong number or a stranger, while the earnings
+   model pays $0.10 for reaching voicemail. The feature is broken and it pays
+   out for being broken.
+
+   Keep USE_LIVE_NUMBERS = false until real data is connected. At that point
+   the numbers are genuine business lines and the B2B exemption does the work.
+   ========================================================================= */
+
+/* ====================== CONFIG ====================== */
+const AZ_LOCK = {
+  ENABLED: true,
+
+  /* Flip to true ONLY when:
+       1. A real business-data provider is connected (Google Places, Yelp
+          Fusion, Data Axle) and generateBusinesses() no longer fabricates —
+          THIS IS THE ONE THAT MATTERS. Real published business numbers are
+          largely exempt from the DNC Registry. Random digits are not, because
+          they aren't business numbers at all.
+       2. Reps are calling the main published line for a verified business,
+          not a number derived or guessed from anything.
+       3. You honor any direct opt-out request immediately and keep an
+          internal do-not-call list. Company-specific opt-out obligations
+          apply to B2B calls even where the national registry does not.
+     Until then this stays false and the app serves 555-01XX demo numbers,
+     which cannot route to a live subscriber. */
+  USE_LIVE_NUMBERS: false,
+
+  ALLOWED_METROS: ['phoenix', 'tucson'],
+
+  AZ_AREA_CODES: ['480', '602', '623', '520', '928'],
+
+  /* Bounding box for Arizona. Approximate — a rectangle clips small slivers
+     of NV/UT/NM/CA at the corners, and the Colorado River border on the west
+     is a curve, not a line. Adequate as a guard rail; if you need precision
+     later, swap in a GeoJSON polygon and a point-in-polygon test. */
+  BBOX: { minLat: 31.30, maxLat: 37.01, minLng: -114.85, maxLng: -109.04 },
+
+  /* Grace margin so a rep near a border isn't locked out by GPS drift. */
+  BORDER_GRACE_DEG: 0.05
+};
+
+/* ====================== ADD TUCSON ====================== */
+/* Phoenix already exists in METROS. Tucson is the natural second Arizona
+   market and 520 is a distinct area code, so add it rather than forcing
+   southern-Arizona reps to work off Phoenix coordinates. */
+if (typeof METROS !== 'undefined' && !METROS.tucson) {
+  METROS.tucson = {
+    name: 'Tucson',
+    state: 'AZ',
+    center: { lat: 32.2226, lng: -110.9747 },
+    areaCodes: ['520'],
+    cities: [
+      { name: 'Tucson',        lat: 32.2226, lng: -110.9747 },
+      { name: 'Oro Valley',    lat: 32.3909, lng: -110.9665 },
+      { name: 'Marana',        lat: 32.4367, lng: -111.2255 },
+      { name: 'Sahuarita',     lat: 31.9573, lng: -110.9557 },
+      { name: 'Green Valley',  lat: 31.8542, lng: -110.9937 },
+      { name: 'Vail',          lat: 32.0470, lng: -110.7126 },
+      { name: 'Catalina Foothills', lat: 32.3120, lng: -110.9195 }
+    ]
+  };
+}
+
+/* ====================== STYLES ====================== */
+(function injectAzLockStyles() {
+  if (document.getElementById('azLockStyles')) return;
+  const s = document.createElement('style');
+  s.id = 'azLockStyles';
+  s.textContent = `
+    option.az-locked {
+      color: rgba(255,255,255,0.28) !important;
+      background: rgba(255,255,255,0.02) !important;
+      font-style: italic;
+    }
+    .az-service-note {
+      display: flex; align-items: flex-start; gap: 9px;
+      background: rgba(255,214,10,0.06);
+      border: 1px dashed rgba(255,214,10,0.35);
+      border-radius: 10px; padding: 9px 12px; margin-top: 10px;
+      font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,0.82);
+    }
+    .az-service-note svg { width: 15px; height: 15px; color: var(--yellow); flex-shrink: 0; margin-top: 1px; }
+    .az-service-note strong { color: var(--yellow); }
+    .az-blocked-banner {
+      display: none; align-items: flex-start; gap: 10px;
+      background: rgba(239,68,68,0.10);
+      border: 1px solid rgba(239,68,68,0.45);
+      border-radius: 12px; padding: 13px 15px; margin-bottom: 16px;
+      font-size: 12.5px; line-height: 1.5; color: rgba(255,255,255,0.92);
+    }
+    .az-blocked-banner.visible { display: flex; }
+    .az-blocked-banner svg { width: 19px; height: 19px; color: #FCA5A5; flex-shrink: 0; margin-top: 1px; }
+    .az-blocked-banner strong { color: #FCA5A5; }
+  `;
+  document.head.appendChild(s);
+})();
+
+/* ====================== HELPERS ====================== */
+
+function azIsAllowedMetro(key) {
+  return AZ_LOCK.ALLOWED_METROS.includes(key);
+}
+
+function azIsInsideArizona(pos) {
+  if (!pos || typeof pos.lat !== 'number') return false;
+  const b = AZ_LOCK.BBOX, g = AZ_LOCK.BORDER_GRACE_DEG;
+  return pos.lat >= b.minLat - g && pos.lat <= b.maxLat + g
+      && pos.lng >= b.minLng - g && pos.lng <= b.maxLng + g;
+}
+
+const AZ_ERROR_MSG = 'CRM GO currently operates in Arizona only. Other service areas are not available.';
+
+function azShowBlockedError(detail) {
+  if (typeof showToast === 'function') showToast(detail || AZ_ERROR_MSG);
+  const el = document.getElementById('azBlockedModal');
+  if (!el) return;
+  document.getElementById('azBlockedText').textContent = detail || AZ_ERROR_MSG;
+  el.classList.add('visible');
+}
+
+function ensureAzBlockedModal() {
+  if (document.getElementById('azBlockedModal')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.id = 'azBlockedModal';
+  wrap.setAttribute('role', 'dialog');
+  wrap.innerHTML = `
+    <div class="modal" style="max-width:400px;text-align:center;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.15);
+        color:#FCA5A5;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <line x1="9" y1="7" x2="15" y2="13"/><line x1="15" y1="7" x2="9" y2="13"/>
+        </svg>
+      </div>
+      <h2 style="font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:1px;color:white;margin-bottom:8px;">
+        Outside Service Area
+      </h2>
+      <p id="azBlockedText" style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.55;margin-bottom:6px;"></p>
+      <p style="font-size:11.5px;color:rgba(255,255,255,0.45);line-height:1.5;">
+        Available areas: Phoenix and Tucson, Arizona.
+      </p>
+      <button class="modal-close" id="azBlockedClose" style="margin-top:16px;">Got It</button>
+    </div>`;
+  document.body.appendChild(wrap);
+  document.getElementById('azBlockedClose').addEventListener('click', () => wrap.classList.remove('visible'));
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) wrap.classList.remove('visible'); });
+}
+
+/* ====================== LOCK THE DROPDOWNS ====================== */
+
+function azLockMetroSelect(selectEl) {
+  if (!selectEl) return;
+
+  // Add Tucson if this select doesn't have it yet
+  if (!Array.from(selectEl.options).some(o => o.value === 'tucson')) {
+    const phoenixOpt = Array.from(selectEl.options).find(o => o.value === 'phoenix');
+    const tucsonOpt = document.createElement('option');
+    tucsonOpt.value = 'tucson';
+    tucsonOpt.textContent = selectEl.id === 'metro'
+      ? 'Tucson, AZ (+ surrounding)' : 'Tucson, AZ';
+    if (phoenixOpt && phoenixOpt.nextSibling) {
+      selectEl.insertBefore(tucsonOpt, phoenixOpt.nextSibling);
+    } else {
+      selectEl.appendChild(tucsonOpt);
+    }
+  }
+
+  Array.from(selectEl.options).forEach(opt => {
+    if (opt.value === 'user-location') return;   // GPS option stays usable
+    if (azIsAllowedMetro(opt.value)) {
+      opt.disabled = false;
+      opt.classList.remove('az-locked');
+      opt.textContent = opt.textContent.replace(/\s*—\s*Not available$/, '');
+    } else {
+      opt.disabled = true;
+      opt.classList.add('az-locked');
+      if (!/—\s*Not available$/.test(opt.textContent)) {
+        opt.textContent = opt.textContent + ' — Not available';
+      }
+    }
+  });
+
+  // If the current value is now illegal, snap to Phoenix
+  if (!azIsAllowedMetro(selectEl.value) && selectEl.value !== 'user-location') {
+    selectEl.value = 'phoenix';
+  }
+
+  // Belt and suspenders: some browsers/assistive tech can still land on a
+  // disabled option programmatically. Bounce it back and explain why.
+  if (!selectEl.dataset.azGuarded) {
+    selectEl.dataset.azGuarded = '1';
+    selectEl.addEventListener('change', function () {
+      if (this.value !== 'user-location' && !azIsAllowedMetro(this.value)) {
+        const attempted = this.options[this.selectedIndex];
+        const label = attempted ? attempted.textContent.replace(/\s*—\s*Not available$/, '') : 'That area';
+        this.value = 'phoenix';
+        azShowBlockedError(`${label} is not in the current service area. CRM GO operates in Arizona only.`);
+      }
+    });
+    // Fires on click even when the selection doesn't change
+    selectEl.addEventListener('mousedown', () => { /* native disabled styling handles it */ });
+  }
+}
+
+function azAddServiceNote(panelEl) {
+  if (!panelEl || panelEl.querySelector('.az-service-note')) return;
+  const note = document.createElement('div');
+  note.className = 'az-service-note';
+  note.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+    </svg>
+    <div><strong>Arizona service area.</strong> CRM GO currently operates in Phoenix and Tucson.
+    Other metros are shown but unavailable.</div>`;
+  panelEl.appendChild(note);
+}
+
+/* ====================== GUARD THE SEARCH ====================== */
+
+function azApplyLocks() {
+  if (!AZ_LOCK.ENABLED) return;
+  ensureAzBlockedModal();
+
+  azLockMetroSelect(document.getElementById('metro'));
+  azLockMetroSelect(document.getElementById('ueCallMetro'));
+  azLockMetroSelect(document.getElementById('ueIpMetro'));
+
+  azAddServiceNote(document.getElementById('searchPanel'));
+  azAddServiceNote(document.getElementById('ipPanel'));
+
+  // Out-of-area banner for In-Person mode
+  const ipShell = document.querySelector('.ip-shell');
+  if (ipShell && !document.getElementById('azOutOfAreaBanner')) {
+    const banner = document.createElement('div');
+    banner.className = 'az-blocked-banner';
+    banner.id = 'azOutOfAreaBanner';
+    banner.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <div><strong>You appear to be outside Arizona.</strong>
+      In-Person mode is available only within the Arizona service area.
+      If this is wrong, check that location services are enabled and retry.</div>`;
+    const panel = document.getElementById('ipPanel');
+    if (panel && panel.parentNode) panel.parentNode.insertBefore(banner, panel);
+  }
+}
+
+/* ====================== WRAP THE CORE FUNCTIONS ====================== */
+
+(function azWrapCore() {
+  if (!AZ_LOCK.ENABLED) return;
+
+  // --- runSearch: force an allowed metro before generating ---
+  if (typeof runSearch === 'function') {
+    const _runSearch = runSearch;
+    window.runSearch = function () {
+      const sel = document.getElementById('metro');
+      if (sel && !azIsAllowedMetro(sel.value)) {
+        sel.value = 'phoenix';
+        azShowBlockedError('That area is outside the Arizona service area. Showing Phoenix instead.');
+      }
+      return _runSearch.apply(this, arguments);
+    };
+    try { runSearch = window.runSearch; } catch (e) {}
+  }
+
+  // --- startInPerson: block if GPS puts the rep outside Arizona ---
+  if (typeof startInPerson === 'function') {
+    const _startInPerson = startInPerson;
+    window.startInPerson = async function () {
+      const result = await _startInPerson.apply(this, arguments);
+      const banner = document.getElementById('azOutOfAreaBanner');
+      if (typeof userPosition !== 'undefined' && userPosition) {
+        if (!azIsInsideArizona(userPosition)) {
+          if (banner) banner.classList.add('visible');
+          // Clear any generated leads — nothing outside the service area
+          if (typeof ipState !== 'undefined') ipState.results = [];
+          if (typeof renderIpResults === 'function') renderIpResults();
+          azShowBlockedError('Your current location is outside Arizona. In-Person mode is unavailable here.');
+        } else if (banner) {
+          banner.classList.remove('visible');
+        }
+      }
+      return result;
+    };
+    try { startInPerson = window.startInPerson; } catch (e) {}
+  }
+
+  // --- Phone numbers: gate on USE_LIVE_NUMBERS ---
+  if (typeof fmtPhone === 'function') {
+    const _fmtPhone = fmtPhone;
+    window.fmtPhone = function (area, rng) {
+      if (AZ_LOCK.USE_LIVE_NUMBERS) {
+        // Real provider connected — pass through, but keep it in-state
+        const azArea = AZ_LOCK.AZ_AREA_CODES.includes(area)
+          ? area
+          : AZ_LOCK.AZ_AREA_CODES[Math.floor(rng() * AZ_LOCK.AZ_AREA_CODES.length)];
+        return _fmtPhone(azArea, rng);
+      }
+      /* Demo mode. 555-01XX is reserved by the North American Numbering Plan
+         for fiction — it cannot route to a live subscriber. This is the only
+         safe way to run the app before real, DNC-scrubbed data is connected. */
+      const n = Math.floor(rng() * 100);
+      return `(555) 01${Math.floor(n / 10)}-01${String(n).padStart(2, '0')}`;
+    };
+    try { fmtPhone = window.fmtPhone; } catch (e) {}
+  }
+
+  console.log('[az-lock] Arizona service-area lock active. Live numbers:',
+    AZ_LOCK.USE_LIVE_NUMBERS);
+})();
+
+/* ====================== APPLY ON LOAD + ON VIEW CHANGE ====================== */
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', azApplyLocks);
+} else {
+  azApplyLocks();
+}
+
+if (typeof showView === 'function') {
+  const _showViewAz = showView;
+  window.showView = function (name) {
+    _showViewAz(name);
+    azApplyLocks();
+  };
+  try { showView = window.showView; } catch (e) {}
+}
+
+// Re-apply after the admin opens the user-edit modal (its selects live there)
+const _ueOpen = typeof openUserEditModal === 'function' ? openUserEditModal : null;
+if (_ueOpen) {
+  window.openUserEditModal = function (uid) {
+    const r = _ueOpen.apply(this, arguments);
+    azApplyLocks();
+    return r;
+  };
+  try { openUserEditModal = window.openUserEditModal; } catch (e) {}
+}
+
+window.crmgoAzLock = {
+  config: AZ_LOCK,
+  isInsideArizona: azIsInsideArizona,
+  isAllowedMetro: azIsAllowedMetro,
+  reapply: azApplyLocks
+};
+
+
+/* ####################################################################
+   MODULE: crm-go-real-data.js
+   #################################################################### */
+
+/* ============================================================================
+   CRM GO — REAL BUSINESS DATA (OpenStreetMap / Overpass API)
+   ============================================================================
+
+   Drop-in module. Paste BEFORE the closing </script> tag, AFTER
+   crm-go-arizona-lock.js.
+
+   Replaces generateBusinesses() and generateBusinessesAroundPoint() with live
+   queries against OpenStreetMap. Real business names, real addresses, real
+   published phone numbers.
+
+   WHY OVERPASS AND NOT GOOGLE PLACES
+   ----------------------------------
+   Free. No API key. No billing account. No key sitting exposed in client-side
+   source. You are already using OSM tiles and OSRM routing, so this is the
+   same ecosystem and the same attribution you already display.
+
+   Google Places has better coverage, especially for trades. When you outgrow
+   OSM, that is the upgrade path — see the note at the bottom of this file.
+
+   COVERAGE — READ THIS
+   --------------------
+   OSM coverage is uneven by category:
+     restaurants / cafes / fast food ....... excellent
+     hardware, garden centres, nurseries ... good
+     plumbers, carpenters, landscapers ..... thin
+
+   Trades are service businesses that often have no mapped storefront. You
+   will get far fewer plumbing results than restaurant results, and that is a
+   property of the data, not a bug. The module tells the rep when a category
+   returns few results rather than silently showing an empty list.
+
+   RATINGS
+   -------
+   OSM has no ratings. This module does NOT fabricate them. Attaching an
+   invented 4.2-star rating to a real, named business is a materially worse
+   idea than attaching one to a fictional business — it is a false statement
+   of fact about an identifiable third party. Ratings now render "—".
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------------
+   VERIFY COVERAGE BEFORE YOU TRUST IT
+   Paste this at https://overpass-turbo.eu and press Run. Swap the amenity tag
+   to check other categories, and the coordinates to check Tucson
+   (32.2226, -110.9747). Restaurants will return plenty; plumbers will not.
+
+     [out:json][timeout:25];
+     (
+       nwr["amenity"="restaurant"]["phone"](around:8000,33.4484,-112.0740);
+       nwr["amenity"="cafe"]["phone"](around:8000,33.4484,-112.0740);
+     );
+     out center 40;
+
+   Do this first. It tells you in 20 seconds whether OSM coverage is good
+   enough for your categories, before you wire anything up.
+   ------------------------------------------------------------------------ */
+
+const REAL_DATA = {
+  ENABLED: true,
+
+  ENDPOINTS: [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter'
+  ],
+
+  TIMEOUT_MS: 25000,
+  CACHE_TTL_MS: 24 * 60 * 60 * 1000,   // 24h — business listings change slowly
+  CACHE_KEY: 'crmgo_osm_cache_v1',
+  MAX_RESULTS: 120,
+
+  SEARCH_RADIUS_M: { metro: 25000, walking: 1600, driving: 8000 },
+
+  /* Fall back to 555 demo data if Overpass is unreachable. Never fall back to
+     fabricated numbers in real area codes. */
+  FALLBACK_TO_DEMO: true
+};
+
+/* OSM tag sets per business type. `nwr` matches nodes, ways, and relations. */
+const OSM_TAGS = {
+  restaurant: [
+    ['amenity', 'restaurant'], ['amenity', 'fast_food'],
+    ['amenity', 'cafe'], ['amenity', 'bar'], ['amenity', 'pub']
+  ],
+  plumbing: [
+    ['craft', 'plumber'], ['shop', 'hardware'],
+    ['shop', 'doityourself'], ['shop', 'plumbing']
+  ],
+  carpentry: [
+    ['craft', 'carpenter'], ['craft', 'joiner'],
+    ['craft', 'cabinet_maker'], ['shop', 'carpenter']
+  ],
+  lawncare: [
+    ['shop', 'garden_centre'], ['craft', 'gardener'],
+    ['landuse', 'plant_nursery'], ['shop', 'lawn_mower_repair']
+  ]
+};
+
+/* ====================== CACHE ====================== */
+
+function osmCacheGet(key) {
+  try {
+    const all = JSON.parse(localStorage.getItem(REAL_DATA.CACHE_KEY) || '{}');
+    const hit = all[key];
+    if (!hit) return null;
+    if (Date.now() - hit.at > REAL_DATA.CACHE_TTL_MS) return null;
+    return hit.data;
+  } catch { return null; }
+}
+
+function osmCacheSet(key, data) {
+  try {
+    const all = JSON.parse(localStorage.getItem(REAL_DATA.CACHE_KEY) || '{}');
+    all[key] = { at: Date.now(), data };
+    // Evict oldest if the cache grows past ~15 areas
+    const keys = Object.keys(all);
+    if (keys.length > 15) {
+      keys.sort((a, b) => all[a].at - all[b].at);
+      delete all[keys[0]];
+    }
+    localStorage.setItem(REAL_DATA.CACHE_KEY, JSON.stringify(all));
+  } catch (e) {
+    // Quota exceeded — clear and retry once
+    try { localStorage.removeItem(REAL_DATA.CACHE_KEY); } catch {}
+  }
+}
+
+/* ====================== PHONE NORMALIZATION ====================== */
+
+/**
+ * OSM phone tags are free text: "+1-602-555-1234", "(602) 555 1234",
+ * "602.555.1234", sometimes several separated by ";". Take the first,
+ * normalize to (XXX) XXX-XXXX, and reject anything that isn't a clean
+ * 10-digit NANP number.
+ */
+function normalizePhone(raw) {
+  if (!raw) return null;
+  const first = String(raw).split(';')[0].trim();
+  let digits = first.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
+  if (digits.length !== 10) return null;
+  // NANP: area code and exchange cannot start with 0 or 1
+  if (digits[0] === '0' || digits[0] === '1') return null;
+  if (digits[3] === '0' || digits[3] === '1') return null;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function buildAddress(tags) {
+  const num = tags['addr:housenumber'] || '';
+  const street = tags['addr:street'] || '';
+  const city = tags['addr:city'] || '';
+  const state = tags['addr:state'] || 'AZ';
+  const line = [num, street].filter(Boolean).join(' ');
+  if (!line && !city) return null;
+  return [line, city, state].filter(Boolean).join(', ');
+}
+
+/* ====================== OVERPASS QUERY ====================== */
+
+function buildOverpassQuery(typeKey, lat, lng, radiusM) {
+  const tags = OSM_TAGS[typeKey] || OSM_TAGS.restaurant;
+  const clauses = [];
+  for (const [k, v] of tags) {
+    // Two statements per tag so we catch both `phone` and `contact:phone`
+    clauses.push(`nwr["${k}"="${v}"]["phone"](around:${radiusM},${lat},${lng});`);
+    clauses.push(`nwr["${k}"="${v}"]["contact:phone"](around:${radiusM},${lat},${lng});`);
+  }
+  return `[out:json][timeout:25];\n(\n${clauses.join('\n')}\n);\nout center ${REAL_DATA.MAX_RESULTS};`;
+}
+
+async function fetchOverpass(query) {
+  let lastErr = null;
+  for (const endpoint of REAL_DATA.ENDPOINTS) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), REAL_DATA.TIMEOUT_MS);
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        body: 'data=' + encodeURIComponent(query),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        signal: ctrl.signal
+      });
+      clearTimeout(t);
+      if (!res.ok) { lastErr = new Error('HTTP ' + res.status); continue; }
+      return await res.json();
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('All Overpass endpoints failed');
+}
+
+/**
+ * Convert Overpass elements into the shape the rest of the app expects.
+ * Anything without a usable name or a valid phone number is dropped —
+ * a lead a rep cannot call is not a lead.
+ */
+function osmToBusinesses(json, center, typeKey) {
+  const seen = new Set();
+  const out = [];
+  for (const el of (json.elements || [])) {
+    const tags = el.tags || {};
+    const name = (tags.name || '').trim();
+    if (!name) continue;
+
+    const phone = normalizePhone(tags.phone || tags['contact:phone']);
+    if (!phone) continue;
+
+    const lat = el.lat !== undefined ? el.lat : (el.center && el.center.lat);
+    const lng = el.lon !== undefined ? el.lon : (el.center && el.center.lon);
+    if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+
+    // Dedupe on name + phone — OSM often has a node and a way for one business
+    const key = name.toLowerCase() + '|' + phone;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const coords = { lat, lng };
+    out.push({
+      id: `osm-${el.type}-${el.id}`,
+      name,
+      address: buildAddress(tags) || (tags['addr:city'] || 'Address not listed'),
+      city: tags['addr:city'] || '',
+      phone,
+      website: tags.website || tags['contact:website'] || null,
+      opening: tags.opening_hours || null,
+      rating: null,          // OSM has no ratings — do not invent them
+      reviews: null,
+      coords,
+      distance: haversineMiles(center, coords),
+      osmType: el.type,
+      osmId: el.id
+    });
+  }
+  return out.sort((a, b) => a.distance - b.distance);
+}
+
+/* ====================== PUBLIC FETCH ====================== */
+
+async function fetchRealBusinesses(typeKey, center, radiusM) {
+  const cacheKey = `${typeKey}:${center.lat.toFixed(3)}:${center.lng.toFixed(3)}:${radiusM}`;
+  const cached = osmCacheGet(cacheKey);
+  if (cached) {
+    return cached.map(b => ({ ...b, distance: haversineMiles(center, b.coords) }))
+                 .sort((a, b) => a.distance - b.distance);
+  }
+  const query = buildOverpassQuery(typeKey, center.lat, center.lng, radiusM);
+  const json = await fetchOverpass(query);
+  const businesses = osmToBusinesses(json, center, typeKey);
+  osmCacheSet(cacheKey, businesses);
+  return businesses;
+}
+
+/* ====================== LOADING / STATUS UI ====================== */
+
+function showDataStatus(target, html, isError) {
+  let el = document.getElementById('dataStatusBar');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dataStatusBar';
+    el.style.cssText = `display:flex;align-items:center;gap:9px;padding:10px 13px;
+      border-radius:10px;font-size:12px;line-height:1.45;margin:12px 0;
+      background:rgba(255,214,10,0.07);border:1px dashed rgba(255,214,10,0.35);
+      color:rgba(255,255,255,0.85);`;
+  }
+  el.style.background = isError ? 'rgba(239,68,68,0.10)' : 'rgba(255,214,10,0.07)';
+  el.style.borderColor = isError ? 'rgba(239,68,68,0.45)' : 'rgba(255,214,10,0.35)';
+  el.innerHTML = html;
+  if (target && el.parentNode !== target) target.appendChild(el);
+  el.style.display = 'flex';
+}
+
+function hideDataStatus() {
+  const el = document.getElementById('dataStatusBar');
+  if (el) el.style.display = 'none';
+}
+
+const SPINNER_HTML = `<span style="width:13px;height:13px;border:2px solid rgba(255,255,255,0.25);
+  border-top-color:var(--yellow);border-radius:50%;display:inline-block;
+  animation:spinIp 0.8s linear infinite;flex-shrink:0;"></span>`;
+
+/* ====================== OVERRIDE THE GENERATORS ====================== */
+
+(function wireRealData() {
+  if (!REAL_DATA.ENABLED) return;
+
+  /* --- OTP mode: metro-wide search --- */
+  if (typeof runSearch === 'function') {
+    const _runSearch = runSearch;
+
+    window.runSearch = async function () {
+      const metroKey = document.getElementById('metro').value;
+      const typeKey = document.getElementById('bizType').value;
+      const metro = METROS[metroKey];
+      if (!metro) return _runSearch.apply(this, arguments);
+
+      searchState.metroKey = metroKey;
+      searchState.typeKey = typeKey;
+      searchState.page = 1;
+
+      const panel = document.getElementById('searchPanel');
+      showDataStatus(panel,
+        `${SPINNER_HTML}<span>Loading real businesses near ${escapeHtml(metro.name)}…</span>`);
+
+      try {
+        let results = await fetchRealBusinesses(
+          typeKey, metro.center, REAL_DATA.SEARCH_RADIUS_M.metro);
+
+        if (!isAdmin()) {
+          const cap = Math.min(100, activeUser().assignment.callCap || 100);
+          results = results.slice(0, cap);
+        }
+        searchState.results = results;
+        updateMapsAllLink();
+        render();
+
+        if (results.length === 0) {
+          showDataStatus(panel,
+            `<span>No mapped <strong>${escapeHtml(TYPE_CONFIG[typeKey].label.toLowerCase())}</strong>
+             businesses with published phone numbers were found near ${escapeHtml(metro.name)}.
+             OpenStreetMap coverage is thin for trades — try Restaurant, or widen the area.</span>`,
+            true);
+        } else if (results.length < 10) {
+          showDataStatus(panel,
+            `<span>Only <strong>${results.length}</strong> mapped
+             ${escapeHtml(TYPE_CONFIG[typeKey].label.toLowerCase())} businesses with published
+             numbers near ${escapeHtml(metro.name)}. This category has limited OpenStreetMap coverage.</span>`);
+        } else {
+          hideDataStatus();
+        }
+      } catch (err) {
+        console.warn('[real-data] Overpass failed:', err);
+        if (REAL_DATA.FALLBACK_TO_DEMO) {
+          _runSearch.apply(this, arguments);
+          showDataStatus(panel,
+            `<span><strong>Live business data unavailable.</strong> Showing demo listings with
+             non-dialable (555) numbers. Check your connection and search again.</span>`, true);
+        } else {
+          searchState.results = [];
+          render();
+          showDataStatus(panel,
+            `<span><strong>Could not load business data.</strong> Check your connection and retry.</span>`, true);
+        }
+      }
+    };
+    try { runSearch = window.runSearch; } catch (e) {}
+  }
+
+  /* --- In-Person mode: radius search around the rep --- */
+  if (typeof runIpSearch === 'function') {
+    const _runIpSearch = runIpSearch;
+
+    window.runIpSearch = async function () {
+      if (!userPosition) return;
+      const radius = ipState.mode === 'walking'
+        ? REAL_DATA.SEARCH_RADIUS_M.walking
+        : REAL_DATA.SEARCH_RADIUS_M.driving;
+
+      const panel = document.getElementById('ipPanel');
+      showDataStatus(panel, `${SPINNER_HTML}<span>Finding real businesses nearby…</span>`);
+
+      try {
+        let results = await fetchRealBusinesses(ipState.typeKey, userPosition, radius);
+        if (!isAdmin()) {
+          const cap = Math.min(20, activeUser().assignment.ipCap || 20);
+          results = results.slice(0, cap);
+        }
+        ipState.results = results;
+        renderIpResults();
+
+        if (results.length === 0) {
+          showDataStatus(panel,
+            `<span>No mapped ${escapeHtml(TYPE_CONFIG[ipState.typeKey].label.toLowerCase())}
+             businesses with published numbers within
+             ${(radius / 1609.34).toFixed(1)} mi. Try Driving mode for a wider radius.</span>`, true);
+        } else {
+          hideDataStatus();
+        }
+      } catch (err) {
+        console.warn('[real-data] Overpass failed (in-person):', err);
+        if (REAL_DATA.FALLBACK_TO_DEMO) {
+          _runIpSearch.apply(this, arguments);
+          showDataStatus(panel,
+            `<span><strong>Live data unavailable.</strong> Showing demo pins with
+             non-dialable (555) numbers.</span>`, true);
+        }
+      }
+    };
+    try { runIpSearch = window.runIpSearch; } catch (e) {}
+  }
+
+  /* --- Ratings: render "—" instead of invented stars --- */
+  if (typeof renderStars === 'function') {
+    const _renderStars = renderStars;
+    window.renderStars = function (rating) {
+      if (rating === null || rating === undefined) return '—';
+      return _renderStars(rating);
+    };
+    try { renderStars = window.renderStars; } catch (e) {}
+  }
+
+  /* Numbers are now real and published, so the demo gate is satisfied. */
+  if (typeof AZ_LOCK !== 'undefined') AZ_LOCK.USE_LIVE_NUMBERS = true;
+
+  console.log('[real-data] OpenStreetMap business data active');
+})();
+
+/* ====================== PATCHES REQUIRED IN THE HOST FILE ======================
+
+   Two small edits in crm-go.html, because rating and review count are no
+   longer numbers and the existing code calls .toFixed() on them.
+
+   1) In render(), FIND:
+
+        <span class="stars" title="${b.rating} stars">${renderStars(b.rating)}</span><span class="meta">${b.rating.toFixed(1)} · ${b.reviews}</span>
+
+      REPLACE:
+
+        <span class="stars">${renderStars(b.rating)}</span><span class="meta">${b.rating ? b.rating.toFixed(1) + ' · ' + b.reviews : 'Not rated'}</span>
+
+   2) In renderIpResults(), FIND:
+
+            <span class="stars">${renderStars(b.rating)}</span>
+            <span>${b.rating.toFixed(1)}</span>
+            <span class="sep">·</span>
+
+      REPLACE:
+
+            <span class="stars">${renderStars(b.rating)}</span>
+            <span>${b.rating ? b.rating.toFixed(1) : 'Not rated'}</span>
+            <span class="sep">·</span>
+
+   And in the map popup inside renderIpResults(), FIND:
+
+        ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel} · ★ ${b.rating.toFixed(1)}
+
+      REPLACE:
+
+        ${b.distance.toFixed(2)} mi · ${time} min ${modeLabel}${b.rating ? ' · ★ ' + b.rating.toFixed(1) : ''}
+
+   ============================================================================
+
+   ATTRIBUTION
+   -----------
+   OSM data is ODbL-licensed. Your map already shows "© OpenStreetMap" via the
+   MapLibre attribution control, which covers this. If you ever export or
+   display listings outside the map, carry the attribution with them.
+
+   UPGRADE PATH — GOOGLE PLACES
+   ----------------------------
+   When OSM coverage stops being enough (it will, for trades):
+     - Places Nearby Search + Place Details returns phone, rating, hours, and
+       far deeper trade coverage.
+     - It requires a billing account and an API key. Restrict the key by HTTP
+       referrer, and better, proxy it through a Supabase Edge Function so the
+       key never reaches the browser at all.
+     - Google's terms restrict caching most Place data beyond 30 days and
+       prohibit storing it as your own database. Read them before you build
+       around it — those limits shape your architecture, so it is cheaper to
+       know now than to refactor later.
+   ========================================================================= */
+
+window.crmgoRealData = {
+  config: REAL_DATA,
+  fetchRealBusinesses,
+  normalizePhone,
+  clearCache: () => localStorage.removeItem(REAL_DATA.CACHE_KEY)
+};
+
+
+/* ####################################################################
+   MODULE: crm-go-engagement.js
+   #################################################################### */
+
+/* ============================================================================
+   CRM GO — ENGAGEMENT TRACKING & HOTSPOT MAPPING
+   ============================================================================
+
+   Drop-in module. Paste this immediately BEFORE the closing </script> tag in
+   crm-go.html — after boot() is defined, so it can hook the existing app.
+
+   WHAT THIS DOES
+   --------------
+   Passively measures how long a rep spends at each business, combines that
+   with how much information they logged and what came of the visit, and
+   produces an "engagement score" per visit. Scores aggregate geospatially
+   into a hotspot heatmap the admin can read to find high-potential territory.
+
+   DESIGN NOTE — WHY DWELL TIME AND NOT PHOTOS
+   -------------------------------------------
+   This measures OUTCOMES, not PRESENCE. It does not tell the contractor how
+   to work, when to work, or require them to prove they are working. It
+   records what happened after the fact, the same way an invoice records
+   completed work. That distinction matters for 1099 classification — see
+   Section 5A of the Independent Contractor Agreement.
+
+   PRIVACY BOUNDARY
+   ----------------
+   Tracking runs ONLY while In-Person mode is open in the foreground. It stops
+   on view change, tab hide, and logout. There is no background tracking. This
+   is deliberate: background location tracking of a contractor is a materially
+   different legal proposition and would require native app permissions the
+   web platform doesn't reliably grant anyway.
+   ========================================================================= */
+
+/* ====================== TUNABLE CONSTANTS ====================== */
+const ENGAGEMENT_CFG = {
+  // --- Geofence ---
+  GEOFENCE_RADIUS_M: 60,       // Considered "at" a business within this radius
+  EXIT_RADIUS_M: 90,           // Hysteresis: must exceed this to be "away"
+  GPS_MAX_ACCURACY_M: 100,     // Reject fixes worse than this — junk data poisons scores
+  EXIT_GRACE_S: 60,            // Must stay outside EXIT_RADIUS this long to close a visit
+
+  // --- Dwell curve breakpoints (seconds) ---
+  DWELL_PASSBY_S: 45,          // Below this = walked past, discard entirely
+  DWELL_BRIEF_S: 120,          // 45s–2m  = brief contact (door answered, quick no)
+  DWELL_CONVERSATION_S: 480,   // 2m–8m   = real conversation — the sweet spot
+  DWELL_DEEP_S: 1200,          // 8m–20m  = presentation / deep engagement
+  DWELL_PLATEAU_S: 2700,       // 20m–45m = hold at max
+  DWELL_STATIONARY_S: 5400,    // >45m    = decay; they're parked, not selling
+
+  // --- Composite weights (must sum to 1.0) ---
+  W_DWELL: 0.45,
+  W_LOG: 0.30,
+  W_OUTCOME: 0.25,
+
+  // --- Hotspot aggregation ---
+  HOTSPOT_CLUSTER_M: 120,      // Visits within this distance aggregate to one hotspot
+  RECENCY_HALFLIFE_DAYS: 30,   // A 30-day-old visit counts half as much
+  MIN_VISITS_FOR_HOTSPOT: 1,
+
+  // --- Sampling ---
+  SAMPLE_INTERVAL_MS: 15000,   // How often to evaluate position while in-person
+  MIN_MOVE_FOR_SAMPLE_M: 5
+};
+
+const VISITS_KEY_PREFIX = 'crmgo_visits_';
+
+/* ====================== STATE ====================== */
+const engagementState = {
+  active: false,
+  watcherId: null,
+  sampleTimer: null,
+  openVisit: null,       // { bizId, bizName, lat, lng, arrivedAt, lastSeenAt, samples[], outsideSince }
+  lastPos: null,
+  sessionVisits: []
+};
+
+function visitsKeyForActive() {
+  return VISITS_KEY_PREFIX + (typeof isAdmin === 'function' && isAdmin()
+    ? 'admin'
+    : (adminState && adminState.activeUserId ? adminState.activeUserId : 'anon'));
+}
+
+function loadVisitsLocal() {
+  try { return JSON.parse(localStorage.getItem(visitsKeyForActive()) || '[]'); }
+  catch { return []; }
+}
+
+function saveVisitLocal(visit) {
+  const list = loadVisitsLocal();
+  const idx = list.findIndex(v => v.id === visit.id);
+  if (idx !== -1) list[idx] = visit; else list.unshift(visit);
+  while (list.length > 500) list.pop();
+  try { localStorage.setItem(visitsKeyForActive(), JSON.stringify(list)); } catch {}
+}
+
+/* ====================== SCORING ====================== */
+
+/**
+ * Dwell score, 0–100, piecewise with a decay tail.
+ *
+ * The tail is the important part. Without it, a rep who eats lunch for two
+ * hours next to a restaurant generates a massive false hotspot. Real selling
+ * activity has a characteristic duration band; sitting still for an hour is
+ * evidence of NOT selling.
+ */
+function dwellScore(seconds) {
+  const C = ENGAGEMENT_CFG;
+  const lerp = (t, a, b, ya, yb) => ya + (yb - ya) * ((t - a) / (b - a));
+
+  if (seconds < C.DWELL_PASSBY_S) return 0;
+  if (seconds < C.DWELL_BRIEF_S)
+    return lerp(seconds, C.DWELL_PASSBY_S, C.DWELL_BRIEF_S, 5, 25);
+  if (seconds < C.DWELL_CONVERSATION_S)
+    return lerp(seconds, C.DWELL_BRIEF_S, C.DWELL_CONVERSATION_S, 25, 70);
+  if (seconds < C.DWELL_DEEP_S)
+    return lerp(seconds, C.DWELL_CONVERSATION_S, C.DWELL_DEEP_S, 70, 100);
+  if (seconds < C.DWELL_PLATEAU_S) return 100;
+  if (seconds < C.DWELL_STATIONARY_S)
+    return lerp(seconds, C.DWELL_PLATEAU_S, C.DWELL_STATIONARY_S, 100, 40);
+  return 40;
+}
+
+/**
+ * Log completeness, 0–100. Rewards actually capturing information.
+ * A ten-minute visit with an empty log is a weaker signal than a
+ * three-minute visit with a name, number, and notes.
+ */
+function logCompletenessScore(customer) {
+  if (!customer) return 0;
+  const weights = {
+    name: 15, phone: 20, email: 10, address: 15,
+    bizType: 5, notes: 25, scheduledAt: 10
+  };
+  let score = 0;
+  for (const [field, w] of Object.entries(weights)) {
+    const v = customer[field];
+    if (v && String(v).trim().length > 0) {
+      // Notes score proportionally — a 3-character note isn't a real note
+      if (field === 'notes') {
+        const len = String(v).trim().length;
+        score += w * Math.min(1, len / 60);
+      } else {
+        score += w;
+      }
+    }
+  }
+  return Math.round(Math.min(100, score));
+}
+
+/** Outcome score, 0–100. */
+function outcomeScore(visit) {
+  let s = 0;
+  if (visit.outcome) {
+    if (visit.outcome.customerSaved) s += 35;
+    if (visit.outcome.quoteRequested) s += 30;
+    if (visit.outcome.appointmentSet) s += 35;
+  }
+  return Math.min(100, s);
+}
+
+function computeEngagement(visit) {
+  const C = ENGAGEMENT_CFG;
+  const d = dwellScore(visit.dwellSeconds || 0);
+  const l = logCompletenessScore(visit.customer);
+  const o = outcomeScore(visit);
+  const raw = C.W_DWELL * d + C.W_LOG * l + C.W_OUTCOME * o;
+  return {
+    dwell: Math.round(d),
+    log: Math.round(l),
+    outcome: Math.round(o),
+    total: Math.round(raw)
+  };
+}
+
+function engagementBand(total) {
+  if (total >= 75) return { label: 'High',     color: '#22c55e' };
+  if (total >= 45) return { label: 'Moderate', color: '#FFD60A' };
+  if (total >= 20) return { label: 'Low',      color: '#FB923C' };
+  return              { label: 'Minimal',  color: '#94A3B8' };
+}
+
+/* ====================== GEOFENCE / VISIT LIFECYCLE ====================== */
+
+function startEngagementTracking() {
+  if (engagementState.active) return;
+  if (!navigator.geolocation) return;
+  engagementState.active = true;
+  engagementState.sessionVisits = [];
+
+  engagementState.watcherId = navigator.geolocation.watchPosition(
+    onEngagementPosition,
+    (err) => console.warn('[engagement] geo error', err),
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 25000 }
+  );
+
+  // Periodic tick so a stationary rep still accrues dwell time even when
+  // watchPosition goes quiet (it only fires on meaningful movement).
+  engagementState.sampleTimer = setInterval(() => {
+    if (engagementState.lastPos) evaluatePosition(engagementState.lastPos, true);
+  }, ENGAGEMENT_CFG.SAMPLE_INTERVAL_MS);
+
+  console.log('[engagement] tracking started');
+}
+
+function stopEngagementTracking() {
+  if (!engagementState.active) return;
+  if (engagementState.openVisit) closeVisit('tracking_stopped');
+  if (engagementState.watcherId !== null) {
+    navigator.geolocation.clearWatch(engagementState.watcherId);
+    engagementState.watcherId = null;
+  }
+  if (engagementState.sampleTimer) {
+    clearInterval(engagementState.sampleTimer);
+    engagementState.sampleTimer = null;
+  }
+  engagementState.active = false;
+  console.log('[engagement] tracking stopped');
+}
+
+function onEngagementPosition(pos) {
+  const p = {
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude,
+    accuracy: pos.coords.accuracy,
+    at: Date.now()
+  };
+  // Reject low-quality fixes outright. Bad GPS creates phantom hotspots,
+  // which is worse than missing data.
+  if (p.accuracy && p.accuracy > ENGAGEMENT_CFG.GPS_MAX_ACCURACY_M) return;
+  engagementState.lastPos = p;
+  evaluatePosition(p, false);
+}
+
+function metersBetween(a, b) {
+  return haversineMiles(a, b) * 1609.34;
+}
+
+function evaluatePosition(p, isTick) {
+  if (!ipState || !ipState.results || !ipState.results.length) return;
+
+  // Find the nearest business within the geofence
+  let nearest = null, nearestDist = Infinity;
+  for (const b of ipState.results) {
+    const d = metersBetween(p, b.coords);
+    if (d < nearestDist) { nearestDist = d; nearest = b; }
+  }
+
+  const open = engagementState.openVisit;
+
+  if (open) {
+    const distToOpen = metersBetween(p, { lat: open.lat, lng: open.lng });
+
+    if (distToOpen <= ENGAGEMENT_CFG.EXIT_RADIUS_M) {
+      // Still here — accrue
+      open.lastSeenAt = p.at;
+      open.outsideSince = null;
+      if (!isTick) open.samples.push({ at: p.at, acc: p.accuracy });
+      updateEngagementHud(open);
+      return;
+    }
+
+    // Outside the exit radius — start / continue the grace clock
+    if (!open.outsideSince) open.outsideSince = p.at;
+    if ((p.at - open.outsideSince) / 1000 >= ENGAGEMENT_CFG.EXIT_GRACE_S) {
+      closeVisit('departed');
+    } else {
+      updateEngagementHud(open);
+      return;
+    }
+  }
+
+  // No open visit — should we open one?
+  if (nearest && nearestDist <= ENGAGEMENT_CFG.GEOFENCE_RADIUS_M) {
+    openVisitFor(nearest, p);
+  }
+}
+
+function openVisitFor(biz, p) {
+  engagementState.openVisit = {
+    id: 'visit_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    bizId: biz.id,
+    bizName: biz.name,
+    bizType: ipState.typeKey,
+    address: biz.address || '',
+    lat: biz.coords.lat,
+    lng: biz.coords.lng,
+    arrivedAt: p.at,
+    lastSeenAt: p.at,
+    outsideSince: null,
+    samples: [{ at: p.at, acc: p.accuracy }],
+    customer: null,
+    outcome: { customerSaved: false, quoteRequested: false, appointmentSet: false },
+    travelMode: ipState.mode
+  };
+  showEngagementHud();
+  if (typeof showToast === 'function') showToast(`Arrived · ${biz.name}`);
+}
+
+function closeVisit(reason) {
+  const v = engagementState.openVisit;
+  if (!v) return;
+  engagementState.openVisit = null;
+  hideEngagementHud();
+
+  const endAt = v.lastSeenAt || Date.now();
+  v.departedAt = endAt;
+  v.dwellSeconds = Math.max(0, Math.round((endAt - v.arrivedAt) / 1000));
+  v.closeReason = reason;
+
+  // Discard pass-bys entirely — no record, no noise in the heatmap
+  if (v.dwellSeconds < ENGAGEMENT_CFG.DWELL_PASSBY_S && !v.customer) {
+    console.log('[engagement] discarded pass-by at', v.bizName, v.dwellSeconds + 's');
+    return;
+  }
+
+  v.score = computeEngagement(v);
+  saveVisitLocal(v);
+  engagementState.sessionVisits.push(v);
+  cloudUpsertVisit(v);
+
+  const band = engagementBand(v.score.total);
+  if (typeof showToast === 'function') {
+    showToast(`Visit logged · ${v.bizName} · ${formatDuration(v.dwellSeconds)} · ${band.label} engagement`);
+  }
+}
+
+/**
+ * Called from the Add Customer save handler so the log data attaches to the
+ * visit that's currently open. This is what links "time spent" to
+ * "information captured."
+ */
+function attachCustomerToOpenVisit(customerRecord) {
+  const v = engagementState.openVisit;
+  if (!v) return false;
+  v.customer = {
+    name: customerRecord.name,
+    phone: customerRecord.phone,
+    email: customerRecord.email,
+    address: customerRecord.address,
+    bizType: customerRecord.bizType,
+    notes: customerRecord.notes,
+    scheduledAt: customerRecord.scheduledAt
+  };
+  v.outcome.customerSaved = true;
+  if (customerRecord.scheduledAt) v.outcome.appointmentSet = true;
+  updateEngagementHud(v);
+  return true;
+}
+
+function markQuoteRequestedOnOpenVisit() {
+  const v = engagementState.openVisit;
+  if (!v) return;
+  v.outcome.quoteRequested = true;
+  updateEngagementHud(v);
+}
+
+/* ====================== LIVE HUD (rep-facing) ====================== */
+/* Deliberately transparent. The rep can see exactly what's being recorded —
+   that's both an ethical baseline and a practical one: a visible meter is a
+   motivator, a hidden one is surveillance. */
+
+function ensureEngagementHud() {
+  if (document.getElementById('engagementHud')) return;
+  const el = document.createElement('div');
+  el.id = 'engagementHud';
+  el.style.cssText = `
+    position:fixed; bottom:64px; left:50%; transform:translateX(-50%);
+    z-index:8000; display:none; align-items:center; gap:12px;
+    background:rgba(0,0,0,0.72); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,214,10,0.4); border-radius:999px;
+    padding:8px 16px 8px 12px; box-shadow:0 8px 28px rgba(0,0,0,0.45);
+    font-family:'Inter',sans-serif; color:white; max-width:calc(100vw - 32px);`;
+  el.innerHTML = `
+    <span style="width:9px;height:9px;border-radius:50%;background:#22c55e;
+      box-shadow:0 0 0 0 rgba(34,197,94,0.7);animation:pulseDot 1.6s ease-out infinite;flex-shrink:0;"></span>
+    <div style="min-width:0;">
+      <div id="engHudName" style="font-family:'Russo One',sans-serif;font-size:12px;
+        letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;"></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:1px;text-transform:uppercase;">At location</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0;">
+      <div id="engHudTimer" style="font-family:'Russo One',sans-serif;font-size:16px;
+        color:var(--yellow);font-variant-numeric:tabular-nums;line-height:1;">00:00</div>
+      <div id="engHudBand" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;
+        color:rgba(255,255,255,0.5);margin-top:2px;">Building</div>
+    </div>
+    <div style="width:52px;height:6px;background:rgba(255,255,255,0.15);border-radius:999px;
+      overflow:hidden;flex-shrink:0;">
+      <div id="engHudBar" style="height:100%;width:0%;background:var(--yellow);
+        border-radius:999px;transition:width 400ms ease, background 400ms ease;"></div>
+    </div>`;
+  document.body.appendChild(el);
+}
+
+function showEngagementHud() {
+  ensureEngagementHud();
+  const hud = document.getElementById('engagementHud');
+  if (hud) hud.style.display = 'flex';
+  if (engagementState._hudTimer) clearInterval(engagementState._hudTimer);
+  engagementState._hudTimer = setInterval(() => {
+    if (engagementState.openVisit) updateEngagementHud(engagementState.openVisit);
+  }, 1000);
+}
+
+function hideEngagementHud() {
+  const hud = document.getElementById('engagementHud');
+  if (hud) hud.style.display = 'none';
+  if (engagementState._hudTimer) {
+    clearInterval(engagementState._hudTimer);
+    engagementState._hudTimer = null;
+  }
+}
+
+function updateEngagementHud(v) {
+  const nameEl = document.getElementById('engHudName');
+  const timerEl = document.getElementById('engHudTimer');
+  const barEl = document.getElementById('engHudBar');
+  const bandEl = document.getElementById('engHudBand');
+  if (!nameEl) return;
+  const secs = Math.round((Date.now() - v.arrivedAt) / 1000);
+  const provisional = computeEngagement({ ...v, dwellSeconds: secs });
+  const band = engagementBand(provisional.total);
+  nameEl.textContent = v.bizName;
+  timerEl.textContent = formatDuration(secs);
+  barEl.style.width = Math.min(100, provisional.total) + '%';
+  barEl.style.background = band.color;
+  bandEl.textContent = band.label;
+  bandEl.style.color = band.color;
+}
+
+/* ====================== CLOUD SYNC ====================== */
+
+async function cloudUpsertVisit(v) {
+  if (typeof sb === 'undefined' || !sb || !cloudUserId) return;
+  try {
+    await sb.from('visits').upsert({
+      id: v.id,
+      user_id: cloudUserId,
+      biz_id: v.bizId,
+      biz_name: v.bizName,
+      biz_type: v.bizType,
+      address: v.address || null,
+      lat: v.lat,
+      lng: v.lng,
+      arrived_at: new Date(v.arrivedAt).toISOString(),
+      departed_at: new Date(v.departedAt).toISOString(),
+      dwell_seconds: v.dwellSeconds,
+      travel_mode: v.travelMode,
+      score_dwell: v.score.dwell,
+      score_log: v.score.log,
+      score_outcome: v.score.outcome,
+      score_total: v.score.total,
+      customer_saved: !!v.outcome.customerSaved,
+      quote_requested: !!v.outcome.quoteRequested,
+      appointment_set: !!v.outcome.appointmentSet,
+      log_snapshot: v.customer || null,
+      close_reason: v.closeReason
+    }, { onConflict: 'id' });
+  } catch (e) { console.warn('[engagement] cloudUpsertVisit', e); }
+}
+
+/* ====================== HOTSPOT AGGREGATION ====================== */
+
+function recencyWeight(isoDate) {
+  const days = (Date.now() - new Date(isoDate).getTime()) / 86400000;
+  return Math.pow(0.5, days / ENGAGEMENT_CFG.RECENCY_HALFLIFE_DAYS);
+}
+
+/**
+ * Cluster visits into hotspots by proximity. Simple greedy clustering —
+ * adequate for the scale here (hundreds to low thousands of visits).
+ */
+function buildHotspots(visits) {
+  const clusters = [];
+  for (const v of visits) {
+    const w = recencyWeight(v.arrived_at || v.arrivedAt);
+    const score = (v.score_total !== undefined ? v.score_total : (v.score && v.score.total)) || 0;
+    const lat = v.lat, lng = v.lng;
+    let placed = false;
+    for (const c of clusters) {
+      if (metersBetween({ lat, lng }, { lat: c.lat, lng: c.lng }) <= ENGAGEMENT_CFG.HOTSPOT_CLUSTER_M) {
+        c.visits.push(v);
+        c.weightedSum += score * w;
+        c.weightTotal += w;
+        c.totalDwell += (v.dwell_seconds || v.dwellSeconds || 0);
+        c.outcomes += (v.appointment_set ? 1 : 0) + (v.quote_requested ? 1 : 0);
+        // Weighted centroid drift
+        c.lat = (c.lat * (c.visits.length - 1) + lat) / c.visits.length;
+        c.lng = (c.lng * (c.visits.length - 1) + lng) / c.visits.length;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      clusters.push({
+        lat, lng,
+        label: v.biz_name || v.bizName || 'Unnamed',
+        bizType: v.biz_type || v.bizType || '',
+        visits: [v],
+        weightedSum: score * w,
+        weightTotal: w,
+        totalDwell: v.dwell_seconds || v.dwellSeconds || 0,
+        outcomes: (v.appointment_set ? 1 : 0) + (v.quote_requested ? 1 : 0)
+      });
+    }
+  }
+  return clusters
+    .filter(c => c.visits.length >= ENGAGEMENT_CFG.MIN_VISITS_FOR_HOTSPOT)
+    .map(c => ({
+      ...c,
+      avgScore: c.weightTotal > 0 ? Math.round(c.weightedSum / c.weightTotal) : 0,
+      visitCount: c.visits.length,
+      // Intensity blends average quality with visit volume — a spot visited
+      // ten times at moderate engagement matters as much as one great visit.
+      intensity: Math.min(100, Math.round(
+        (c.weightTotal > 0 ? c.weightedSum / c.weightTotal : 0) * 0.7 +
+        Math.min(100, c.visits.length * 12) * 0.3
+      ))
+    }))
+    .sort((a, b) => b.intensity - a.intensity);
+}
+
+/* ====================== ADMIN HOTSPOT MAP ====================== */
+
+let hotspotMap = null;
+let hotspotData = [];
+
+function ensureHotspotModal() {
+  if (document.getElementById('hotspotModal')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.id = 'hotspotModal';
+  wrap.setAttribute('role', 'dialog');
+  wrap.innerHTML = `
+    <div class="modal" style="max-width:900px;max-height:92vh;overflow-y:auto;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:2px;">Engagement Hotspots</h2>
+      <div class="biz-sub">Where the team is actually connecting</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:16px 0;">
+        <div>
+          <label style="display:block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:5px;">Rep</label>
+          <select id="hsRep" style="width:100%;background:var(--black);color:white;border:2px solid rgba(255,255,255,0.12);border-radius:9px;padding:9px 11px;font-size:13px;font-family:'Inter',sans-serif;">
+            <option value="">All reps</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:5px;">Period</label>
+          <select id="hsPeriod" style="width:100%;background:var(--black);color:white;border:2px solid rgba(255,255,255,0.12);border-radius:9px;padding:9px 11px;font-size:13px;font-family:'Inter',sans-serif;">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="0">All time</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:5px;">Business Type</label>
+          <select id="hsType" style="width:100%;background:var(--black);color:white;border:2px solid rgba(255,255,255,0.12);border-radius:9px;padding:9px 11px;font-size:13px;font-family:'Inter',sans-serif;">
+            <option value="">All types</option>
+            <option value="restaurant">Restaurant</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="carpentry">Carpentry</option>
+            <option value="lawncare">Lawn Care</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="dash-stats" id="hsStats" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px;">
+        <div class="dash-stat"><div class="num" id="hsVisits">0</div><div class="lbl">Visits</div></div>
+        <div class="dash-stat"><div class="num" id="hsAvgDwell">—</div><div class="lbl">Avg Dwell</div></div>
+        <div class="dash-stat"><div class="num" id="hsAvgScore">—</div><div class="lbl">Avg Engagement</div></div>
+        <div class="dash-stat"><div class="num" id="hsHotspots">0</div><div class="lbl">Hotspots</div></div>
+      </div>
+
+      <div style="position:relative;height:400px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;">
+        <div id="hotspotMapContainer" style="width:100%;height:100%;background:#0F2B36;"></div>
+        <div id="hsEmpty" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,50,65,0.9);color:rgba(255,255,255,0.6);font-size:13px;text-align:center;padding:20px;"></div>
+      </div>
+
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:16px;">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;vertical-align:-1px;margin-right:5px;"></span>High</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#FFD60A;vertical-align:-1px;margin-right:5px;"></span>Moderate</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#FB923C;vertical-align:-1px;margin-right:5px;"></span>Low</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#94A3B8;vertical-align:-1px;margin-right:5px;"></span>Minimal</span>
+      </div>
+
+      <div class="dash-section-title" style="font-size:12px;margin:6px 0 10px;">Top Locations</div>
+      <div id="hsList"></div>
+
+      <button class="modal-close" id="hsClose">Close</button>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  document.getElementById('hsClose').addEventListener('click', closeHotspotModal);
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) closeHotspotModal(); });
+  ['hsRep', 'hsPeriod', 'hsType'].forEach(id => {
+    document.getElementById(id).addEventListener('change', loadHotspotData);
+  });
+}
+
+async function openHotspotMap() {
+  ensureHotspotModal();
+  document.getElementById('hotspotModal').classList.add('visible');
+
+  // Populate the rep filter from the admin's team
+  if (sb && currentProfile) {
+    const { data: team } = await sb.from('profiles')
+      .select('id, display_name, email')
+      .eq('supervisor_id', currentProfile.id);
+    const sel = document.getElementById('hsRep');
+    const existing = sel.value;
+    sel.innerHTML = '<option value="">All reps</option>' +
+      (team || []).map(m =>
+        `<option value="${escapeHtml(m.id)}">${escapeHtml(m.display_name || m.email)}</option>`).join('');
+    sel.value = existing;
+  }
+
+  await loadMapLibrary();
+  await loadHotspotData();
+}
+
+function closeHotspotModal() {
+  document.getElementById('hotspotModal').classList.remove('visible');
+}
+
+async function loadHotspotData() {
+  if (!sb || !currentProfile) return;
+  const repId = document.getElementById('hsRep').value;
+  const days = parseInt(document.getElementById('hsPeriod').value, 10);
+  const bizType = document.getElementById('hsType').value;
+
+  const { data: team } = await sb.from('profiles').select('id')
+    .eq('supervisor_id', currentProfile.id);
+  const teamIds = (team || []).map(t => t.id);
+  teamIds.push(currentProfile.id); // include the admin's own Sales View visits
+
+  let q = sb.from('visits').select('*').in('user_id', repId ? [repId] : teamIds);
+  if (days > 0) {
+    q = q.gte('arrived_at', new Date(Date.now() - days * 86400000).toISOString());
+  }
+  if (bizType) q = q.eq('biz_type', bizType);
+  q = q.order('arrived_at', { ascending: false }).limit(3000);
+
+  const { data: visits, error } = await q;
+  if (error) { console.warn('[engagement] hotspot load', error); return; }
+
+  hotspotData = visits || [];
+  renderHotspotStats(hotspotData);
+  const spots = buildHotspots(hotspotData);
+  renderHotspotMap(spots);
+  renderHotspotList(spots);
+}
+
+function renderHotspotStats(visits) {
+  const n = visits.length;
+  document.getElementById('hsVisits').textContent = n;
+  if (n === 0) {
+    document.getElementById('hsAvgDwell').textContent = '—';
+    document.getElementById('hsAvgScore').textContent = '—';
+    return;
+  }
+  const avgDwell = visits.reduce((s, v) => s + (v.dwell_seconds || 0), 0) / n;
+  const avgScore = visits.reduce((s, v) => s + (v.score_total || 0), 0) / n;
+  document.getElementById('hsAvgDwell').textContent = formatDuration(avgDwell);
+  document.getElementById('hsAvgScore').textContent = Math.round(avgScore);
+}
+
+function renderHotspotMap(spots) {
+  const emptyEl = document.getElementById('hsEmpty');
+  document.getElementById('hsHotspots').textContent = spots.length;
+
+  if (spots.length === 0) {
+    emptyEl.style.display = 'flex';
+    emptyEl.textContent = 'No visits recorded for these filters yet. Hotspots appear once reps start logging time at locations.';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  const fc = {
+    type: 'FeatureCollection',
+    features: spots.map(s => ({
+      type: 'Feature',
+      properties: {
+        intensity: s.intensity,
+        label: s.label,
+        visits: s.visitCount,
+        avgScore: s.avgScore
+      },
+      geometry: { type: 'Point', coordinates: [s.lng, s.lat] }
+    }))
+  };
+
+  const center = [spots[0].lng, spots[0].lat];
+
+  if (!hotspotMap) {
+    hotspotMap = new maplibregl.Map({
+      container: 'hotspotMapContainer',
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster',
+            tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256, attribution: '© OpenStreetMap'
+          }
+        },
+        layers: [{ id: 'osm-layer', type: 'raster', source: 'osm' }]
+      },
+      center, zoom: 12, attributionControl: false
+    });
+    hotspotMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    hotspotMap.on('load', () => paintHotspotLayers(fc, spots));
+  } else {
+    if (hotspotMap.getSource('hotspots')) {
+      hotspotMap.getSource('hotspots').setData(fc);
+    } else {
+      paintHotspotLayers(fc, spots);
+    }
+    fitToSpots(spots);
+  }
+  setTimeout(() => hotspotMap && hotspotMap.resize(), 120);
+}
+
+function paintHotspotLayers(fc, spots) {
+  if (hotspotMap.getSource('hotspots')) return;
+  hotspotMap.addSource('hotspots', { type: 'geojson', data: fc });
+
+  hotspotMap.addLayer({
+    id: 'hotspot-heat',
+    type: 'heatmap',
+    source: 'hotspots',
+    paint: {
+      'heatmap-weight': ['interpolate', ['linear'], ['get', 'intensity'], 0, 0, 100, 1],
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 10, 1, 16, 3],
+      'heatmap-color': [
+        'interpolate', ['linear'], ['heatmap-density'],
+        0,    'rgba(11,110,140,0)',
+        0.2,  'rgba(148,163,184,0.5)',
+        0.4,  'rgba(251,146,60,0.6)',
+        0.65, 'rgba(255,214,10,0.75)',
+        1,    'rgba(34,197,94,0.9)'
+      ],
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 10, 18, 16, 48],
+      'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 14, 0.9, 17, 0.45]
+    }
+  });
+
+  hotspotMap.addLayer({
+    id: 'hotspot-points',
+    type: 'circle',
+    source: 'hotspots',
+    minzoom: 13,
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['get', 'visits'], 1, 5, 20, 16],
+      'circle-color': [
+        'step', ['get', 'avgScore'],
+        '#94A3B8', 20, '#FB923C', 45, '#FFD60A', 75, '#22c55e'
+      ],
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': 'rgba(255,255,255,0.85)',
+      'circle-opacity': 0.9
+    }
+  });
+
+  hotspotMap.on('click', 'hotspot-points', (e) => {
+    const p = e.features[0].properties;
+    new maplibregl.Popup({ offset: 12 })
+      .setLngLat(e.lngLat)
+      .setHTML(`<div class="popup-content">
+        <h4>${escapeHtml(p.label)}</h4>
+        <div class="meta">${p.visits} visit${p.visits == 1 ? '' : 's'} · avg engagement ${p.avgScore}/100</div>
+      </div>`)
+      .addTo(hotspotMap);
+  });
+  hotspotMap.on('mouseenter', 'hotspot-points', () => hotspotMap.getCanvas().style.cursor = 'pointer');
+  hotspotMap.on('mouseleave', 'hotspot-points', () => hotspotMap.getCanvas().style.cursor = '');
+
+  fitToSpots(spots);
+}
+
+function fitToSpots(spots) {
+  if (!spots.length || !hotspotMap) return;
+  const b = new maplibregl.LngLatBounds();
+  spots.forEach(s => b.extend([s.lng, s.lat]));
+  hotspotMap.fitBounds(b, { padding: 50, maxZoom: 15, duration: 500 });
+}
+
+function renderHotspotList(spots) {
+  const el = document.getElementById('hsList');
+  if (!spots.length) {
+    el.innerHTML = '<div class="dash-empty">No locations yet.</div>';
+    return;
+  }
+  el.innerHTML = spots.slice(0, 25).map(s => {
+    const band = engagementBand(s.avgScore);
+    const avgDwell = s.totalDwell / s.visitCount;
+    return `
+      <div class="mc-agenda-row" style="border-left-color:${band.color};">
+        <div class="mc-head">
+          <span class="mc-biz">${escapeHtml(s.label)}</span>
+          <span class="mc-time" style="color:${band.color};">${s.intensity}</span>
+        </div>
+        <div class="mc-meta">
+          ${s.visitCount} visit${s.visitCount === 1 ? '' : 's'} ·
+          avg ${formatDuration(avgDwell)} on site ·
+          avg engagement ${s.avgScore}/100 ·
+          ${s.outcomes} outcome${s.outcomes === 1 ? '' : 's'}
+        </div>
+        <span class="mc-rep" style="background:${band.color}22;color:${band.color};border-color:${band.color}55;">
+          ${band.label} engagement
+        </span>
+      </div>`;
+  }).join('');
+}
+
+/* ====================== WIRING INTO THE EXISTING APP ====================== */
+
+(function wireEngagement() {
+
+  // 1. Start/stop tracking with the In-Person view -----------------------
+  if (typeof showView === 'function') {
+    const _showView = showView;
+    window.showView = function (name) {
+      _showView(name);
+      if (name === 'inperson') startEngagementTracking();
+      else stopEngagementTracking();
+    };
+    // Rebind the local reference used elsewhere in the file
+    try { showView = window.showView; } catch (e) {}
+  }
+
+  // Stop when the tab is hidden — no background tracking, by design
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && engagementState.active) {
+      if (engagementState.openVisit) closeVisit('tab_hidden');
+    }
+  });
+
+  // 2. Attach saved customers to the open visit --------------------------
+  const custSaveBtn = document.getElementById('custSave');
+  if (custSaveBtn) {
+    custSaveBtn.addEventListener('click', () => {
+      // Runs after the existing handler; read the freshly-saved record
+      setTimeout(() => {
+        const list = loadCustomersLocal();
+        if (list && list.length) attachCustomerToOpenVisit(list[0]);
+      }, 80);
+    });
+  }
+
+  const quoteBtn = document.getElementById('custRequestQuoteBtn');
+  if (quoteBtn) quoteBtn.addEventListener('click', () => markQuoteRequestedOnOpenVisit());
+
+  // 3. Add the Hotspots button to the admin dashboard --------------------
+  const actions = document.querySelector('.dash-header-actions');
+  if (actions && !document.getElementById('dashHotspotsBtn')) {
+    const btn = document.createElement('button');
+    btn.className = 'dash-refresh';
+    btn.id = 'dashHotspotsBtn';
+    btn.type = 'button';
+    btn.title = 'Engagement hotspot map';
+    btn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+      Hotspots`;
+    btn.addEventListener('click', openHotspotMap);
+    actions.appendChild(btn);
+  }
+
+  console.log('[engagement] module wired');
+})();
+
+/* ====================== EXPORTS ====================== */
+window.crmgoEngagement = {
+  start: startEngagementTracking,
+  stop: stopEngagementTracking,
+  openHotspotMap,
+  computeEngagement,
+  dwellScore,
+  config: ENGAGEMENT_CFG,
+  state: engagementState
+};
 
 </script>
 </body>
