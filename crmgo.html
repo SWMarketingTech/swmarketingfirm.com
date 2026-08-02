@@ -10921,13 +10921,38 @@ window.crmgoRealData = {
 /* ====================== TUNABLE CONSTANTS ====================== */
 const ENGAGEMENT_CFG = {
   // --- Geofence ---
-  GEOFENCE_RADIUS_M: 60,       // Considered "at" a business within this radius
-  EXIT_RADIUS_M: 90,           // Hysteresis: must exceed this to be "away"
-  GPS_MAX_ACCURACY_M: 100,     // Reject fixes worse than this — junk data poisons scores
-  EXIT_GRACE_S: 60,            // Must stay outside EXIT_RADIUS this long to close a visit
+  /* 0.03 mi = 48 m must NOT register as an arrival, so the entry radius sits
+     well inside that at 25 m — roughly "at the door", not "across the lot". */
+  GEOFENCE_RADIUS_M: 25,       // Entry radius. 25 m ≈ 0.016 mi
+  EXIT_RADIUS_M: 45,           // Hysteresis. 45 m ≈ 0.028 mi — still under 0.03
+  /* This matters as much as the radius. A fix reporting ±80 m accuracy cannot
+     tell 20 m from 100 m, so trusting it would defeat the tight radius
+     entirely. Anything worse than 30 m is discarded rather than believed. */
+  GPS_MAX_ACCURACY_M: 30,      // was 100
+  EXIT_GRACE_S: 45,            // Must stay outside EXIT_RADIUS this long to depart
+
+  /* Presence confirmation. Entering the radius starts a CANDIDATE, not a
+     visit. The rep must stay inside continuously for this long before a visit
+     opens, and dwell time counts from THAT moment — not from entry. Anything
+     shorter is someone walking past a doorway, and it is discarded with no
+     record at all. */
+  CONFIRM_DWELL_S: 20,
+
+  /* Signal-loss handling. GPS degrades hard indoors and in urban canyons —
+     exactly where reps go. With a 30 m accuracy filter those fixes are
+     rejected, so without this the visit would stop accruing the moment the
+     rep walks through the door.
+
+     Rule: absence of evidence is not evidence of departure. If the last GOOD
+     fix placed them inside, keep accruing wall-clock time. Only a good fix
+     that places them OUTSIDE can close a visit. */
+  SIGNAL_LOSS_CAP_S: 1800,     // Stop accruing after 30 min with no good fix
+  STALE_FIX_WARN_S: 45,        // Show "weak signal" on the HUD after this
 
   // --- Dwell curve breakpoints (seconds) ---
-  DWELL_PASSBY_S: 45,          // Below this = walked past, discard entirely
+  /* Measured from confirmation, so total time on site before a visit scores
+     anything is CONFIRM_DWELL_S + DWELL_PASSBY_S = 45 s. */
+  DWELL_PASSBY_S: 25,          // Below this = no real engagement, discard
   DWELL_BRIEF_S: 120,          // 45s–2m  = brief contact (door answered, quick no)
   DWELL_CONVERSATION_S: 480,   // 2m–8m   = real conversation — the sweet spot
   DWELL_DEEP_S: 1200,          // 8m–20m  = presentation / deep engagement
@@ -10945,7 +10970,7 @@ const ENGAGEMENT_CFG = {
   MIN_VISITS_FOR_HOTSPOT: 1,
 
   // --- Sampling ---
-  SAMPLE_INTERVAL_MS: 15000,   // How often to evaluate position while in-person
+  SAMPLE_INTERVAL_MS: 1000,    // 1 s — required to time the 20 s confirmation
   MIN_MOVE_FOR_SAMPLE_M: 5
 };
 
@@ -10956,7 +10981,8 @@ const engagementState = {
   active: false,
   watcherId: null,
   sampleTimer: null,
-  openVisit: null,       // { bizId, bizName, lat, lng, arrivedAt, lastSeenAt, samples[], outsideSince }
+  candidate: null,       // inside the radius, not yet held long enough to count
+  openVisit: null,       // confirmed visit — dwell counts from confirmedAt
   lastPos: null,
   sessionVisits: []
 };
@@ -11080,17 +11106,17 @@ function startEngagementTracking() {
     { enableHighAccuracy: true, maximumAge: 5000, timeout: 25000 }
   );
 
-  // Periodic tick so a stationary rep still accrues dwell time even when
-  // watchPosition goes quiet (it only fires on meaningful movement).
-  engagementState.sampleTimer = setInterval(() => {
-    if (engagementState.lastPos) evaluatePosition(engagementState.lastPos, true);
-  }, ENGAGEMENT_CFG.SAMPLE_INTERVAL_MS);
+  /* 1 s ticker. watchPosition only fires on meaningful movement, so a
+     stationary rep would otherwise never accrue time — and the 20 s
+     confirmation needs finer resolution than watchPosition provides. */
+  engagementState.sampleTimer = setInterval(engagementTick, ENGAGEMENT_CFG.SAMPLE_INTERVAL_MS);
 
   console.log('[engagement] tracking started');
 }
 
 function stopEngagementTracking() {
   if (!engagementState.active) return;
+  engagementState.candidate = null;
   if (engagementState.openVisit) closeVisit('tracking_stopped');
   if (engagementState.watcherId !== null) {
     navigator.geolocation.clearWatch(engagementState.watcherId);
@@ -11122,10 +11148,46 @@ function metersBetween(a, b) {
   return haversineMiles(a, b) * 1609.34;
 }
 
+function engagementTick() {
+  const p = engagementState.lastPos;
+  if (!p) return;
+  const now = Date.now();
+
+  // Candidate still inside? Promote once it has been held long enough.
+  /* The candidate window is the most fragile moment: a rep who walks straight
+     from the sidewalk through the door can lose signal inside the 20 s hold.
+     The candidate is only cancelled by a good fix showing them outside (see
+     evaluatePosition), never by silence. */
+  const cand = engagementState.candidate;
+  if (cand && !engagementState.openVisit) {
+    const held = (now - cand.firstSeenAt) / 1000;
+    if (held >= ENGAGEMENT_CFG.CONFIRM_DWELL_S) {
+      promoteCandidate(cand, p);
+    } else {
+      updateCandidateHud(cand, held);
+    }
+  }
+
+  const open = engagementState.openVisit;
+  if (open) {
+    /* Keep accruing while the signal is out, provided the last good fix had
+       them inside. Capped so a phone left in a parking lot — or one that dies
+       mid-visit — cannot run up hours of phantom dwell. */
+    const sinceGood = (now - open.lastGoodFixAt) / 1000;
+    if (open.lastGoodInside && sinceGood < ENGAGEMENT_CFG.SIGNAL_LOSS_CAP_S) {
+      open.lastSeenAt = now;
+    } else if (open.lastGoodInside && sinceGood >= ENGAGEMENT_CFG.SIGNAL_LOSS_CAP_S) {
+      closeVisit('signal_lost');
+      return;
+    }
+    updateEngagementHud(open);
+  }
+  evaluatePosition(p, true);
+}
+
 function evaluatePosition(p, isTick) {
   if (!ipState || !ipState.results || !ipState.results.length) return;
 
-  // Find the nearest business within the geofence
   let nearest = null, nearestDist = Infinity;
   for (const b of ipState.results) {
     const d = metersBetween(p, b.coords);
@@ -11134,35 +11196,73 @@ function evaluatePosition(p, isTick) {
 
   const open = engagementState.openVisit;
 
+  // ---- Confirmed visit: track departure ----
   if (open) {
     const distToOpen = metersBetween(p, { lat: open.lat, lng: open.lng });
+    const now = Date.now();
 
     if (distToOpen <= ENGAGEMENT_CFG.EXIT_RADIUS_M) {
-      // Still here — accrue
-      open.lastSeenAt = p.at;
+      open.lastGoodFixAt = now;
+      open.lastGoodInside = true;
+      open.lastSeenAt = now;
       open.outsideSince = null;
       if (!isTick) open.samples.push({ at: p.at, acc: p.accuracy });
-      updateEngagementHud(open);
       return;
     }
 
-    // Outside the exit radius — start / continue the grace clock
-    if (!open.outsideSince) open.outsideSince = p.at;
-    if ((p.at - open.outsideSince) / 1000 >= ENGAGEMENT_CFG.EXIT_GRACE_S) {
+    // A good fix places them outside — this is the only thing that can
+    // start the departure clock.
+    open.lastGoodFixAt = now;
+    open.lastGoodInside = false;
+    if (!open.outsideSince) open.outsideSince = now;
+    if ((now - open.outsideSince) / 1000 >= ENGAGEMENT_CFG.EXIT_GRACE_S) {
       closeVisit('departed');
-    } else {
-      updateEngagementHud(open);
-      return;
     }
+    return;
   }
 
-  // No open visit — should we open one?
+  // ---- Candidate: inside the radius but not yet confirmed ----
+  const cand = engagementState.candidate;
+  if (cand) {
+    const distToCand = metersBetween(p, { lat: cand.lat, lng: cand.lng });
+    if (distToCand <= ENGAGEMENT_CFG.EXIT_RADIUS_M) {
+      cand.lastSeenAt = p.at;
+      return;
+    }
+    // Left before confirming — a walk-past. Discard with no record.
+    engagementState.candidate = null;
+    hideEngagementHud();
+  }
+
+  // ---- Open a new candidate ----
   if (nearest && nearestDist <= ENGAGEMENT_CFG.GEOFENCE_RADIUS_M) {
-    openVisitFor(nearest, p);
+    startCandidate(nearest, p);
   }
 }
 
-function openVisitFor(biz, p) {
+function startCandidate(biz, p) {
+  engagementState.candidate = {
+    biz,
+    bizId: biz.id,
+    bizName: biz.name,
+    lat: biz.coords.lat,
+    lng: biz.coords.lng,
+    firstSeenAt: Date.now(),
+    lastSeenAt: p.at,
+    enteredAt: p.at
+  };
+  showEngagementHud();
+  updateCandidateHud(engagementState.candidate, 0);
+}
+
+/**
+ * Promote a held candidate into a real visit.
+ * dwellSeconds is measured from THIS moment, not from geofence entry — the
+ * first 20 seconds are a qualifying period, not engagement.
+ */
+function promoteCandidate(cand, p) {
+  const biz = cand.biz;
+  engagementState.candidate = null;
   engagementState.openVisit = {
     id: 'visit_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     bizId: biz.id,
@@ -11171,16 +11271,19 @@ function openVisitFor(biz, p) {
     address: biz.address || '',
     lat: biz.coords.lat,
     lng: biz.coords.lng,
-    arrivedAt: p.at,
-    lastSeenAt: p.at,
+    enteredAt: cand.enteredAt,      // when the radius was first entered
+    arrivedAt: Date.now(),          // when presence was confirmed — dwell starts here
+    lastSeenAt: Date.now(),
+    lastGoodFixAt: Date.now(),   // last accepted (accurate) fix
+    lastGoodInside: true,        // did that fix place them inside?
     outsideSince: null,
     samples: [{ at: p.at, acc: p.accuracy }],
     customer: null,
     outcome: { customerSaved: false, quoteRequested: false, appointmentSet: false },
     travelMode: ipState.mode
   };
-  showEngagementHud();
-  if (typeof showToast === 'function') showToast(`Arrived · ${biz.name}`);
+  updateEngagementHud(engagementState.openVisit);
+  if (typeof showToast === 'function') showToast(`On site · ${biz.name}`);
 }
 
 function closeVisit(reason) {
@@ -11298,6 +11401,23 @@ function hideEngagementHud() {
   }
 }
 
+function updateCandidateHud(cand, heldSeconds) {
+  const nameEl = document.getElementById('engHudName');
+  if (!nameEl) return;
+  const remain = Math.max(0, Math.ceil(ENGAGEMENT_CFG.CONFIRM_DWELL_S - heldSeconds));
+  const pct = Math.min(100, (heldSeconds / ENGAGEMENT_CFG.CONFIRM_DWELL_S) * 100);
+  nameEl.textContent = cand.bizName;
+  const sub = nameEl.nextElementSibling;
+  if (sub) sub.textContent = 'Confirming arrival';
+  document.getElementById('engHudTimer').textContent = remain + 's';
+  const bandEl = document.getElementById('engHudBand');
+  bandEl.textContent = 'Holding';
+  bandEl.style.color = 'rgba(255,255,255,0.55)';
+  const bar = document.getElementById('engHudBar');
+  bar.style.width = pct + '%';
+  bar.style.background = 'rgba(255,255,255,0.45)';
+}
+
 function updateEngagementHud(v) {
   const nameEl = document.getElementById('engHudName');
   const timerEl = document.getElementById('engHudTimer');
@@ -11308,6 +11428,13 @@ function updateEngagementHud(v) {
   const provisional = computeEngagement({ ...v, dwellSeconds: secs });
   const band = engagementBand(provisional.total);
   nameEl.textContent = v.bizName;
+  const staleFor = (Date.now() - (v.lastGoodFixAt || Date.now())) / 1000;
+  const weak = staleFor > ENGAGEMENT_CFG.STALE_FIX_WARN_S;
+  const sub = nameEl.nextElementSibling;
+  if (sub) {
+    sub.textContent = weak ? 'On site · weak GPS' : 'On site';
+    sub.style.color = weak ? 'rgba(255,214,10,0.85)' : 'rgba(255,255,255,0.55)';
+  }
   timerEl.textContent = formatDuration(secs);
   barEl.style.width = Math.min(100, provisional.total) + '%';
   barEl.style.background = band.color;
@@ -12413,6 +12540,116 @@ window.crmgoAdminTools = {
   requestWithdrawal: atRequestWithdrawal,
   config: ADMIN_TOOLS
 };
+
+
+/* ####################################################################
+   MODULE: OTP mode restricted to admin
+   #################################################################### */
+(function restrictOtpMode() {
+
+  function isAdminProfile() {
+    return !!(typeof currentProfile !== 'undefined' && currentProfile
+              && currentProfile.role === 'admin');
+  }
+
+  function applyOtpRestriction() {
+    const btn = document.getElementById('otpBtn');
+    if (!btn) return;
+    if (isAdminProfile()) {
+      btn.style.display = '';
+      btn.removeAttribute('data-otp-locked');
+      const lock = btn.querySelector('.otp-lock-icon');
+      if (lock) lock.remove();
+      btn.style.opacity = '';
+      btn.style.cursor = '';
+      return;
+    }
+    // Regular rep — visible but locked, so the mode's existence is not a mystery
+    btn.setAttribute('data-otp-locked', '1');
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+    btn.style.filter = 'grayscale(0.7)';
+    if (!btn.querySelector('.otp-lock-icon')) {
+      const lock = document.createElement('span');
+      lock.className = 'otp-lock-icon';
+      lock.style.cssText = 'display:inline-flex;align-items:center;margin-left:2px;';
+      lock.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" ' +
+        'style="width:15px;height:15px;color:rgba(255,255,255,0.7);">' +
+        '<rect x="3" y="11" width="18" height="11" rx="2"/>' +
+        '<path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+      btn.appendChild(lock);
+    }
+  }
+
+  // Intercept the click before the original handler can fire
+  const btn = document.getElementById('otpBtn');
+  if (btn) {
+    btn.addEventListener('click', function (e) {
+      if (!isAdminProfile()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (typeof showToast === 'function') {
+          showToast('Phone mode is not available on your account');
+        }
+      }
+    }, true);   // capture phase — runs before the app's own listener
+  }
+
+  // Guard the view itself, in case anything routes there directly
+  if (typeof showView === 'function') {
+    const _sv = showView;
+    window.showView = function (name) {
+      if (name === 'search' && !isAdminProfile()) {
+        if (typeof showToast === 'function') {
+          showToast('Phone mode is not available on your account');
+        }
+        return _sv('options');
+      }
+      const r = _sv(name);
+      applyOtpRestriction();
+      return r;
+    };
+    try { showView = window.showView; } catch (e) {}
+  }
+
+  if (typeof showOtpFaq === 'function') {
+    const _faq = showOtpFaq;
+    window.showOtpFaq = function () {
+      if (!isAdminProfile()) {
+        if (typeof showToast === 'function') {
+          showToast('Phone mode is not available on your account');
+        }
+        return;
+      }
+      return _faq.apply(this, arguments);
+    };
+    try { showOtpFaq = window.showOtpFaq; } catch (e) {}
+  }
+
+  // Re-apply whenever the signed-in identity changes
+  if (typeof enterUserApp === 'function') {
+    const _eu = enterUserApp;
+    window.enterUserApp = function (p) {
+      const r = _eu.apply(this, arguments);
+      applyOtpRestriction();
+      return r;
+    };
+    try { enterUserApp = window.enterUserApp; } catch (e) {}
+  }
+  if (typeof enterAdminSalesView === 'function') {
+    const _es = enterAdminSalesView;
+    window.enterAdminSalesView = function () {
+      const r = _es.apply(this, arguments);
+      applyOtpRestriction();
+      return r;
+    };
+    try { enterAdminSalesView = window.enterAdminSalesView; } catch (e) {}
+  }
+
+  applyOtpRestriction();
+  console.log('[otp-restrict] phone mode limited to admin accounts');
+})();
 
 </script>
 </body>
