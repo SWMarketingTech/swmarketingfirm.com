@@ -12651,6 +12651,205 @@ window.crmgoAdminTools = {
   console.log('[otp-restrict] phone mode limited to admin accounts');
 })();
 
+
+/* ####################################################################
+   MODULE: backend health check + per-user engagement stats
+   #################################################################### */
+(function backendAndStats() {
+
+  const REQUIRED_TABLES = [
+    { name: 'profiles',            feature: 'Accounts and balances' },
+    { name: 'calls',               feature: 'Call history' },
+    { name: 'contacts',            feature: 'Contact sync' },
+    { name: 'called_businesses',   feature: 'Called-list tracking' },
+    { name: 'audit_snapshots',     feature: 'Call audit screenshots' },
+    { name: 'customers',           feature: 'Manual customer entry' },
+    { name: 'quote_requests',      feature: 'Quote requests' },
+    { name: 'visits',              feature: 'Engagement tracking + hotspots' },
+    { name: 'withdrawal_requests', feature: 'Withdrawal requests' },
+    { name: 'problem_reports',     feature: 'Problem reports' },
+    { name: 'wallet_adjustments',  feature: 'Balance adjustment audit log' }
+  ];
+
+  async function probeTable(t) {
+    try {
+      const { error } = await sb.from(t.name).select('*', { head: true, count: 'exact' }).limit(1);
+      if (!error) return { ...t, ok: true };
+      const code = error.code || '';
+      const msg = (error.message || '').toLowerCase();
+      if (code === '42P01' || msg.includes('does not exist') || msg.includes('not find the table')) {
+        return { ...t, ok: false, why: 'Table missing' };
+      }
+      if (code === '42501' || msg.includes('permission')) {
+        return { ...t, ok: false, why: 'Blocked by RLS' };
+      }
+      return { ...t, ok: false, why: error.message || 'Unknown error' };
+    } catch (e) {
+      return { ...t, ok: false, why: e.message || 'Request failed' };
+    }
+  }
+
+  async function runBackendHealthCheck() {
+    if (!sb || !currentProfile || currentProfile.role !== 'admin') return;
+    const shell = document.querySelector('.dash-shell');
+    if (!shell) return;
+
+    let panel = document.getElementById('backendHealth');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'backendHealth';
+      panel.style.display = 'none';
+      shell.insertBefore(panel, shell.querySelector('.dash-stats'));
+    }
+
+    const results = await Promise.all(REQUIRED_TABLES.map(probeTable));
+    const broken = results.filter(r => !r.ok);
+
+    if (broken.length === 0) { panel.style.display = 'none'; return; }
+
+    panel.style.cssText = `display:block;background:rgba(239,68,68,0.10);
+      border:1px solid rgba(239,68,68,0.45);border-radius:14px;
+      padding:16px 18px;margin-bottom:20px;`;
+    panel.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round"
+             style="width:20px;height:20px;color:#FCA5A5;flex-shrink:0;margin-top:1px;">
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+          <div style="font-family:'Russo One',sans-serif;font-size:13px;letter-spacing:1px;
+                      color:#FCA5A5;text-transform:uppercase;margin-bottom:4px;">
+            Backend setup incomplete — ${broken.length} issue${broken.length === 1 ? '' : 's'}
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.8);line-height:1.5;">
+            These features are running but saving nothing. Run
+            <strong style="color:var(--yellow);">crm-go-backend-setup.sql</strong>
+            in the Supabase SQL Editor, then press Refresh.
+          </div>
+        </div>
+      </div>
+      ${broken.map(b => `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;
+                    background:rgba(0,0,0,0.3);border-radius:8px;padding:8px 12px;margin-bottom:6px;">
+          <div style="min-width:0;">
+            <div style="font-family:'Russo One',sans-serif;font-size:12px;color:white;">${escapeHtml(b.feature)}</div>
+            <div style="font-size:10.5px;color:rgba(255,255,255,0.5);">table: ${escapeHtml(b.name)}</div>
+          </div>
+          <span style="font-family:'Russo One',sans-serif;font-size:9px;letter-spacing:1px;
+                       text-transform:uppercase;color:#FCA5A5;background:rgba(239,68,68,0.15);
+                       border:1px solid rgba(239,68,68,0.35);padding:3px 9px;border-radius:999px;
+                       white-space:nowrap;">${escapeHtml(b.why)}</span>
+        </div>`).join('')}`;
+  }
+
+  /* ---------- Per-user engagement stats in the drill-down ---------- */
+  async function injectEngagementStats(uid) {
+    const modal = document.getElementById('userDetailModal');
+    if (!modal || !sb) return;
+
+    let block = document.getElementById('udEngagement');
+    if (!block) {
+      block = document.createElement('div');
+      block.id = 'udEngagement';
+      const stats = document.getElementById('udStats');
+      if (stats && stats.parentNode) stats.parentNode.insertBefore(block, stats.nextSibling);
+    }
+    block.innerHTML = '<div class="dash-empty" style="padding:14px;font-size:12px;">Loading engagement…</div>';
+
+    const { data: visits, error } = await sb.from('visits').select('*')
+      .eq('user_id', uid).order('arrived_at', { ascending: false }).limit(500);
+
+    if (error) {
+      block.innerHTML = `<div class="dash-empty" style="padding:14px;font-size:12px;color:#FCA5A5;">
+        Engagement unavailable — ${escapeHtml(error.message)}</div>`;
+      return;
+    }
+
+    const list = visits || [];
+    if (list.length === 0) {
+      block.innerHTML = `<div class="dash-section-title" style="font-size:12px;margin:18px 0 10px;">Field Engagement</div>
+        <div class="dash-empty">No visits recorded yet.</div>`;
+      return;
+    }
+
+    const n = list.length;
+    const avgDwell = list.reduce((a, v) => a + (v.dwell_seconds || 0), 0) / n;
+    const avgScore = list.reduce((a, v) => a + (v.score_total || 0), 0) / n;
+    const avgLog   = list.reduce((a, v) => a + (v.score_log || 0), 0) / n;
+    const outcomes = list.filter(v => v.appointment_set || v.quote_requested).length;
+    const high     = list.filter(v => (v.score_total || 0) >= 75).length;
+    const minimal  = list.filter(v => (v.score_total || 0) < 20).length;
+    const conv     = n > 0 ? Math.round((outcomes / n) * 100) : 0;
+
+    const band = (t) => t >= 75 ? '#22c55e' : t >= 45 ? '#FFD60A' : t >= 20 ? '#FB923C' : '#94A3B8';
+
+    const recent = list.slice(0, 8).map(v => {
+      const when = new Date(v.arrived_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const c = band(v.score_total || 0);
+      const tags = [
+        v.appointment_set ? 'appointment' : null,
+        v.quote_requested ? 'quote' : null,
+        v.customer_saved  ? 'logged'  : null
+      ].filter(Boolean).join(' · ');
+      return `<div class="ud-call-row" style="border-left-color:${c};">
+        <div class="ud-head">
+          <span class="ud-biz">${escapeHtml(v.biz_name || 'Unknown')}</span>
+          <span class="ud-earn" style="color:${c};">${v.score_total || 0}</span>
+        </div>
+        <div class="ud-meta">${escapeHtml(when)} · ${formatDuration(v.dwell_seconds || 0)} on site${tags ? ' · ' + escapeHtml(tags) : ''}</div>
+      </div>`;
+    }).join('');
+
+    block.innerHTML = `
+      <div class="dash-section-title" style="font-size:12px;margin:18px 0 10px;">Field Engagement</div>
+      <div class="uc-stats" style="margin-bottom:10px;">
+        <div class="uc-stat"><div class="n">${n}</div><div class="l">Visits</div></div>
+        <div class="uc-stat"><div class="n">${formatDuration(avgDwell)}</div><div class="l">Avg On Site</div></div>
+        <div class="uc-stat"><div class="n" style="color:${band(avgScore)};">${Math.round(avgScore)}</div><div class="l">Avg Engagement</div></div>
+        <div class="uc-stat"><div class="n ${conv >= 20 ? 'green' : ''}">${conv}%</div><div class="l">Outcome Rate</div></div>
+      </div>
+      <div class="uc-stats" style="margin-bottom:4px;">
+        <div class="uc-stat"><div class="n green">${high}</div><div class="l">High Engagement</div></div>
+        <div class="uc-stat"><div class="n ${minimal > high ? 'red' : ''}">${minimal}</div><div class="l">Minimal</div></div>
+        <div class="uc-stat"><div class="n">${Math.round(avgLog)}</div><div class="l">Avg Log Quality</div></div>
+        <div class="uc-stat"><div class="n">${outcomes}</div><div class="l">Outcomes</div></div>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;margin:10px 0 6px;">
+        Engagement blends time on site (45%), how completely the visit was logged (30%),
+        and what came of it (25%). A high visit count with low log quality usually means
+        doors are being knocked but nothing is being written down.
+      </div>
+      <div class="dash-section-title" style="font-size:11px;margin:14px 0 8px;">Recent Visits</div>
+      ${recent}`;
+  }
+
+  /* ---------- Wire ---------- */
+  if (typeof loadAdminDashboard === 'function') {
+    const _load = loadAdminDashboard;
+    window.loadAdminDashboard = async function () {
+      const r = await _load.apply(this, arguments);
+      try { await runBackendHealthCheck(); } catch (e) { console.warn('[health]', e); }
+      return r;
+    };
+    try { loadAdminDashboard = window.loadAdminDashboard; } catch (e) {}
+  }
+
+  if (typeof openUserDetail === 'function') {
+    const _open = openUserDetail;
+    window.openUserDetail = async function (uid) {
+      const r = await _open.apply(this, arguments);
+      try { await injectEngagementStats(uid); } catch (e) { console.warn('[stats]', e); }
+      return r;
+    };
+    try { openUserDetail = window.openUserDetail; } catch (e) {}
+  }
+
+  window.crmgoHealthCheck = runBackendHealthCheck;
+  console.log('[backend-check] ready — run crmgoHealthCheck() any time');
+})();
+
 </script>
 </body>
 </html>
