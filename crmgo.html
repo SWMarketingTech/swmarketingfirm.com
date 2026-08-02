@@ -11770,6 +11770,650 @@ window.crmgoEngagement = {
   state: engagementState
 };
 
+
+/* ####################################################################
+   MODULE: crm-go-admin-tools.js
+   #################################################################### */
+/* ============================================================================
+   CRM GO — ADMIN TOOLS
+   ----------------------------------------------------------------------------
+     A. Manual wallet balance adjustment (admin, per user, with audit trail)
+     B. Request Withdrawal  -> email + logged request  (REQUEST WITHDRAWAL)
+     C. Report a Problem    -> email + logged report   (REPORT A PROBLEM)
+
+   NOTE: no literal closing-script tag appears anywhere in this file, including
+   inside comments. The HTML parser scans for that sequence regardless of JS
+   comment syntax and will terminate the script block early if it finds one.
+   ========================================================================= */
+
+const ADMIN_TOOLS = {
+  INBOX: 'info@swmarketingfirm.com',
+  CC: 'swmarketingfirm@gmail.com',
+  SUBJ_WITHDRAW: 'REQUEST WITHDRAWAL',
+  SUBJ_PROBLEM: 'REPORT A PROBLEM'
+};
+
+function atNow() {
+  const now = new Date();
+  return {
+    now,
+    dateStr: now.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }),
+    timeStr: now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  };
+}
+
+function atRepName() {
+  if (typeof currentProfile !== 'undefined' && currentProfile) {
+    return currentProfile.display_name || currentProfile.email;
+  }
+  if (typeof activeUser === 'function') {
+    const u = activeUser();
+    if (u) return u.name;
+  }
+  return 'A rep';
+}
+
+function atRepEmail() {
+  return (typeof currentProfile !== 'undefined' && currentProfile) ? (currentProfile.email || '') : '';
+}
+
+function atOpenMail(subject, body) {
+  const url = 'mailto:' + ADMIN_TOOLS.INBOX
+    + '?cc=' + encodeURIComponent(ADMIN_TOOLS.CC)
+    + '&subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+  window.location.href = url;
+}
+
+/* ==========================================================================
+   A.  MANUAL WALLET ADJUSTMENT  (admin only)
+   ==========================================================================
+   Money changes need a paper trail. Every adjustment records who made it,
+   the before and after balances, and a required reason. That log is what you
+   point at if a contractor ever disputes a payout.
+   ======================================================================== */
+
+function ensureBalanceModal() {
+  if (document.getElementById('balanceModal')) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.id = 'balanceModal';
+  wrap.setAttribute('role', 'dialog');
+  wrap.innerHTML = `
+    <div class="modal" style="max-width:420px;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:2px;">Adjust Balance</h2>
+      <div class="biz-sub" id="balUserName">—</div>
+
+      <div class="withdraw-summary" style="margin:14px 0 16px;">
+        <div class="lbl">Current Balance</div>
+        <div class="amt" id="balCurrent">$0.00</div>
+      </div>
+
+      <div class="ue-field">
+        <label>Adjustment Type</label>
+        <div class="mode-toggle" style="margin-bottom:2px;">
+          <button class="mode-btn active" data-baltype="add" type="button">Add</button>
+          <button class="mode-btn" data-baltype="subtract" type="button">Subtract</button>
+          <button class="mode-btn" data-baltype="set" type="button">Set To</button>
+        </div>
+      </div>
+
+      <div class="ue-field">
+        <label for="balAmount">Amount (USD)</label>
+        <input type="number" id="balAmount" min="0" step="0.01" placeholder="0.00" />
+        <div class="hint" id="balPreview">New balance: —</div>
+      </div>
+
+      <div class="ue-field cust-field">
+        <label for="balReason">Reason (required)</label>
+        <textarea id="balReason" placeholder="e.g. Paid out $120 via Zelle on 8/1 — confirmation #4471"></textarea>
+        <div class="hint">Recorded permanently in the adjustment log with your name and timestamp.</div>
+      </div>
+
+      <div class="ue-actions">
+        <button class="ue-cancel" id="balCancel">Cancel</button>
+        <button class="ue-save" id="balSave">Save Adjustment</button>
+      </div>
+
+      <div class="dash-section-title" style="font-size:11px;margin:18px 0 8px;">Recent Adjustments</div>
+      <div id="balHistory" style="max-height:150px;overflow-y:auto;"></div>
+
+      <button class="modal-close" id="balClose">Close</button>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  wrap.querySelectorAll('[data-baltype]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      wrap.querySelectorAll('[data-baltype]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      balUpdatePreview();
+    });
+  });
+  document.getElementById('balAmount').addEventListener('input', balUpdatePreview);
+  document.getElementById('balCancel').addEventListener('click', closeBalanceModal);
+  document.getElementById('balClose').addEventListener('click', closeBalanceModal);
+  document.getElementById('balSave').addEventListener('click', saveBalanceAdjustment);
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) closeBalanceModal(); });
+}
+
+let balEditing = null;   // { id, name, balance }
+
+function balSelectedType() {
+  const el = document.querySelector('#balanceModal [data-baltype].active');
+  return el ? el.dataset.baltype : 'add';
+}
+
+function balComputeNew() {
+  const amt = parseFloat(document.getElementById('balAmount').value);
+  if (isNaN(amt) || !balEditing) return null;
+  const cur = balEditing.balance;
+  const t = balSelectedType();
+  if (t === 'add') return cur + amt;
+  if (t === 'subtract') return Math.max(0, cur - amt);
+  return Math.max(0, amt);
+}
+
+function balUpdatePreview() {
+  const n = balComputeNew();
+  document.getElementById('balPreview').textContent =
+    n === null ? 'New balance: —' : 'New balance: $' + n.toFixed(2);
+}
+
+async function openBalanceModal(uid) {
+  ensureBalanceModal();
+  if (!sb) return;
+  const { data: p } = await sb.from('profiles').select('*').eq('id', uid).maybeSingle();
+  if (!p) { showToast('Could not load that user'); return; }
+
+  balEditing = {
+    id: p.id,
+    name: p.display_name || p.email,
+    balance: parseFloat(p.wallet_balance || 0)
+  };
+  document.getElementById('balUserName').textContent = balEditing.name;
+  document.getElementById('balCurrent').textContent = '$' + balEditing.balance.toFixed(2);
+  document.getElementById('balAmount').value = '';
+  document.getElementById('balReason').value = '';
+  balUpdatePreview();
+  document.getElementById('balanceModal').classList.add('visible');
+  loadBalanceHistory(uid);
+}
+
+function closeBalanceModal() {
+  const m = document.getElementById('balanceModal');
+  if (m) m.classList.remove('visible');
+  balEditing = null;
+}
+
+async function loadBalanceHistory(uid) {
+  const el = document.getElementById('balHistory');
+  if (!sb) { el.innerHTML = ''; return; }
+  const { data } = await sb.from('wallet_adjustments').select('*')
+    .eq('user_id', uid).order('created_at', { ascending: false }).limit(20);
+  const rows = data || [];
+  if (!rows.length) {
+    el.innerHTML = '<div class="dash-empty" style="padding:14px;font-size:12px;">No adjustments yet.</div>';
+    return;
+  }
+  el.innerHTML = rows.map(r => {
+    const when = new Date(r.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const delta = parseFloat(r.delta || 0);
+    const col = delta >= 0 ? '#4ADE80' : '#FF6B7E';
+    return `<div class="ud-call-row" style="border-left-color:${col};">
+      <div class="ud-head">
+        <span class="ud-biz">$${parseFloat(r.amount_before||0).toFixed(2)} → $${parseFloat(r.amount_after||0).toFixed(2)}</span>
+        <span class="ud-earn" style="color:${col};">${delta >= 0 ? '+' : ''}$${Math.abs(delta).toFixed(2)}</span>
+      </div>
+      <div class="ud-meta">${escapeHtml(when)} · ${escapeHtml(r.admin_name || 'Admin')}</div>
+      ${r.reason ? `<div class="ud-meta" style="color:rgba(255,255,255,0.75);font-style:italic;">${escapeHtml(r.reason)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function saveBalanceAdjustment() {
+  if (!balEditing || !sb) return;
+  const newBal = balComputeNew();
+  const reason = (document.getElementById('balReason').value || '').trim();
+  if (newBal === null) { showToast('Enter an amount'); return; }
+  if (!reason) { showToast('A reason is required'); document.getElementById('balReason').focus(); return; }
+
+  const before = balEditing.balance;
+  const btn = document.getElementById('balSave');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const { error: upErr } = await sb.from('profiles')
+      .update({ wallet_balance: newBal }).eq('id', balEditing.id);
+    if (upErr) throw upErr;
+
+    await sb.from('wallet_adjustments').insert({
+      id: 'adj_' + Date.now(),
+      user_id: balEditing.id,
+      admin_id: currentProfile ? currentProfile.id : null,
+      admin_name: currentProfile ? (currentProfile.display_name || currentProfile.email) : 'Admin',
+      amount_before: before,
+      amount_after: newBal,
+      delta: newBal - before,
+      reason,
+      created_at: new Date().toISOString()
+    });
+
+    showToast(`${balEditing.name}: $${before.toFixed(2)} → $${newBal.toFixed(2)}`);
+    balEditing.balance = newBal;
+    document.getElementById('balCurrent').textContent = '$' + newBal.toFixed(2);
+    document.getElementById('balAmount').value = '';
+    document.getElementById('balReason').value = '';
+    balUpdatePreview();
+    loadBalanceHistory(balEditing.id);
+    if (typeof loadAdminDashboard === 'function') loadAdminDashboard();
+  } catch (e) {
+    showToast('Adjustment failed: ' + (e.message || 'error'));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Adjustment';
+  }
+}
+
+/* ==========================================================================
+   B.  REQUEST WITHDRAWAL
+   ==========================================================================
+   Mirrors Request Quote: opens the rep's mail client with everything filled
+   in, and logs the request so the admin sees it in the dashboard even if the
+   mail client never opens.
+
+   The balance is NOT zeroed on request. A request is not a payment. The admin
+   pays out, then uses Adjust Balance to bring the number down — which is what
+   creates the audit trail.
+   ======================================================================== */
+
+function atRequestWithdrawal() {
+  const amount = (typeof walletBalance === 'number') ? walletBalance : 0;
+  if (amount <= 0) { showToast('No funds available to withdraw'); return; }
+
+  const name = atRepName();
+  const email = atRepEmail();
+  const { now, dateStr, timeStr } = atNow();
+  const method = (document.getElementById('payoutMethod') || {}).value || 'Not specified';
+  const amountStr = '$' + amount.toFixed(2);
+
+  const body =
+    `${name} is requesting ${amountStr} on ${dateStr} at ${timeStr}.\n\n`
+    + `Rep: ${name}\n`
+    + (email ? `Email: ${email}\n` : '')
+    + `Amount: ${amountStr}\n`
+    + `Payout method: ${method}\n`
+    + `Requested: ${dateStr} at ${timeStr}\n`;
+
+  atOpenMail(`${ADMIN_TOOLS.SUBJ_WITHDRAW} — ${name} — ${amountStr}`, body);
+
+  if (sb && cloudUserId) {
+    sb.from('withdrawal_requests').insert({
+      id: 'wd_' + Date.now(),
+      user_id: cloudUserId,
+      rep_name: name,
+      rep_email: email || null,
+      amount: amount,
+      payout_method: method,
+      requested_at: now.toISOString(),
+      status: 'pending',
+      seen: false
+    }).then(null, e => console.warn('withdrawal_requests insert', e));
+  }
+
+  showToast(`Withdrawal request for ${amountStr} sent`);
+  const wm = document.getElementById('withdrawModal');
+  if (wm) wm.classList.remove('visible');
+}
+
+/* ==========================================================================
+   C.  REPORT A PROBLEM
+   ==========================================================================
+   Placed bottom-left. Bottom-right is the Sign out pill, top-left is the user
+   switcher, top-right is the wallet, and bottom-centre is the engagement HUD.
+   Bottom-left is the only fixed corner still free, and it mirrors Sign out.
+   Easy to move — change the `left` and `bottom` values in reportBtn.style.
+   ======================================================================== */
+
+function ensureReportProblemUI() {
+  if (document.getElementById('reportProblemBtn')) return;
+
+  const btn = document.createElement('button');
+  btn.id = 'reportProblemBtn';
+  btn.type = 'button';
+  btn.title = 'Report a problem';
+  btn.style.cssText = `
+    position:fixed; bottom:16px; left:16px; z-index:50;
+    display:none; align-items:center; gap:6px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.14);
+    color:rgba(255,255,255,0.55); border-radius:999px;
+    padding:6px 13px 6px 11px; font-family:'Inter',sans-serif;
+    font-size:10.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase;
+    cursor:pointer; backdrop-filter:blur(8px);
+    transition:color 150ms ease, border-color 150ms ease, background 150ms ease;`;
+  btn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <span>Report a problem</span>`;
+  btn.addEventListener('mouseenter', () => {
+    btn.style.color = 'rgba(255,255,255,0.95)';
+    btn.style.borderColor = 'rgba(252,165,165,0.55)';
+    btn.style.background = 'rgba(239,68,68,0.10)';
+  });
+  btn.addEventListener('mouseleave', () => {
+    btn.style.color = 'rgba(255,255,255,0.55)';
+    btn.style.borderColor = 'rgba(255,255,255,0.14)';
+    btn.style.background = 'rgba(255,255,255,0.03)';
+  });
+  btn.addEventListener('click', openReportProblemModal);
+  document.body.appendChild(btn);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-backdrop';
+  wrap.id = 'reportProblemModal';
+  wrap.setAttribute('role', 'dialog');
+  wrap.innerHTML = `
+    <div class="modal" style="max-width:440px;">
+      <h2 style="font-family:'Russo One',sans-serif;font-size:18px;letter-spacing:1px;color:white;margin-bottom:2px;">Report a Problem</h2>
+      <div class="biz-sub">Goes straight to the team</div>
+
+      <div class="ue-field" style="margin-top:14px;">
+        <label for="rpCategory">What kind of problem?</label>
+        <select id="rpCategory">
+          <option value="App bug or crash">App bug or crash</option>
+          <option value="Wrong or missing business data">Wrong or missing business data</option>
+          <option value="Call tracking / verification issue">Call tracking / verification issue</option>
+          <option value="Earnings or balance issue">Earnings or balance issue</option>
+          <option value="Map / GPS issue">Map / GPS issue</option>
+          <option value="Account or login issue">Account or login issue</option>
+          <option value="Something else">Something else</option>
+        </select>
+      </div>
+
+      <div class="ue-field cust-field">
+        <label for="rpMessage">What happened?</label>
+        <textarea id="rpMessage" style="min-height:110px;"
+          placeholder="Describe what you were doing and what went wrong. Include the business name or screen if it helps."></textarea>
+      </div>
+
+      <div class="ue-actions">
+        <button class="ue-cancel" id="rpCancel">Cancel</button>
+        <button class="ue-save" id="rpSend">Send Report</button>
+      </div>
+      <button class="modal-close" id="rpClose">Close</button>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  document.getElementById('rpCancel').addEventListener('click', closeReportProblemModal);
+  document.getElementById('rpClose').addEventListener('click', closeReportProblemModal);
+  document.getElementById('rpSend').addEventListener('click', sendProblemReport);
+  wrap.addEventListener('click', (e) => { if (e.target === wrap) closeReportProblemModal(); });
+}
+
+function openReportProblemModal() {
+  ensureReportProblemUI();
+  document.getElementById('rpMessage').value = '';
+  document.getElementById('reportProblemModal').classList.add('visible');
+}
+
+function closeReportProblemModal() {
+  const m = document.getElementById('reportProblemModal');
+  if (m) m.classList.remove('visible');
+}
+
+function sendProblemReport() {
+  const category = document.getElementById('rpCategory').value;
+  const message = (document.getElementById('rpMessage').value || '').trim();
+  if (!message) { showToast('Describe the problem first'); document.getElementById('rpMessage').focus(); return; }
+
+  const name = atRepName();
+  const email = atRepEmail();
+  const { now, dateStr, timeStr } = atNow();
+  const screen = (typeof currentView !== 'undefined') ? currentView : 'unknown';
+
+  const body =
+    `${name} is reporting a problem on ${dateStr} at ${timeStr}.\n\n`
+    + `Category: ${category}\n`
+    + `Reported by: ${name}\n`
+    + (email ? `Email: ${email}\n` : '')
+    + `Screen: ${screen}\n`
+    + `Device: ${navigator.userAgent}\n\n`
+    + `Details:\n${message}\n`;
+
+  atOpenMail(`${ADMIN_TOOLS.SUBJ_PROBLEM} — ${category} — ${name}`, body);
+
+  if (sb && cloudUserId) {
+    sb.from('problem_reports').insert({
+      id: 'rp_' + Date.now(),
+      user_id: cloudUserId,
+      rep_name: name,
+      rep_email: email || null,
+      category,
+      message,
+      screen,
+      user_agent: navigator.userAgent,
+      reported_at: now.toISOString(),
+      status: 'open',
+      seen: false
+    }).then(null, e => console.warn('problem_reports insert', e));
+  }
+
+  closeReportProblemModal();
+  showToast('Problem report sent — thank you');
+}
+
+/* ==========================================================================
+   D.  ADMIN DASHBOARD SECTIONS
+   ======================================================================== */
+
+function ensureAdminSections() {
+  const shell = document.querySelector('.dash-shell');
+  if (!shell || document.getElementById('withdrawalsList')) return;
+  const teamTitle = Array.from(shell.querySelectorAll('.dash-section-title'))
+    .find(el => el.textContent.trim().startsWith('Team Members'));
+
+  const block = document.createElement('div');
+  block.innerHTML = `
+    <div class="dash-section-title">
+      Withdrawal Requests <span class="count-badge urgent" id="withdrawalsBadge">0</span>
+    </div>
+    <div id="withdrawalsList"></div>
+    <div class="dash-section-title">
+      Problem Reports <span class="count-badge urgent" id="problemsBadge">0</span>
+    </div>
+    <div id="problemsList"></div>`;
+  while (block.firstChild) {
+    shell.insertBefore(block.firstChild, teamTitle || null);
+  }
+}
+
+async function loadAdminExtras() {
+  if (!sb || !currentProfile) return;
+  ensureAdminSections();
+
+  const { data: team } = await sb.from('profiles').select('id, display_name, email')
+    .eq('supervisor_id', currentProfile.id);
+  const ids = (team || []).map(t => t.id);
+  ids.push(currentProfile.id);
+
+  // --- Withdrawal requests ---
+  const wl = document.getElementById('withdrawalsList');
+  const wb = document.getElementById('withdrawalsBadge');
+  if (wl) {
+    const { data: wds, error } = await sb.from('withdrawal_requests').select('*')
+      .in('user_id', ids).order('requested_at', { ascending: false }).limit(60);
+    if (error) {
+      wl.innerHTML = `<div class="dash-empty">${escapeHtml(error.message)}</div>`;
+    } else {
+      const list = wds || [];
+      const pending = list.filter(w => w.status === 'pending');
+      if (wb) { wb.textContent = pending.length; wb.classList.toggle('urgent', pending.length > 0); }
+      wl.innerHTML = list.length === 0
+        ? '<div class="dash-empty">No withdrawal requests.</div>'
+        : list.map(w => {
+            const when = new Date(w.requested_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            const paid = w.status === 'paid';
+            return `<div class="quote-card">
+              <div class="qc-head">
+                <span class="qc-biz">${escapeHtml(w.rep_name || 'Rep')}</span>
+                <span class="qc-time" style="color:${paid ? '#86EFAC' : 'var(--yellow)'};font-family:'Russo One',sans-serif;">
+                  $${parseFloat(w.amount || 0).toFixed(2)}
+                </span>
+              </div>
+              <div class="qc-meta">${escapeHtml(when)} · ${escapeHtml(w.payout_method || 'method not set')}${w.rep_email ? ' · ' + escapeHtml(w.rep_email) : ''}</div>
+              <span class="qc-rep" style="${paid ? 'background:rgba(34,197,94,0.12);color:#86EFAC;border-color:rgba(34,197,94,0.3);' : ''}">${escapeHtml(w.status)}</span>
+              ${paid ? '' : `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="qc-send-btn" data-adjust-bal="${escapeHtml(w.user_id)}">Adjust Balance</button>
+                <button class="qc-send-btn" style="background:rgba(34,197,94,0.9);" data-mark-paid="${escapeHtml(w.id)}">Mark Paid</button>
+              </div>`}
+            </div>`;
+          }).join('');
+    }
+  }
+
+  // --- Problem reports ---
+  const pl = document.getElementById('problemsList');
+  const pb = document.getElementById('problemsBadge');
+  if (pl) {
+    const { data: prs, error } = await sb.from('problem_reports').select('*')
+      .in('user_id', ids).order('reported_at', { ascending: false }).limit(60);
+    if (error) {
+      pl.innerHTML = `<div class="dash-empty">${escapeHtml(error.message)}</div>`;
+    } else {
+      const list = prs || [];
+      const open = list.filter(p => p.status === 'open');
+      if (pb) { pb.textContent = open.length; pb.classList.toggle('urgent', open.length > 0); }
+      pl.innerHTML = list.length === 0
+        ? '<div class="dash-empty">No problem reports.</div>'
+        : list.map(p => {
+            const when = new Date(p.reported_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            const resolved = p.status === 'resolved';
+            return `<div class="quote-card" style="${resolved ? 'border-color:rgba(34,197,94,0.3);' : 'border-color:rgba(239,68,68,0.35);'}">
+              <div class="qc-head">
+                <span class="qc-biz">${escapeHtml(p.category || 'Problem')}</span>
+                <span class="qc-time">${escapeHtml(when)}</span>
+              </div>
+              <div class="qc-meta">${escapeHtml(p.message || '')}</div>
+              <span class="qc-rep">${escapeHtml(p.rep_name || 'Rep')}${p.screen ? ' · ' + escapeHtml(p.screen) : ''}</span>
+              ${resolved ? '' : `<div style="margin-top:10px;">
+                <button class="qc-send-btn" data-resolve-problem="${escapeHtml(p.id)}">Mark Resolved</button>
+              </div>`}
+            </div>`;
+          }).join('');
+    }
+  }
+}
+
+/* ==========================================================================
+   E.  WIRING
+   ======================================================================== */
+
+(function wireAdminTools() {
+
+  // --- Replace the Request Withdraw confirm handler ---
+  const wc = document.getElementById('withdrawConfirm');
+  if (wc) {
+    const fresh = wc.cloneNode(true);      // drops the original zero-the-balance listener
+    wc.parentNode.replaceChild(fresh, wc);
+    fresh.addEventListener('click', atRequestWithdrawal);
+  }
+
+  // --- Show the Report a Problem button once signed in ---
+  ensureReportProblemUI();
+  const syncReportBtn = () => {
+    const btn = document.getElementById('reportProblemBtn');
+    if (!btn) return;
+    btn.style.display = document.body.classList.contains('app-ready') ? 'inline-flex' : 'none';
+  };
+  syncReportBtn();
+  new MutationObserver(syncReportBtn)
+    .observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  // --- Also show it on the admin dashboard ---
+  if (typeof enterAdminDashboard === 'function') {
+    const _enter = enterAdminDashboard;
+    window.enterAdminDashboard = function () {
+      const r = _enter.apply(this, arguments);
+      document.body.classList.add('app-ready');
+      syncReportBtn();
+      return r;
+    };
+    try { enterAdminDashboard = window.enterAdminDashboard; } catch (e) {}
+  }
+
+  // --- Extend the dashboard loader ---
+  if (typeof loadAdminDashboard === 'function') {
+    const _load = loadAdminDashboard;
+    window.loadAdminDashboard = async function () {
+      const r = await _load.apply(this, arguments);
+      try { await loadAdminExtras(); } catch (e) { console.warn('[admin-tools]', e); }
+      try { addAdjustButtonsToTeamCards(); } catch (e) {}
+      return r;
+    };
+    try { loadAdminDashboard = window.loadAdminDashboard; } catch (e) {}
+  }
+
+  // --- Dashboard click delegation for the new buttons ---
+  const dash = document.getElementById('adminDash');
+  if (dash) {
+    dash.addEventListener('click', async (e) => {
+      const adj = e.target.closest('[data-adjust-bal]');
+      const paid = e.target.closest('[data-mark-paid]');
+      const res = e.target.closest('[data-resolve-problem]');
+
+      if (adj) { e.stopPropagation(); openBalanceModal(adj.dataset.adjustBal); return; }
+
+      if (paid) {
+        e.stopPropagation();
+        try {
+          await sb.from('withdrawal_requests')
+            .update({ status: 'paid', replied_at: new Date().toISOString() })
+            .eq('id', paid.dataset.markPaid);
+          showToast('Marked paid — remember to adjust the balance');
+          loadAdminDashboard();
+        } catch (err) { showToast('Update failed'); }
+        return;
+      }
+
+      if (res) {
+        e.stopPropagation();
+        try {
+          await sb.from('problem_reports')
+            .update({ status: 'resolved', replied_at: new Date().toISOString() })
+            .eq('id', res.dataset.resolveProblem);
+          showToast('Marked resolved');
+          loadAdminDashboard();
+        } catch (err) { showToast('Update failed'); }
+        return;
+      }
+    });
+  }
+
+  console.log('[admin-tools] wired');
+})();
+
+/* Add an "Adjust Balance" button to every team member card. */
+function addAdjustButtonsToTeamCards() {
+  document.querySelectorAll('#teamList .user-card').forEach(card => {
+    const uid = card.dataset.uid;
+    const actions = card.querySelector('.uc-actions');
+    if (!uid || !actions || actions.querySelector('[data-adjust-bal]')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.adjustBal = uid;
+    b.textContent = 'Adjust Balance';
+    actions.insertBefore(b, actions.firstChild);
+  });
+}
+
+window.crmgoAdminTools = {
+  openBalanceModal,
+  openReportProblemModal,
+  requestWithdrawal: atRequestWithdrawal,
+  config: ADMIN_TOOLS
+};
+
 </script>
 </body>
 </html>
