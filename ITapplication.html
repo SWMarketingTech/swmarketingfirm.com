@@ -823,8 +823,7 @@ async function saveCopyToSupabase(d, blob) {
     await fetch(SEND_FN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-      body,
-      keepalive: body.length < 60000   // lets the upload finish even if the page navigates to the email app
+      body
     });
   } catch (err) {
     console.warn('Backup copy to Supabase failed:', err);
