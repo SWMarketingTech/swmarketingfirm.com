@@ -414,6 +414,7 @@
 
     <div class="send-meta">
       <div><b>To</b> swmarketingfirm@gmail.com</div>
+      <div><b>CC</b> info@swmarketingfirm.com</div>
       <div><b>Subject</b> <span id="metaSubject"></span></div>
       <div><b>Attach</b> <span id="metaFile"></span></div>
     </div>
@@ -447,6 +448,7 @@
 <script>
 /* ───────── CONFIG ───────── */
 const TO_EMAIL = 'swmarketingfirm@gmail.com';
+const CC_EMAIL = 'info@swmarketingfirm.com';
 const ROLE = 'IT / AV Field Technician';
 
 /* Supabase function that emails the application + PDF to SW (see setup guide) */
@@ -715,11 +717,11 @@ function emailBody(d) {
 }
 
 function links() {
-  const s = encodeURIComponent(subject), b = encodeURIComponent(bodyText), to = encodeURIComponent(TO_EMAIL);
+  const s = encodeURIComponent(subject), b = encodeURIComponent(bodyText), to = encodeURIComponent(TO_EMAIL), cc = encodeURIComponent(CC_EMAIL);
   return {
-    mailto: `mailto:${TO_EMAIL}?subject=${s}&body=${b}`,
-    gmail: `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${s}&body=${b}`,
-    outlook: `https://outlook.live.com/mail/0/deeplink/compose?to=${to}&subject=${s}&body=${b}`,
+    mailto: `mailto:${TO_EMAIL}?cc=${cc}&subject=${s}&body=${b}`,
+    gmail: `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&cc=${cc}&su=${s}&body=${b}`,
+    outlook: `https://outlook.live.com/mail/0/deeplink/compose?to=${to}&cc=${cc}&subject=${s}&body=${b}`,
   };
 }
 
@@ -741,7 +743,7 @@ const isTouch = window.matchMedia('(pointer: coarse)').matches;
 async function sharePdf() {
   const f = new File([pdfBlob], pdfName, { type: 'application/pdf' });
   try {
-    await navigator.share({ files: [f], title: subject, text: `To: ${TO_EMAIL}\nSubject: ${subject}\n\n${bodyText}` });
+    await navigator.share({ files: [f], title: subject, text: `To: ${TO_EMAIL}\nCC: ${CC_EMAIL}\nSubject: ${subject}\n\n${bodyText}` });
   } catch (e) { /* user cancelled share sheet */ }
 }
 
