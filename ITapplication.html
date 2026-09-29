@@ -758,7 +758,7 @@ function openSendModal(shareMode) {
   $('attachStep').style.display = shareMode ? 'none' : '';
   $('sendLead').textContent = shareMode
     ? 'Your completed form is ready as a PDF. Tap "Email with PDF Attached", pick your Mail app, and send it to the address below.'
-    : 'Your completed form has been saved as a PDF and your email is set up. Attach the PDF and send to finish applying.';
+    : 'Your completed form has been saved as a PDF. Choose how you want to email it below, attach the PDF, and send to finish applying.';
   $('sendOverlay').classList.add('show');
 }
 $('sendClose').addEventListener('click', () => $('sendOverlay').classList.remove('show'));
@@ -795,9 +795,8 @@ $('regForm').addEventListener('submit', async e => {
     // Phones/tablets: share sheet → Mail app with the PDF already attached
     sharePdf();
   } else {
-    // Desktop: save the PDF, then open the person's email app with To/Subject/Body filled in
+    // Desktop: save the PDF, then let the person pick how to email it (buttons in the pop-up)
     downloadPdf();
-    setTimeout(() => { window.location.href = links().mailto; }, 600);
   }
 
   // Backup: quietly save a copy of the PDF to Supabase Storage (does not affect the email above)
