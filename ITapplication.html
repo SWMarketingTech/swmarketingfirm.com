@@ -414,6 +414,7 @@
 
     <div class="send-meta">
       <div><b>To</b> swmarketingfirm@gmail.com</div>
+      <div><b>CC</b> info@swmarketingfirm.com</div>
       <div><b>Subject</b> <span id="metaSubject"></span></div>
       <div><b>Attach</b> <span id="metaFile"></span></div>
     </div>
@@ -447,6 +448,7 @@
 <script>
 /* ───────── CONFIG ───────── */
 const TO_EMAIL = 'swmarketingfirm@gmail.com';
+const CC_EMAIL = 'info@swmarketingfirm.com';
 const ROLE = 'IT / AV Field Technician';
 
 /* Supabase function that emails the application + PDF to SW (see setup guide) */
@@ -715,11 +717,11 @@ function emailBody(d) {
 }
 
 function links() {
-  const s = encodeURIComponent(subject), b = encodeURIComponent(bodyText), to = encodeURIComponent(TO_EMAIL);
+  const s = encodeURIComponent(subject), b = encodeURIComponent(bodyText), to = encodeURIComponent(TO_EMAIL), cc = encodeURIComponent(CC_EMAIL);
   return {
-    mailto: `mailto:${TO_EMAIL}?subject=${s}&body=${b}`,
-    gmail: `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${s}&body=${b}`,
-    outlook: `https://outlook.live.com/mail/0/deeplink/compose?to=${to}&subject=${s}&body=${b}`,
+    mailto: `mailto:${TO_EMAIL}?cc=${cc}&subject=${s}&body=${b}`,
+    gmail: `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&cc=${cc}&su=${s}&body=${b}`,
+    outlook: `https://outlook.live.com/mail/0/deeplink/compose?to=${to}&cc=${cc}&subject=${s}&body=${b}`,
   };
 }
 
@@ -741,7 +743,7 @@ const isTouch = window.matchMedia('(pointer: coarse)').matches;
 async function sharePdf() {
   const f = new File([pdfBlob], pdfName, { type: 'application/pdf' });
   try {
-    await navigator.share({ files: [f], title: subject, text: `To: ${TO_EMAIL}\nSubject: ${subject}\n\n${bodyText}` });
+    await navigator.share({ files: [f], title: subject, text: `To: ${TO_EMAIL}\nCC: ${CC_EMAIL}\nSubject: ${subject}\n\n${bodyText}` });
   } catch (e) { /* user cancelled share sheet */ }
 }
 
@@ -756,7 +758,7 @@ function openSendModal(shareMode) {
   $('attachStep').style.display = shareMode ? 'none' : '';
   $('sendLead').textContent = shareMode
     ? 'Your completed form is ready as a PDF. Tap "Email with PDF Attached", pick your Mail app, and send it to the address below.'
-    : 'Your completed form has been saved as a PDF and your email is set up. Attach the PDF and send to finish applying.';
+    : 'Your completed form has been saved as a PDF. Choose how you want to email it below, attach the PDF, and send to finish applying.';
   $('sendOverlay').classList.add('show');
 }
 $('sendClose').addEventListener('click', () => $('sendOverlay').classList.remove('show'));
@@ -793,9 +795,8 @@ $('regForm').addEventListener('submit', async e => {
     // Phones/tablets: share sheet → Mail app with the PDF already attached
     sharePdf();
   } else {
-    // Desktop: save the PDF, then open the person's email app with To/Subject/Body filled in
+    // Desktop: save the PDF, then let the person pick how to email it (buttons in the pop-up)
     downloadPdf();
-    setTimeout(() => { window.location.href = links().mailto; }, 600);
   }
 
   // Backup: quietly save a copy of the PDF to Supabase Storage (does not affect the email above)
@@ -822,8 +823,7 @@ async function saveCopyToSupabase(d, blob) {
     await fetch(SEND_FN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-      body,
-      keepalive: body.length < 60000   // lets the upload finish even if the page navigates to the email app
+      body
     });
   } catch (err) {
     console.warn('Backup copy to Supabase failed:', err);
